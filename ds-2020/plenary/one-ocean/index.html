@@ -11,10 +11,10 @@
   <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/2.8.0/Chart.min.js"></script>
   <script type="module" src="https://unpkg.com/@esri/calcite-components@1.0.0-beta.20/dist/calcite/calcite.esm.js"></script>
   <script nomodule="" src="https://unpkg.com/@esri/calcite-components@1.0.0-beta.20/dist/calcite/calcite.js"></script>
-  <script src="https://js.arcgis.com/4.15/"></script>
+  <script src="https://js.arcgis.com/4.16/"></script>
 
   <link rel="stylesheet" type="text/css" href="https://unpkg.com/@esri/calcite-components@1.0.0-beta.20/dist/calcite/calcite.css">
-  <link rel="stylesheet" href="https://js.arcgis.com/4.15/esri/themes/light/main.css" />
+  <link rel="stylesheet" href="https://js.arcgis.com/4.16/esri/themes/light/main.css" />
   <link rel="stylesheet" href="app.css" />
 
 
@@ -24,10 +24,12 @@
       "esri/WebMap",
       "esri/layers/FeatureLayer",
 
-      "esri/renderers/smartMapping/statistics/histogram",
-      "esri/renderers/smartMapping/statistics/summaryStatistics",
+      "esri/smartMapping/statistics/histogram",
+      "esri/smartMapping/statistics/summaryStatistics",
       "esri/renderers/support/jsonUtils",
       "esri/symbols/CIMSymbol",
+      "esri/symbols/WebStyleSymbol",
+      "esri/symbols/support/cimSymbolUtils",
       "esri/Color",
 
       "esri/views/draw/Draw",
@@ -46,7 +48,7 @@
       "esri/core/watchUtils"
       ], function(
         MapView, WebMap, FeatureLayer,
-        histogram, summaryStatistics, rendererJsonUtils, CIMSymbol, Color,
+        histogram, summaryStatistics, rendererJsonUtils, CIMSymbol, WebStyleSymbol, cimSymbolUtils, Color,
         Draw, Graphic,
         Histogram, Slider, Legend, Expand, Zoom, Bookmarks, Bookmark,
         geometryEngine, lang, watchUtils
@@ -540,185 +542,16 @@
             clearHistogram();
           }
 
-          const tearDropCIMData = {
-            "type":"CIMPointSymbol",
-            "symbolLayers":[
-              {
-                "type":"CIMVectorMarker",
-                "enable":true,
-                "anchorPoint":{
-                  "x":0,
-                  "y":-0.5
-                },
-                "anchorPointUnits":"Relative",
-                "dominantSizeAxis3D":"Y",
-                "size":18.5,
-                "billboardMode3D":"FaceNearPlane",
-                "frame":{
-                  "xmin":0.0,
-                  "ymin":0.0,
-                  "xmax":21.0,
-                  "ymax":21.0
-                },
-                "markerGraphics":[
-                  {
-                    "type":"CIMMarkerGraphic",
-                    "geometry":{
-                      "rings":[
-                        [
-                          [
-                            17.17,
-                            14.33
-                          ],
-                          [
-                            16.97,
-                            12.96
-                          ],
-                          [
-                            16.38,
-                            11.37
-                          ],
-                          [
-                            12.16,
-                            3.98
-                          ],
-                          [
-                            11.2,
-                            1.94
-                          ],
-                          [
-                            10.5,
-                            0.0
-                          ],
-                          [
-                            9.8,
-                            1.96
-                          ],
-                          [
-                            8.84,
-                            4.02
-                          ],
-                          [
-                            4.61,
-                            11.41
-                          ],
-                          [
-                            4.02,
-                            12.98
-                          ],
-                          [
-                            3.83,
-                            14.33
-                          ],
-                          [
-                            3.96,
-                            15.63
-                          ],
-                          [
-                            4.34,
-                            16.88
-                          ],
-                          [
-                            4.95,
-                            18.03
-                          ],
-                          [
-                            5.78,
-                            19.04
-                          ],
-                          [
-                            6.8,
-                            19.88
-                          ],
-                          [
-                            7.95,
-                            20.49
-                          ],
-                          [
-                            9.2,
-                            20.87
-                          ],
-                          [
-                            10.5,
-                            21.0
-                          ],
-                          [
-                            11.8,
-                            20.87
-                          ],
-                          [
-                            13.05,
-                            20.5
-                          ],
-                          [
-                            14.2,
-                            19.88
-                          ],
-                          [
-                            15.22,
-                            19.05
-                          ],
-                          [
-                            16.05,
-                            18.03
-                          ],
-                          [
-                            16.66,
-                            16.88
-                          ],
-                          [
-                            17.04,
-                            15.63
-                          ],
-                          [
-                            17.17,
-                            14.33
-                          ]
-                        ]
-                      ]
-                    },
-                    "symbol":{
-                      "type":"CIMPolygonSymbol",
-                      "symbolLayers":[
-                        {
-                          "type":"CIMSolidStroke",
-                          "enable":true,
-                          "capStyle":"Round",
-                          "joinStyle":"Round",
-                          "lineStyle3D":"Strip",
-                          "miterLimit":10,
-                          "width":0,
-                          "color":[
-                            110,
-                            110,
-                            110,
-                            255
-                          ]
-                        },
-                        {
-                          "type":"CIMSolidFill",
-                          "enable":true,
-                          "color":[
-                            201,
-                            49,
-                            0,
-                            255
-                          ]
-                        }
-                      ]
-                    }
-                  }
-                ],
-                "scaleSymbolsProportionally":true,
-                "respectFrame":true
-              }
-            ],
-            "haloSize":1,
-            "scaleX":1,
-            "angleAlignment":"Display",
-            "version":"2.0.0",
-            "build":"8933"
-          };
+          let tearDropCIMSymbol;
+
+          const tearDropSymbol = new WebStyleSymbol({
+            name: "tear-pin-1",
+            styleName: "Esri2DPointSymbolsStyle"
+          });
+
+          tearDropSymbol.fetchCIMSymbol().then(function(cim){
+            tearDropCIMSymbol = cim;
+          })
 
           function updateSalinityTempRelationship(addCurrents){
             const level = getLevelFromDepth(depthSlider.values[0]);
@@ -1147,15 +980,8 @@
 
               renderer.uniqueValueInfos.forEach(function(info){
                 const color = info.symbol.color;
-
-                const symbolData = lang.clone(tearDropCIMData);
-                symbolData.symbolLayers[0].markerGraphics[0].symbol.symbolLayers[1].color = color.toJSON();
-
-                const symbol = new CIMSymbol({
-                  data: symbolData
-                });
-
-                info.symbol = symbol;
+                cimSymbolUtils.applyCIMSymbolColor(tearDropCIMSymbol, color);
+                info.symbol = tearDropCIMSymbol.clone();
               });
 
               renderer.visualVariables = visualVariables;
