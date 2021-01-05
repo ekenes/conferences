@@ -1,4 +1,4 @@
-# *.pptx
+*.pptx
 *.potx
 
 node_modules/
