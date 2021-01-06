@@ -22,41 +22,21 @@ In this session, we'll demonstrate how you can leverage clustering to effectivel
 
 [Click here to download slides](https://github.com/ekenes/conferences/raw/master/ds-2021/clustering/slides.pptx)
 
+## Outline
+
+I. Basic clustering (simple renderer) - live/copy and paste
+   A. Enable it
+   B. Popup
+   C. Labels (new since last DS)
+   D. Cluster radius and minSize/maxSize
+II. Different renderers
+   A. color visual variable
+   B. unique value renderer (predominance)
+II. Smart mapping - Popups and labels
+   A. Suggested defaults
+III. Cluster queries
+
 ## Demos
-
-### Viral
-
-#### Explore COVID-19 data in the United States
-
-The [following app](https://ekenes.github.io/covid19viz/) demonstrates how you can visualize COVID-19 data in a variety of ways using the same dataset. Use the time slider to explore this data through time. Each time the slider moves, the layer's renderer and popups update based on newly generated [Arcade expressions](https://developers.arcgis.com/arcade/).
-
-##### Total Cases
-
-[![viral](images/total-cases.png)](https://ekenes.github.io/covid19viz/)
-
-##### Doubling Time
-
-[![viral](images/doubling-time.png)](https://ekenes.github.io/covid19viz/)
-
-##### Active Cases
-
-[![viral](images/active-cases.png)](https://ekenes.github.io/covid19viz/)
-
-##### Active Rate
-
-[![viral](images/active-rate.png)](https://ekenes.github.io/covid19viz/)
-
-##### Infection rate
-
-[![viral](images/infection-rate.png)](https://ekenes.github.io/covid19viz/)
-
-##### Total deaths
-
-[![viral](images/total-deaths.png)](https://ekenes.github.io/covid19viz/)
-
-##### Death rate
-
-[![viral](images/death-rate.png)](https://ekenes.github.io/covid19viz/)
 
 ## Resources
 

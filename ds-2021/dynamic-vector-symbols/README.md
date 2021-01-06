@@ -22,41 +22,25 @@ Learn the basics of working with scalable vector symbols (CIM symbols), from cre
 
 [Click here to download slides](https://github.com/ekenes/conferences/raw/master/ds-2021/dynamic-vector-symbols/slides.pptx)
 
+## Outline
+
+I. Intro - What is CIM?
+  A. Points
+  B. Lines
+  C. Polygons
+II. Create a symbol from scratch
+  A. JS Code
+  B. CIM symbol builder
+III. Creating a web style - Russ
+  A. What do you get OOB
+  B. Creating my own style
+IV. Data-driven CIM - primitive overrides
+  A. Election app
+  B. Arcade snippets
+V. Conclusion - wrap up
+
 ## Demos
 
-### Viral
-
-#### Explore COVID-19 data in the United States
-
-The [following app](https://ekenes.github.io/covid19viz/) demonstrates how you can visualize COVID-19 data in a variety of ways using the same dataset. Use the time slider to explore this data through time. Each time the slider moves, the layer's renderer and popups update based on newly generated [Arcade expressions](https://developers.arcgis.com/arcade/).
-
-##### Total Cases
-
-[![viral](images/total-cases.png)](https://ekenes.github.io/covid19viz/)
-
-##### Doubling Time
-
-[![viral](images/doubling-time.png)](https://ekenes.github.io/covid19viz/)
-
-##### Active Cases
-
-[![viral](images/active-cases.png)](https://ekenes.github.io/covid19viz/)
-
-##### Active Rate
-
-[![viral](images/active-rate.png)](https://ekenes.github.io/covid19viz/)
-
-##### Infection rate
-
-[![viral](images/infection-rate.png)](https://ekenes.github.io/covid19viz/)
-
-##### Total deaths
-
-[![viral](images/total-deaths.png)](https://ekenes.github.io/covid19viz/)
-
-##### Death rate
-
-[![viral](images/death-rate.png)](https://ekenes.github.io/covid19viz/)
 
 ## Resources
 
