@@ -1,0 +1,132 @@
+<html>
+
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="initial-scale=1, maximum-scale=1,user-scalable=no" />
+
+  <!--
+  ArcGIS API for JavaScript, https://js.arcgis.com
+  For more information about the featurelayerview-query-distance sample, read the original sample description at developers.arcgis.com.
+  https://developers.arcgis.com/javascript/latest/sample-code/featurelayerview-query-distance/index.html
+  -->
+  <title>
+    Query statistics client-side by distance | Sample | ArcGIS API for
+    JavaScript 4.19
+  </title>
+
+  <!-- Load the Chart.js library -->
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/2.4.0/Chart.min.js"></script>
+
+  <link rel="stylesheet" href="https://jsdev.arcgis.com/4.19/esri/themes/dark/main.css" />
+
+  <style>
+    html,
+    body,
+    #viewDiv {
+      padding: 0;
+      margin: 0;
+      height: 100%;
+      width: 100%;
+      overflow: hidden;
+    }
+  </style>
+
+  <script src="https://jsdev.arcgis.com/4.19/"></script>
+
+  <script>
+    require([
+      "esri/views/MapView",
+      "esri/Map",
+      "esri/layers/FeatureLayer",
+      "esri/widgets/Legend",
+      "esri/widgets/Expand",
+      "esri/widgets/Bookmarks",
+    ], function(
+      MapView,
+      Map,
+      FeatureLayer,
+      Legend,
+      Expand,
+      Bookmarks,
+    ) {
+      // load a web map containing homicide statistics
+      // from a portal item
+      const layer = new FeatureLayer({
+        url: "https://services.arcgis.com/V6ZHFr6zdgNZuVG0/arcgis/rest/services/homicide_wp_time/FeatureServer",
+        renderer: {
+            type: "simple",
+            symbol: {
+                type: "simple-marker",
+                size: 5,
+                color: "#ff4d6a",
+                outline: {  // autocasts as new SimpleLineSymbol()
+                    color: "#453437",
+                    width: "0.5px"
+                }
+            },
+            visualVariables: [{
+                type: "color",
+                field: "victim_age_years",
+                stops: [
+                    { value: 15, color: "#ff4d6a" },
+                    { value: 30, color: "#ffc800" },
+                    { value: 45, color: "#66a0ff" }
+                ]
+            }]
+        },
+        featureReduction: {
+          type: "cluster",
+          clusterMinSize: "16px",
+          clusterMaxSize: "60px",
+          labelingInfo: [
+            {
+              deconflictionStrategy: "none",
+              labelExpressionInfo: {
+                expression: "Text($feature.cluster_count, '#,###')"
+              },
+              symbol: {
+                type: "text",
+                color: "#453437",
+                font: {
+                  weight: "bold",
+                  family: "Noto Sans",
+                  size: "12px"
+                }
+              },
+              labelPlacement: "center-center"
+            }
+          ],
+          popupTemplate: {
+            // cluster_count is an aggregate field indicating the number
+            // of features summarized by the cluster
+            content: "This cluster represents {cluster_count} homicides."
+          }
+        }
+      })
+      const map = new Map({
+        basemap: "dark-gray-vector",
+        layers: [layer]
+      });
+      const view = new MapView({
+        map: map,
+        container: "viewDiv",
+        center: [-87.6298, 41.8781],
+        zoom: 11
+      });
+      const legendExpand = new Expand({
+        view: view,
+        content: new Legend({
+          view: view
+        }),
+        expanded: view.widthBreakpoint !== "xsmall"
+      });
+      view.ui.add(legendExpand, "bottom-left");
+    });
+  </script>
+</head>
+
+<body>
+  <div id="viewDiv"></div>
+</body>
+
+</html>
