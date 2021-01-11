@@ -24,17 +24,18 @@ In this session, we'll demonstrate how you can leverage clustering to effectivel
 
 ## Outline
 
-I. Basic clustering (simple renderer) - live/copy and paste
+I. Basic clustering (Anne) <10>
+  (simple renderer) - live/copy and paste
    A. Enable it
    B. Popup
    C. Labels (new since last DS)
    D. Cluster radius and minSize/maxSize
-II. Different renderers
+II. Different renderers (Anne) <5>
    A. color visual variable
    B. unique value renderer (predominance)
-II. Smart mapping - Popups and labels
+II. Smart mapping - Popups and labels (Kristian) <5>
    A. Suggested defaults
-III. Cluster queries
+III. Cluster queries (Kristian) <5-10>
 
 ## Demos
 
