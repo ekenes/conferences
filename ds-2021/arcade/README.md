@@ -20,6 +20,33 @@ This session will demonstrate how you can transform your data from one or more f
 
 [Click here to download slides](https://github.com/ekenes/conferences/raw/master/ds-2021/arcade/slides.pptx)
 
+## Outline
+
+I. Intro to the session (Kristian) <5>
+II. Language Overview (Anne) <10>
+   A. Basic overview
+   B. Feature sets
+   C. New syntax (template literals)
+III. Profiles and demos <25>
+   A. Overview
+   B. Viz (Kristian) <8>
+      - field normalization
+      - predominance (election 2020)
+   C. Popup (Anne) <8>
+      - basic
+      - featureset
+   D. Labels (Anne) <8>
+      - Labeling with multiple label classes
+      - simple expressions, implicit casting, multi-line expressions (in script)
+IV. Generating Arcade (Kristian) <10>
+  - Examples
+    - Simple case (matches with simple viz sample)
+    - Popup template generator (new)
+    - Smart mapping (predominance/relationship/age)
+V. Conclusion (Anne) <2>
+  - Resources
+  - Future
+
 ## Demos
 
 ### Playground
