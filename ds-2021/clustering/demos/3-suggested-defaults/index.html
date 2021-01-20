@@ -162,6 +162,8 @@
             .getLabelSchemes({ layer, view })
             .then(labelSchemes => labelSchemes.primaryScheme);
 
+          console.log(labelingInfo[0].labelExpressionInfo.expression);
+
           return {
             type: "cluster",
             popupTemplate,
