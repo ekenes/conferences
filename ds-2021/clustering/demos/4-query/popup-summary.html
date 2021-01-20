@@ -1,0 +1,488 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <meta charset="utf-8" />
+    <meta
+      name="viewport"
+      content="initial-scale=1,maximum-scale=1,user-scalable=no"
+    />
+
+    <title>
+      Point clustering - query clusters | Sample | ArcGIS API for JavaScript
+      4.18
+    </title>
+
+    <link
+      rel="stylesheet"
+      href="https://js.arcgis.com/4.18/esri/themes/light/main.css"
+    />
+    <script src="https://js.arcgis.com/4.18/"></script>
+
+    <style>
+      html,
+      body,
+      #viewDiv {
+        height: 100%;
+        width: 100%;
+        margin: 0;
+        padding: 0;
+      }
+      #infoDiv {
+        background: white;
+        padding: 10px;
+      }
+      table td {
+        padding: 3px;
+      }
+
+      table.popup td.num {
+        text-align: right;
+      }
+
+      table.popup tr.head {
+        text-align: center;
+        font-weight: bold;
+        background-color: rgba(50, 50, 50, 0.08);
+      }
+
+      .table-container {
+        width: 100%;
+        height: 100%;
+        text-align: center;
+      }
+
+      table {
+        margin: 0 auto;
+      }
+      .esri-popup__action-text {
+        overflow: visible;
+      }
+    </style>
+
+    <script>
+      require([
+        "esri/WebMap",
+        "esri/views/MapView",
+        "esri/layers/FeatureLayer",
+        "esri/widgets/Legend",
+        "esri/widgets/Expand",
+        "esri/smartMapping/labels/clusters",
+        "esri/smartMapping/popup/clusters",
+        "esri/core/watchUtils",
+        "esri/symbols/support/symbolUtils",
+        "esri/geometry/geometryEngine"
+      ], function (
+        WebMap,
+        MapView,
+        FeatureLayer,
+        Legend,
+        Expand,
+        clusterLabelCreator,
+        clusterPopupCreator,
+        watchUtils,
+        symbolUtils,
+        geometryEngine
+      ) {
+        let layerView;
+
+        const layer = new FeatureLayer({
+          portalItem: {
+            id: "eb54b44c65b846cca12914b87b315169"
+          },
+          outFields: ["capacity_mw"]
+        });
+
+        const map = new WebMap({
+          basemap: {
+            portalItem: {
+              id: "75a08e8cd8b64dcfa6945bb7f624ccc5"
+            }
+          },
+          layers: [layer]
+        });
+
+        const view = new MapView({
+          container: "viewDiv",
+          map,
+          extent: {
+            spatialReference: {
+              latestWkid: 3857,
+              wkid: 102100
+            },
+            xmin: -15327459,
+            ymin: 2740044,
+            xmax: -6076744,
+            ymax: 6878650
+          },
+          popup: {
+            dockEnabled: true,
+            dockOptions: {
+              breakpoint: false,
+              position: "top-right"
+            }
+          }
+        });
+
+        view.ui.add(
+          new Expand({
+            content: new Legend({ view }),
+            view
+          }),
+          "top-left"
+        );
+
+        layer
+          .when()
+          .then(generateClusterConfig)
+          .then(async (featureReduction) => {
+            // sets generated cluster configuration on the layer
+            layer.featureReduction = featureReduction;
+
+            // the layer view is needed for querying clusters
+            layerView = await view.whenLayerView(layer);
+
+            // Disable clustering when user zooms beyond a 1:50,000 scale level
+            // Re-enable clustering when the user zooms out to a scale smaller than 1:50,000
+            view.watch("scale", function (scale) {
+              layer.featureReduction =
+                view.scale > 50000 ? featureReduction : null;
+            });
+          })
+          .catch((error) => {
+            console.error(error);
+          });
+
+        async function generateClusterConfig(layer) {
+          // generates default popupTemplate
+          const popupTemplate = await clusterPopupCreator
+            .getTemplates({
+              layer
+            })
+            .then(
+              (popupTemplateResponse) =>
+                popupTemplateResponse.primaryTemplate.value
+            );
+
+          popupTemplate.title = "Cluster summary";
+          popupTemplate.overwriteActions = true;
+
+          // Add actions for exploring the features of each cluster
+          popupTemplate.actions = [
+            {
+              title: "Statistics",
+              id: "statistics",
+              className: "esri-icon-line-chart"
+            },
+            {
+              title: "Browse features",
+              id: "browse",
+              className: "esri-icon-table"
+            },
+            {
+              title: "Convex hull",
+              id: "convex-hull",
+              className: "esri-icon-polygon"
+            },
+            {
+              title: "Show features",
+              id: "show-features",
+              className: "esri-icon-maps"
+            },
+            {
+              title: "Extent",
+              id: "extent",
+              className: "esri-icon-checkbox-unchecked"
+            },
+            {
+              title: "Zoom to extent",
+              id: "zoom-extent",
+              className: "esri-icon-zoom-in-fixed"
+            }
+          ];
+
+          // generates default labelingInfo
+          const { labelingInfo, clusterMinSize } = await clusterLabelCreator
+            .getLabelSchemes({
+              layer,
+              view
+            })
+            .then((labelSchemes) => labelSchemes.primaryScheme);
+
+          return {
+            type: "cluster",
+            popupTemplate,
+            labelingInfo,
+            clusterMinSize
+          };
+        }
+
+        view.popup.on("trigger-action", (event) => {
+          clear();
+
+          const id = event.action.id;
+
+          if (id === "browse") {
+            browseFeatures(view.popup.selectedFeature);
+          }
+          if (id === "extent") {
+            displayClusterExtent(view.popup.selectedFeature);
+          }
+          if (id === "convex-hull") {
+            displayConvexHull(view.popup.selectedFeature);
+          }
+          if (id === "show-features") {
+            displayFeatures(view.popup.selectedFeature);
+          }
+          if (id === "zoom-extent") {
+            zoomToClusterExtent(view.popup.selectedFeature);
+          }
+          if (id === "statistics") {
+            calculateStatistics(view.popup.selectedFeature);
+          }
+        });
+
+        let selectedFeatureHandle = null;
+        let selectedFeature = null;
+        let selectedClusterFeature = null;
+
+        // Clear view graphics and popup when cluster is no longer selected
+        // or when the scale changes. This needs to happen because clusters
+        // regenerate at each scale level, so the popup would no longer represents
+        // a valid cluster if it were to persist.
+        watchUtils.whenFalse(view.popup, "visible", clear);
+        watchUtils.whenDefined(view.popup, "selectedFeature", (newFeature) => {
+          if (selectedClusterFeature?.isAggregate && newFeature?.isAggregate) {
+            clear();
+          }
+          if (newFeature?.isAggregate) {
+            selectedClusterFeature = newFeature;
+          }
+        });
+        watchUtils.watch(view, "scale", () => {
+          clear();
+          view.popup.close();
+        });
+
+        function clear() {
+          view.popup.features = view.popup.features.filter(
+            (feature) => feature.isAggregate
+          );
+          view.graphics.removeAll();
+          if (selectedFeatureHandle) {
+            selectedFeatureHandle.remove();
+            selectedFeatureHandle = null;
+            selectedFeature = null;
+          }
+        }
+
+        async function browseFeatures(graphic) {
+          processParams(graphic, layerView);
+
+          displayConvexHull(graphic);
+
+          const query = layerView.createQuery();
+          query.aggregateIds = [graphic.getObjectId()];
+
+          // push all features in cluster to the popup features
+          // to allow users to browse their popup templates
+          const { features } = await layerView.queryFeatures(query);
+          view.popup.features = [graphic].concat(features);
+
+          // when user selects a feature in the cluster, display its location in the view
+          selectedFeatureHandle = view.popup.watch(
+            "selectedFeature",
+            async (feature) => {
+              if (!feature || feature?.isAggregate) {
+                return;
+              }
+              const symbol = await symbolUtils.getDisplayedSymbol(feature);
+              symbol.outline = {
+                color: [50, 50, 50, 0.75],
+                width: 0.5
+              };
+              feature.symbol = symbol;
+
+              if (selectedFeature && view.graphics.includes(selectedFeature)) {
+                view.graphics.remove(selectedFeature);
+                selectedFeature = null;
+              }
+              view.graphics.add(feature);
+              selectedFeature = feature;
+            }
+          );
+        }
+
+        // displays all features from a given cluster in the view
+        async function displayFeatures(graphic) {
+          processParams(graphic, layerView);
+
+          const query = layerView.createQuery();
+          query.aggregateIds = [graphic.getObjectId()];
+
+          const { features } = await layerView.queryFeatures(query);
+
+          features.forEach(async (feature) => {
+            const symbol = await symbolUtils.getDisplayedSymbol(feature);
+            feature.symbol = symbol;
+            view.graphics.add(feature);
+          });
+        }
+
+        // queries the extent of the clustered features and displays it in the view
+        async function displayClusterExtent(graphic) {
+          processParams(graphic, layerView);
+
+          const query = layerView.createQuery();
+          query.aggregateIds = [graphic.getObjectId()];
+
+          const { extent } = await layerView.queryExtent(query);
+          const extentGraphic = {
+            geometry: extent,
+            symbol: {
+              type: "simple-fill",
+              outline: {
+                width: 1.5,
+                color: [75, 75, 75, 1]
+              },
+              style: "none",
+              color: [0, 0, 0, 0.1]
+            }
+          };
+          view.graphics.add(extentGraphic);
+        }
+
+        // zooms to the extent of a cluster's features
+        async function zoomToClusterExtent(graphic) {
+          processParams(graphic, layerView);
+
+          const query = layerView.createQuery();
+          query.aggregateIds = [graphic.getObjectId()];
+
+          const { extent } = await layerView.queryExtent(query);
+          view.goTo(extent);
+        }
+
+        async function displayConvexHull(graphic) {
+          processParams(graphic, layerView);
+
+          const query = layerView.createQuery();
+          query.aggregateIds = [graphic.getObjectId()];
+
+          const { features } = await layerView.queryFeatures(query);
+          const geometries = features.map((feature) => feature.geometry);
+          const [convexHull] = geometryEngine.convexHull(geometries, true);
+          const convexHullGraphic = {
+            geometry: convexHull,
+            symbol: {
+              type: "simple-fill",
+              outline: {
+                width: 1.5,
+                color: [75, 75, 75, 1]
+              },
+              style: "none",
+              color: [0, 0, 0, 0.1]
+            }
+          };
+          view.graphics.add(convexHullGraphic);
+        }
+
+        // calculates set statistics for features in a cluster
+        // and displays them in the cluster popup
+        async function calculateStatistics(graphic) {
+          processParams(graphic, layerView);
+
+          const query = layerView.createQuery();
+          query.aggregateIds = [graphic.getObjectId()];
+          query.groupByFieldsForStatistics = ["fuel1"];
+          query.outFields = ["capacity_mw", "fuel1"];
+          query.orderByFields = ["num_features desc"];
+          query.outStatistics = [
+            {
+              onStatisticField: "capacity_mw",
+              outStatisticFieldName: "capacity_total",
+              statisticType: "sum"
+            },
+            {
+              onStatisticField: "1",
+              outStatisticFieldName: "num_features",
+              statisticType: "count"
+            },
+            {
+              onStatisticField: "capacity_mw",
+              outStatisticFieldName: "capacity_max",
+              statisticType: "max"
+            }
+          ];
+
+          const { features } = await layerView.queryFeatures(query);
+          const stats = features.map((feature) => feature.attributes);
+
+          let table = `
+            <div class="table-container">
+              <span style="font-size: 14pt"><strong>Summary by fuel type</strong></span>
+              <br/>
+              <br/>
+              <table class="esri-widget popup">
+                <tr class="head"><td>Fuel</td><td>Count</td><td>Capacity (mW)</td><td>Largest plant (mW)</td></tr>
+          `;
+
+          let totalCapacity = 0;
+          let totalCount = 0;
+
+          stats.forEach((stat) => {
+            const fuel = stat.fuel1;
+            const total = stat.capacity_total;
+            const max = stat.capacity_max;
+            const count = stat.num_features;
+
+            totalCapacity += total;
+            totalCount += count;
+
+            table += `
+              <tr><td><span style:'font-weight:bolder'>${fuel}</span></td><td class="num">${count}</td><td class="num">${roundDecimals(
+                  total,
+                  2
+                ).toLocaleString()}</td><td class="num">${roundDecimals(
+                  max,
+                  2
+                ).toLocaleString()}</td></tr>
+            `;
+          });
+
+          table += `
+            </table>
+          </div>`;
+
+          view.popup.content =
+            `
+              <div style="font-size: 12pt">
+              Number of features: <strong>${totalCount.toLocaleString()}</strong><br>
+              Total capacity (mW): <strong>${roundDecimals(
+                totalCapacity,
+                2
+              ).toLocaleString()}</strong><br>
+              </div><br>
+            ` + table;
+        }
+
+        function processParams(graphic, layerView) {
+          if (!graphic || !layerView) {
+            throw new Error("Graphic or layerView not provided.");
+          }
+
+          if (!graphic.isAggregate) {
+            throw new Error("Graphic must represent a cluster.");
+          }
+        }
+
+        function roundDecimals(num, places) {
+          return Math.round(num * Math.pow(10, places)) / Math.pow(10, places);
+        }
+      });
+    </script>
+  </head>
+
+  <body>
+    <div id="viewDiv"></div>
+  </body>
+</html>

@@ -1,0 +1,197 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="initial-scale=1,maximum-scale=1,user-scalable=no" />
+
+    <title>
+      Point clustering - generate suggested configuration | Sample | ArcGIS API
+      for JavaScript 4.18
+    </title>
+
+    <link rel="stylesheet" href="https://js.arcgis.com/4.18/esri/themes/light/main.css" />
+    <script src="https://js.arcgis.com/4.18/"></script>
+
+    <style>
+      html,
+      body,
+      #viewDiv {
+        height: 100%;
+        width: 100%;
+        margin: 0;
+        padding: 0;
+      }
+      #infoDiv {
+        background: white;
+        padding: 10px;
+      }
+    </style>
+
+    <script>
+      require([
+        "esri/WebMap",
+        "esri/views/MapView",
+        "esri/layers/FeatureLayer",
+        "esri/widgets/Legend",
+        "esri/widgets/Expand",
+        "esri/smartMapping/labels/clusters",
+        "esri/smartMapping/popup/clusters",
+        "esri/core/promiseUtils"
+      ], function (
+        Map,
+        MapView,
+        FeatureLayer,
+        Legend,
+        Expand,
+        clusterLabelCreator,
+        clusterPopupCreator,
+        promiseUtils
+      ) {
+        const serviceUrl = "https://services.arcgis.com/V6ZHFr6zdgNZuVG0/arcgis/rest/services/Places_of_Worship_India/FeatureServer/0";
+        const layer = new FeatureLayer({
+          url: serviceUrl,
+          title: "Places of worship",
+          outFields: ["name", "religion", "denomination"],
+          popupTemplate: {
+            title: "{name}",
+            content: [
+              {
+                type: "fields",
+                fieldInfos: [
+                  {
+                    fieldName: "religion"
+                  },
+                  {
+                    fieldName: "denomination"
+                  }
+                ]
+              }
+            ]
+          }
+        });
+
+        const map = new Map({
+          basemap: "gray-vector",
+          layers: [layer]
+        });
+
+        const view = new MapView({
+          container: "viewDiv",
+          map: map,
+          center: [80.20127, 22.12355],
+          zoom: 4
+        });
+
+        const legend = new Legend({
+          view: view,
+          container: "legendDiv"
+        });
+
+        const infoDiv = document.getElementById("infoDiv");
+        view.ui.add(
+          new Expand({
+            view: view,
+            content: infoDiv,
+            expandIconClass: "esri-icon-layer-list",
+            expanded: true
+          }),
+          "top-right"
+        );
+
+        layer
+          .when()
+          .then(generateClusterConfig)
+          .then((featureReduction) => {
+            layer.featureReduction = featureReduction;
+
+            const toggleButton = document.getElementById("toggle-cluster");
+            toggleButton.addEventListener("click", toggleClustering);
+
+            // To turn off clustering on a layer, set the
+            // featureReduction property to null
+            function toggleClustering() {
+              if (isWithinScaleThreshold()) {
+                let fr = layer.featureReduction;
+                layer.featureReduction =
+                  fr && fr.type === "cluster" ? null : featureReduction;
+              }
+              toggleButton.innerText =
+                toggleButton.innerText === "Enable Clustering"
+                  ? "Disable Clustering"
+                  : "Enable Clustering";
+            }
+
+            view.whenLayerView(layer).then(function (layerView) {
+              const filterSelect = document.getElementById("filter");
+              // filters the layer using a definitionExpression
+              // based on a religion selected by the user
+              filterSelect.addEventListener("change", function (event) {
+                const newValue = event.target.value;
+
+                const whereClause = newValue ? `religion = '${newValue}'` : null;
+                layerView.filter = {
+                  where: whereClause
+                };
+                // close popup for former cluster that no longer displays
+                view.popup.close();
+              });
+            });
+
+            view.watch("scale", function (scale) {
+              if (toggleButton.innerText === "Disable Clustering") {
+                layer.featureReduction = isWithinScaleThreshold()
+                  ? featureReduction
+                  : null;
+              }
+            });
+          })
+          .catch(function (error) {
+            console.error(error);
+          });
+
+        function isWithinScaleThreshold() {
+          return view.scale > 50000;
+        }
+
+        async function generateClusterConfig(layer){
+          const popupTemplate = await clusterPopupCreator
+            .getTemplates({ layer })
+            .then(response => response.primaryTemplate.value);
+
+          const { labelingInfo, clusterMinSize } = await clusterLabelCreator
+            .getLabelSchemes({ layer, view })
+            .then(labelSchemes => labelSchemes.primaryScheme);
+
+          return {
+            type: "cluster",
+            popupTemplate,
+            labelingInfo,
+            clusterMinSize
+          };
+        }
+      });
+    </script>
+  </head>
+
+  <body>
+    <div id="viewDiv"></div>
+    <div id="infoDiv" class="esri-widget">
+      Filter by religion:
+      <select id="filter" class="esri-select">
+        <option value="">All</option>
+        <option value="Hindu">Hindu</option>
+        <option value="Christian">Christian</option>
+        <option value="Muslim">Muslim</option>
+        <option value="Buddhist">Buddhist</option>
+        <option value="Sikh">Sikh</option>
+        <option value="Jain">Jain</option>
+      </select>
+      <div style="padding-top: 10px">
+        <button id="toggle-cluster" class="esri-button">
+          Disable Clustering
+        </button>
+      </div>
+      <div id="legendDiv"></div>
+    </div>
+  </body>
+</html>
