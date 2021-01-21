@@ -6,8 +6,8 @@
   <meta name="viewport" content="initial-scale=1,maximum-scale=1,user-scalable=no" />
   <title>Add multiple label classes to a layer - 4.11</title>
 
-  <link rel="stylesheet" href="https://jsdev.arcgis.com/next/esri/themes/light/main.css" />
-  <script src="https://jsdev.arcgis.com/next/"></script>
+  <link rel="stylesheet" href="https://js.arcgis.com/next/esri/themes/light/main.css" />
+  <script src="https://js.arcgis.com/next/"></script>
 
   <style>
     html,
@@ -45,8 +45,9 @@
         const tempClass = {
           // labelExpression: "[TEMP]",
           labelExpressionInfo: {
+            // expression: "$feature.TEMP"
             // expression: "Round($feature.TEMP) + '° F';"
-            expression: "Round(($feature.TEMP - 32) * 5/9) + '° C';"
+            expression: "Text((($feature.TEMP - 32) * 5/9), '#° C')"
           },
           symbol: {
             type: "text",
