@@ -20,6 +20,21 @@ The ArcGIS API for JavaScript lets you build powerful interactive mapping applic
 
 [Click here to download slides](https://github.com/ekenes/conferences/raw/master/ds-2021/2d-viz/slides.pptx)
 
+## Outline
+
+I. Introduction (1-5)
+II. Symbols (6-8)
+III. Renderers (9-10)
+IV. Visual variables (11)
+V. Data-driven visualization (12-13)
+VI. Clustering (14)
+VII. Scale-driven size (15-16)
+VIII. Smart mapping (17-20)
+IX. Multi-dimensional data exploration (21-23)
+X. Performance improvements (24)
+XI. Layer blending (25)
+XII. Conclusion (26-29)
+
 ## Demos
 
 ### Viral
@@ -71,7 +86,7 @@ Licensed under the Apache License, Version 2.0 (the "License");
 you may not use this file except in compliance with the License.
 You may obtain a copy of the License at
 
-   http://www.apache.org/licenses/LICENSE-2.0
+   <http://www.apache.org/licenses/LICENSE-2.0>
 
 Unless required by applicable law or agreed to in writing, software
 distributed under the License is distributed on an "AS IS" BASIS,
