@@ -1,0 +1,215 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="initial-scale=1,maximum-scale=1,user-scalable=no" />
+  <title>CIMSymbol lines and polygons | Sample | ArcGIS API for JavaScript 4.18</title>
+  <style>
+    html,
+    body,
+    #viewDiv {
+      padding: 0;
+      margin: 0;
+      height: 100%;
+      width: 100%;
+    }
+
+  </style>
+
+  <link rel="stylesheet" href="https://js.arcgis.com/4.18/esri/themes/light/main.css" />
+  <script src="https://js.arcgis.com/4.18/"></script>
+
+  <script>
+    require([
+      "esri/views/MapView",
+      "esri/Map",
+      "esri/layers/FeatureLayer",
+      "esri/layers/VectorTileLayer",
+      "esri/widgets/Expand",
+      "esri/widgets/Slider",
+      "esri/widgets/Home",
+      "esri/symbols/support/cimSymbolUtils"
+    ], function (MapView, Map, FeatureLayer, VectorTileLayer, Expand, Slider, Home, cimSymbolUtils) {
+      // Tahoe Rim Trail feature layer
+      const rimTrail = new FeatureLayer({
+        portalItem: {
+          id: "9a61ba12e9904388a0d17c48ce6a5662"
+        },
+        renderer: {
+          type: "simple",
+          symbol: {
+            type: "cim",
+            // CIM Line Symbol
+            data: {
+              type: "CIMSymbolReference",
+              symbol:{
+                type: "CIMLineSymbol",
+                symbolLayers: [{
+                    // white dashed layer at center of the line
+                    type: "CIMSolidStroke",
+                    effects: [{
+                      type: "CIMGeometricEffectDashes",
+                      dashTemplate: [2, 2, 2, 2], // width of dashes and spacing between the dashes
+                      lineDashEnding: "NoConstraint",
+                      controlPointEnding: "NoConstraint"
+                    }],
+                    enable: true, // must be set to true in order for the symbol layer to be visible
+                    capStyle: "Butt",
+                    joinStyle: "Round",
+                    width: 1,
+                    color: [
+                      255,
+                      255,
+                      255,
+                      255
+                    ]
+                  },
+                  {
+                    // lighter green line layer that surrounds the dashes
+                    type: "CIMSolidStroke",
+                    enable: true,
+                    capStyle: "Butt",
+                    joinStyle: "Round",
+                    width: 3,
+                    color: [
+                      56,
+                      168,
+                      0,
+                      255
+                    ]
+                  },
+                  {
+                    // darker green outline around the line symbol
+                    type: "CIMSolidStroke",
+                    enable: true,
+                    capStyle: "Butt",
+                    joinStyle: "Round",
+                    width: 6,
+                    color: [
+                      0,
+                      115,
+                      76,
+                      255
+                    ]
+                  }
+                ]
+              }
+            }
+          }
+        }
+      });
+      // Lake Tahoe feature layer
+      const lakeLayer = new FeatureLayer({
+        url: "https://services.arcgis.com/V6ZHFr6zdgNZuVG0/arcgis/rest/services/Lake_Tahoe/FeatureServer",
+        renderer: {
+          type: "simple",
+          symbol: {
+            type: "cim",
+            data: {
+              type: "CIMSymbolReference",
+              symbol: {
+                // CIM polygon symbol
+                type: "CIMPolygonSymbol",
+                symbolLayers: [{
+                  // light blue outline around the polygon
+                    type: "CIMSolidStroke",
+                    enable: true,
+                    width: 0.4,
+                    color: [
+                      0,
+                      92,
+                      230,
+                      255
+                    ]
+                  },
+                  {
+                    // light blue hatch fill
+                    type: "CIMHatchFill",
+                    enable: true,
+                    lineSymbol: {
+                      type: "CIMLineSymbol", // CIM line symbol that makes up the line inside the hatch fill
+                      symbolLayers: [{
+                        type: "CIMSolidStroke",
+                        effects: [{
+                          type: "CIMGeometricEffectDashes",
+                          dashTemplate: [1, 2],
+                          lineDashEnding: "FullPattern",
+                        }],
+                        enable: true,
+                        width: 1,
+                        color: [
+                          0,
+                          92,
+                          230,
+                          255
+                        ]
+                      }]
+                    },
+                    rotation: 45, // rotation of the lines
+                    separation: 4 // distance between lines in hatch fill
+                  },
+                  {
+                    // solid blue fill background
+                    type: "CIMSolidFill",
+                    enable: true,
+                    color: [
+                      151,
+                      219,
+                      242,
+                      150
+                    ]
+                  }
+                ]
+              }
+            }
+          }
+        }
+      });
+      // add trailheads feature layer as webstyle symbol
+      const trailheads = new FeatureLayer({
+        url: "https://services.arcgis.com/V6ZHFr6zdgNZuVG0/arcgis/rest/services/TahoeTrailheads/FeatureServer",
+        renderer: {
+          type: "simple",
+          symbol: {
+            type: "web-style",
+            name: "trail",
+            styleName: "Esri2DPointSymbolsStyle"
+          }
+        }
+      });
+      // set up the map and view
+      const map = new Map({
+        basemap: { // using a custom basemap from ArcGIS Online
+          baseLayers: new VectorTileLayer({
+            portalItem: {
+              id: "b5676525747f499687f12746441101ef"
+            }
+          }),
+          referenceLayers: new VectorTileLayer({
+            portalItem: {
+              id: "94329802cbfa44a18f423e6f1a0b875c"
+            }
+          })
+        },
+        layers: [rimTrail, lakeLayer, trailheads] // add layers to the map
+      });
+
+      const view = new MapView({
+        container: "viewDiv",
+        map: map,
+        center: [-120, 39.05], // centered at Lake Tahoe
+        zoom: 9
+      });
+    
+      
+    });
+
+  </script>
+</head>
+
+<body>
+  <div id="viewDiv"></div>
+</body>
+
+</html>
