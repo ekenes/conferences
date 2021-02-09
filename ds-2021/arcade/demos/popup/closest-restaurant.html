@@ -37,9 +37,9 @@
       closestRestaurant = listing;
     }
   };
-  "Hotel: " + $feature.name + "\n" +
-  "Closest Restaurant: " + closestRestaurant.name + "\n" +
-  IIF(!IsEmpty(closestRestaurant.opening_hours), "Hours: " + closestRestaurant.opening_hours, "");
+  `Hotel: ${$feature.name}
+  Closest Restaurant: ${closestRestaurant.name}
+  ${IIF(!IsEmpty(closestRestaurant.opening_hours), "Hours: " + closestRestaurant.opening_hours, "")}`;
 </script>
 
 <script>

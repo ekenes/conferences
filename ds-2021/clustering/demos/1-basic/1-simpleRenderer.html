@@ -3,21 +3,11 @@
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="initial-scale=1, maximum-scale=1,user-scalable=no" />
-
-  <!--
-  ArcGIS API for JavaScript, https://js.arcgis.com
-  For more information about the featurelayerview-query-distance sample, read the original sample description at developers.arcgis.com.
-  https://developers.arcgis.com/javascript/latest/sample-code/featurelayerview-query-distance/index.html
-  -->
   <title>
-    Query statistics client-side by distance | Sample | ArcGIS API for
-    JavaScript 4.19
+    Basic Configuration | DevSummit 2021
   </title>
 
-  <!-- Load the Chart.js library -->
-  <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/2.4.0/Chart.min.js"></script>
-
-  <link rel="stylesheet" href="https://jsdev.arcgis.com/4.19/esri/themes/dark/main.css" />
+  <link rel="stylesheet" href="https://js.arcgis.com/4.19/esri/themes/dark/main.css" />
 
   <style>
     html,
@@ -31,26 +21,21 @@
     }
   </style>
 
-  <script src="https://jsdev.arcgis.com/4.19/"></script>
+  <script src="https://js.arcgis.com/4.19/"></script>
 
   <script>
     require([
       "esri/views/MapView",
       "esri/Map",
       "esri/layers/FeatureLayer",
-      "esri/widgets/Legend",
-      "esri/widgets/Expand",
-      "esri/widgets/Bookmarks",
+      "esri/widgets/Legend"
     ], function(
       MapView,
       Map,
       FeatureLayer,
-      Legend,
-      Expand,
-      Bookmarks,
+      Legend
     ) {
       // load a web map containing homicide statistics
-      // from a portal item
       const layer = new FeatureLayer({
         url: "https://services.arcgis.com/V6ZHFr6zdgNZuVG0/arcgis/rest/services/homicide_wp_time/FeatureServer",
         renderer: {
