@@ -37,6 +37,11 @@ XII. Conclusion (26-29)
 
 ## Demos
 
+Scale: https://codepen.io/kekenes/pen/JjoVWpz?editors=0010
+Simple symbols with election data
+
+
+
 ### Viral
 
 #### Explore COVID-19 data in the United States

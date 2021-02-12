@@ -44,43 +44,27 @@
           opacity: 1,
           renderer: {
             type: "simple",
-            symbol: createSymbol(),
+            symbol: {
+              type: "simple-marker",
+              style: "solid",
+              color: "rgba(100,100,100,1)",
+              outline: {
+                width: 0.5,
+                color: "rgba(100,100,100,1)",
+              }
+            },
             label: "County",
-          //   visualVariables: [
-          //     {
-          //     type: "color",
-          //     field: "oth_2016",
-          //     valueExpressionTitle: "Votes for third party",
-          //     stops: [
-          //       { value: 0, color: colors[0] },
-          //       { value: 1000, color: colors[1] },
-          //       { value: 5000, color: colors[2] },
-          //       { value: 10000, color: colors[3] },
-          //       { value: 50000, color: colors[4] }
-          //     ]
-          //   }
-          // ]
             visualVariables: [
               {
-              type: "color",
-              valueExpression: `
-                var r = $feature.rep_2016;
-                var d = $feature.dem_2016;
-                var o = $feature.oth_2016;
-                var all = Sum([r, d, o]);
-
-                return (o / all) * 100;
-              `,
-              valueExpressionTitle: "% votes for third party",
-              stops: [
-                { value: 0, color: colors[0], label: "0%" },
-                { value: 2.5, color: colors[1] },
-                { value: 5, color: colors[2], label: "National average (5%)" },
-                { value: 10, color: colors[3] },
-                { value: 15, color: colors[4], label: ">15%" }
-              ]
-            }
-          ]
+                type: "size",
+                field: "oth_2016",
+                valueExpressionTitle: "Votes for third party",
+                minDataValue: 100,
+                maxDataValue: 100000,
+                minSize: "4px",
+                maxSize: "40px"
+              }
+            ]
           },
           popupTemplate: {
             title: "{COUNTY}, {STATE}",
