@@ -1,0 +1,80 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="initial-scale=1,maximum-scale=1,user-scalable=no">
+<title>Compare Neighbors</title>
+
+<link rel="stylesheet" href="https://js.arcgis.com/next/esri/css/main.css">
+
+<style>
+  html, body, #viewDiv {
+    padding: 0;
+    margin: 0;
+    height: 100%;
+    width: 100%;
+  }
+</style>
+
+<script src="https://js.arcgis.com/next/"></script>
+
+<script type="text/plain" id="crimes-arcade">
+  var allCrimes = FeatureSetById($map, /* la_crimes_2015_all */ "la_crimes_2015_all_4748");
+  var crimes = Count( Intersects($feature, allCrimes) );
+  var crimeRate = Round(crimes / ( $feature.POPULATION / 1000), 2);
+
+  var crimeText = "A total of " + Text(crimes, "#,###") + " crimes were committed "
+  + " here at a rate of " + crimeRate + " crimes per 1,000 people.";
+
+  IIF(crimes == 0, "No crime data", crimeText);
+</script>
+
+<script>
+require([
+    "esri/views/MapView",
+    "esri/WebMap"
+  ],
+  function(
+    MapView,
+    WebMap
+  ) {
+
+    var map = new WebMap({
+      portalItem: {
+        id: "86e89fdfb9da4b1fba46a8883e16a838"
+      }
+    });
+
+    var view = new MapView({
+      container: "viewDiv",
+      map: map
+    });
+
+    // Create new feature layer pointing to service with educational
+    // attainment data by city and assigns it a PopupTemplate
+
+    view.when().then(function(){
+      var layer = map.layers.getItemAt(1);
+
+      // layer.popupEnabled = true;
+      // layer.popupTemplate = {
+      //   title: "Zip Code: {ZIP_CODE}",
+      //   content: "{expression/crimes}",
+      //   expressionInfos: [{
+      //     name: "crimes",
+      //     title: "crimes",
+      //     expression: document.getElementById("crimes-arcade").text
+      //   }]
+      // };
+
+    });
+
+  });
+</script>
+</head>
+
+<body>
+  <div id="viewDiv"></div>
+</body>
+
+</html>

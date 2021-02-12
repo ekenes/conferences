@@ -1,0 +1,103 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="initial-scale=1,maximum-scale=1,user-scalable=no">
+<title>Compare Neighbors</title>
+
+<link rel="stylesheet" href="https://js.arcgis.com/next/esri/css/main.css">
+
+<style>
+  html, body, #viewDiv {
+    padding: 0;
+    margin: 0;
+    height: 100%;
+    width: 100%;
+  }
+</style>
+
+<script src="https://js.arcgis.com/next/"></script>
+
+<script type="text/plain" id="neighbors-arcade">
+  // % of population that didn't complete formal education
+  var featureNoSchool = ($feature.EDUC01_CY / $feature.EDUCA_BASE) * 100;
+  // Gets the features that share an edge with the clicked feature
+  var id = $feature.OBJECTID;
+  var neighbors = Filter( Intersects( $layer, $feature ), "OBJECTID <> @id" );
+  if( Count(neighbors) == 0 ){
+    return "---";
+  }
+  var neighborsNoSchoolAverage = Average(neighbors, "(EDUC01_CY / EDUCA_BASE) * 100");
+  var difference = Round(featureNoSchool - neighborsNoSchoolAverage);
+  When( difference > 0 , difference + " points above",
+        difference < 0 , Abs(difference) + " points below",
+        "about equal to" );
+</script>
+
+<script>
+require([
+    "esri/views/MapView",
+    "esri/Map",
+    "esri/layers/FeatureLayer",
+    "esri/widgets/Legend",
+  ],
+  function(
+    MapView,
+    Map,
+    FeatureLayer,
+    Legend
+  ) {
+
+    var map = new Map({
+      basemap: "gray"
+    });
+
+    var view = new MapView({
+      container: "viewDiv",
+      map: map,
+      center: [-97.29614, 19.54323],
+      zoom: 7
+    });
+
+    var arcadeExpressionInfos = [{
+      name: "neighbors",
+      title: "neighbors",
+      expression: document.getElementById("neighbors-arcade").text
+    }, {
+      name: "no-education",
+      title: "no-education",
+      expression: "Round( ($feature.EDUC01_CY / $feature.EDUCA_BASE) * 100, 1)"
+    }];
+
+    var url = "https://services.arcgis.com/V6ZHFr6zdgNZuVG0/ArcGIS/rest/services/Mexico_demographics/FeatureServer/0";
+
+    // Create new feature layer pointing to service with educational
+    // attainment data by city and assigns it a PopupTemplate
+
+    var layer = new FeatureLayer({
+      url: url,
+      outFields: [ "NAME", "EDUC01_CY", "EDUCA_BASE", "AVGHHSZ_CY" ],
+      popupTemplate: {
+        title: "{NAME}",
+        content: "{expression/no-education}% of the population 14+ did not complete any level of formal education. This is <b>{expression/neighbors}</b> the average of the same variable in neighboring features.",
+        expressionInfos: arcadeExpressionInfos
+      }
+    });
+
+    // Add the layer to the map
+    map.add(layer);
+
+    var legend = new Legend({
+      view: view
+    });
+    view.ui.add(legend, "top-left");
+
+  });
+</script>
+</head>
+
+<body>
+  <div id="viewDiv"></div>
+</body>
+
+</html>

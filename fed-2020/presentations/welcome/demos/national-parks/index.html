@@ -449,7 +449,7 @@
 
         const slider = new Slider({
           min: 1904,
-          max: 2018,
+          max: 2019,
           values: [1904],
           labelsVisible: true,
           rangeLabelsVisible: false,
@@ -651,7 +651,7 @@
                 fieldName: "expression/min"
               }, {
                 fieldName: "TOTAL",
-                label: "Total visits (1904-2018)",
+                label: "Total visits (1904-2019)",
                 format: {
                   places: 0,
                   digitSeparator: true
@@ -723,7 +723,7 @@
           let fieldNames = [];
           let startYear = 1904;
 
-          while(startYear < 2018+1){
+          while(startYear < 2019+1){
             fieldNames.push( `F${(startYear++).toString()}` );
           }
 
@@ -750,7 +750,7 @@
           let yearsLabels = [];
           let startYear = 1904;
 
-          while(startYear < 2018+1){
+          while(startYear < 2019+1){
             yearsLabels.push( (startYear++).toString() );
           }
 
@@ -781,7 +781,7 @@
                     ticks: {
                       beginAtZero: true,
                       min: 1904,
-                      max: 2018,
+                      max: 2019,
                       stepSize: 1,
                       callback:(label, index, labels) => {
                         return label % 5 === 0 ? label : "";
@@ -854,7 +854,7 @@
     <div id="containerDiv" class="esri-widget">
       <div id="title" class="esri-widget">
         National Park Visits
-        <div id="year-range">1904 - 2018</div>
+        <div id="year-range">1904 - 2019</div>
       </div>
       <div id="legend">
         <img src="nps-legend3.png" width="300px">

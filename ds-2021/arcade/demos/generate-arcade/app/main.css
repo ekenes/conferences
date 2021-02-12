@@ -1,0 +1,17 @@
+html,
+body, #viewDiv {
+  padding: 0;
+  margin: 0;
+  height: 100%;
+  width: 100%;
+  overflow: hidden;
+}
+
+#panel {
+  padding: 10px;
+  max-width: 350px;
+}
+
+select {
+  max-width: 300px;
+}
