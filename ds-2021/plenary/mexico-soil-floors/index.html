@@ -1,0 +1,121 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="initial-scale=1,maximum-scale=1,user-scalable=no" />
+  <title>Censo 2020 de Mexico</title>
+
+  <style>
+    html,
+    body,
+    #viewDiv {
+      height: 100%;
+      width: 100%;
+      margin: 0;
+      padding: 0;
+    }
+    #titleDiv {
+      padding: 10px;
+    }
+    #titleText {
+      font-size: 32pt;
+      font-weight: 600;
+      padding: 10px 5px 10px 5px;
+    }
+    #dataDescription {
+      font-size: 12pt;
+      padding: 10px 5px 0px 5px;
+    }
+  </style>
+
+<link rel="stylesheet" href="https://js.arcgis.com/4.19/esri/themes/light/main.css" />
+<script src="https://js.arcgis.com/4.19/"></script>
+
+  <script>
+    require([
+      "esri/WebMap",
+      "esri/views/MapView",
+      "esri/layers/FeatureLayer",
+      "esri/renderers/SimpleRenderer",
+      "esri/widgets/Expand",
+      "esri/widgets/Home",
+      "esri/widgets/Bookmarks",
+      "esri/widgets/LayerList",
+      "esri/widgets/Legend"
+    ], function(
+      WebMap,
+      MapView,
+      FeatureLayer,
+      SimpleRenderer,
+      Expand,
+      Home,
+      Bookmarks,
+      LayerList,
+      Legend
+    ) {
+
+    ( async () => {
+
+      const titleText = document.getElementById("titleText");
+
+      const map = new WebMap({
+        portalItem: {
+          id: "b9689a78f06745fc9cea291c73e0ae4f"
+        }
+      });
+
+      await map.load();
+      const title = map.portalItem.title;
+      titleText.innerText = title;
+
+      const layer = map.layers.find(layer => layer.type === "group");
+      layer.visibilityMode = "exclusive";
+
+      const view = new MapView({
+        container: "viewDiv",
+        map: map,
+        constraints: {
+          snapToZoom: false
+        },
+        viewpoint: {
+          rotation: 0,
+          scale: 10316391,
+          targetGeometry: {
+            type: "point",
+            spatialReference: {
+              latestWkid: 3857,
+              wkid: 102100
+            },
+            x: -11404543,
+            y: 2745801
+          }
+        }
+      });
+      view.ui.add("titleDiv", "top-right");
+
+      const layerList = new LayerList({
+        view,
+        listItemCreatedFunction: (event) => {  event.item.open = true }
+      });
+      view.ui.add(layerList, "top-right");
+
+      const legend = new Legend({
+        view
+      });
+      view.ui.add(legend, "bottom-left");
+
+
+    })();
+
+    });
+  </script>
+</head>
+
+<body>
+  <div id="viewDiv"></div>
+  <div id="titleDiv" class="esri-widget">
+    <div id="titleText">Webmap title</div>
+    <div id="dataDescription">Explore Mexico's 2020 census data</div>
+  </div>
+</body>
+</html>
