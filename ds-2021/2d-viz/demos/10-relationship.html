@@ -1,0 +1,142 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <meta charset="utf-8" />
+    <meta
+      name="viewport"
+      content="initial-scale=1,maximum-scale=1,user-scalable=no"
+    />
+    <title>ArcGIS Developer Guide: Relationship</title>
+
+    <link rel="stylesheet" href="https://js.arcgis.com/4.18//esri/themes/light/main.css"/>
+    <script src="https://js.arcgis.com/4.18//"></script>
+
+    <style>
+      html,
+      body,
+      #viewDiv {
+        padding: 0;
+        margin: 0;
+        height: 100%;
+        width: 100%;
+      }
+    </style>
+
+    <script>
+      require([
+        "esri/config",
+        "esri/views/MapView",
+        "esri/WebMap",
+        "esri/layers/FeatureLayer",
+        "esri/widgets/Legend",
+        "esri/widgets/Expand",
+        "esri/smartMapping/renderers/relationship"
+      ], function (
+        esriConfig,
+        MapView,
+        WebMap,
+        FeatureLayer,
+        Legend,
+        Expand,
+        relationshipRendererCreator
+      ) {
+        const layer = new FeatureLayer({
+          portalItem: {
+            id: "1cbb0faa0f1f424bbe213bfae9319309"
+          },
+          blendMode: "multiply",
+          definitionExpression: "STATE = 'AZ'"
+        });
+
+        const map = new WebMap({
+          portalItem: {
+            id: "9cf503b654144873a8e33f996f91ba1d"
+          },
+          layers: [ layer ]
+        });
+
+        const referenceScale = 9244650*2;
+
+        const view = new MapView({
+          container: "viewDiv",
+          map: map,
+          scale: 1155580,
+          center: [ -111.868, 33.411 ],
+          // Set dock options on the view's popup
+          popup: {
+            dockEnabled: true,
+            dockOptions: {
+              breakpoint: false
+            }
+          },
+          constraints: {
+            snapToZoom:false
+          }
+        });
+
+        view.ui.add(new Expand({
+          content: new Legend({
+            view
+          }),
+          view
+        }), "top-right");
+
+        layer.when()
+          .then(createRelationshipRenderer)
+          .then(applyRenderer);
+
+
+        function createRelationshipRenderer() {
+
+          const params = {
+            layer: layer,
+            view: view,
+            field1: {
+              field: "AVGHHSZ_CY",
+              label: "Household size"
+            },
+            field2: {
+              field: "AVGVAL_CY",
+              label: "Home value"
+            },
+            focus: null,
+            numClasses: 3,
+            outlineOptimizationEnabled: true
+          };
+
+          return relationshipRendererCreator.createRenderer(params);
+
+        }
+
+        function applyRenderer(response) {
+          const renderer = response.renderer;
+
+
+          renderer.uniqueValueInfos.forEach(function (info) {
+            switch (info.value) {
+              case "HH":
+                info.label = "Large households; Expensive homes";
+                break;
+              case "HL":
+                info.label = "Large households; Cheaper homes";
+                break;
+              case "LH":
+                info.label = "Small households; Expensive homes"
+                break;
+              case "LL":
+                info.label = "Small households; Cheaper homes";
+                break;
+            }
+          });
+
+          layer.renderer = renderer;
+        }
+
+      });
+    </script>
+  </head>
+
+  <body>
+    <div id="viewDiv"></div>
+  </body>
+</html>

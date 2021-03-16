@@ -1,0 +1,140 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="initial-scale=1,maximum-scale=1,user-scalable=no" />
+  <title>Censo 2020 de Mexico</title>
+
+  <style>
+    html,
+    body,
+    #viewDiv {
+      height: 100%;
+      width: 100%;
+      margin: 0;
+      padding: 0;
+    }
+    #titleDiv {
+      padding: 10px;
+    }
+    #titleText {
+      font-size: 32pt;
+      font-weight: 600;
+      padding: 10px 5px 10px 5px;
+    }
+    #dataDescription {
+      font-size: 12pt;
+      padding: 10px 5px 0px 5px;
+    }
+  </style>
+
+<link rel="stylesheet" href="https://js.arcgis.com/4.19/esri/themes/light/main.css" />
+<script src="https://js.arcgis.com/4.19/"></script>
+
+  <script>
+    require([
+      "esri/WebMap",
+      "esri/views/MapView",
+      "esri/layers/FeatureLayer",
+      "esri/layers/GroupLayer",
+      "esri/renderers/SimpleRenderer",
+      "esri/widgets/Expand",
+      "esri/widgets/Home",
+      "esri/widgets/Bookmarks",
+      "esri/widgets/LayerList",
+      "esri/widgets/Legend"
+    ], function(
+      WebMap,
+      MapView,
+      FeatureLayer,
+      GroupLayer,
+      SimpleRenderer,
+      Expand,
+      Home,
+      Bookmarks,
+      LayerList,
+      Legend
+    ) {
+
+    ( async () => {
+
+      const titleText = document.getElementById("titleText");
+
+      const map = new WebMap({
+        portalItem: {
+          id: "2cd897d28ca842ecaa5df6bfe067c407"
+        }
+      });
+
+      await map.load();
+      const title = map.portalItem.title;
+      titleText.innerText = title;
+
+      map.layers.filter(layer => layer.type === "group").forEach(layer => layer.visibilityMode = "exclusive");
+
+      const layer = new GroupLayer({
+        title: "Layers",
+        layers: map.layers.toArray(),
+        visibilityMode: "exclusive"
+      });
+
+      map.removeAll();
+      map.add(layer);
+
+      const view = new MapView({
+        container: "viewDiv",
+        map,
+        constraints: {
+          snapToZoom: false
+        },
+        viewpoint: {
+          rotation: 0,
+          scale: 10316391,
+          targetGeometry: {
+            type: "point",
+            spatialReference: {
+              latestWkid: 3857,
+              wkid: 102100
+            },
+            x: -11404543,
+            y: 2745801
+          }
+        }
+      });
+      view.ui.add("titleDiv", "top-right");
+
+      const layerList = new LayerList({
+        view,
+        listItemCreatedFunction: (event) => {  event.item.open = true }
+      });
+      view.ui.add(layerList, "top-right");
+
+      const legend = new Legend({
+        view
+      });
+      view.ui.add(legend, "bottom-left");
+
+      const genderLayers = map.allLayers.find( layer => layer.title === "Educational attainment by gender").layers;
+
+      genderLayers.forEach( genderLayer => {
+        const renderer = genderLayer.renderer.clone();
+        const colorVV = renderer.visualVariables.filter( vv => vv.type === "color")[0];
+        colorVV.stops[0].label = "Men outperform women";
+        colorVV.stops[2].label = "Equal attainment";
+        colorVV.stops[4].label = "Women outperform men";
+        genderLayer.renderer = renderer;
+      });
+    })();
+
+    });
+  </script>
+</head>
+
+<body>
+  <div id="viewDiv"></div>
+  <div id="titleDiv" class="esri-widget">
+    <div id="titleText">Webmap title</div>
+    <div id="dataDescription">Explore Mexico's 2020 census data</div>
+  </div>
+</body>
+</html>

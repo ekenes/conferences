@@ -4,6 +4,9 @@
 node_modules/
 .vscode/*
 
+*.cmproj
+*.mp4
+
 agu-2017/presentation/media/7-legend.png
 agu-2017/agu script.docx
 agu-2017/Session abstract.docx

@@ -1,0 +1,83 @@
+<html>
+
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="initial-scale=1, maximum-scale=1,user-scalable=no" />
+  <title>
+    Basic Configuration | DevSummit 2021
+  </title>
+
+  <link rel="stylesheet" href="https://js.arcgis.com/4.19/esri/themes/dark/main.css" />
+
+  <style>
+    html,
+    body,
+    #viewDiv {
+      padding: 0;
+      margin: 0;
+      height: 100%;
+      width: 100%;
+      overflow: hidden;
+    }
+  </style>
+
+  <script src="https://js.arcgis.com/4.19/"></script>
+
+  <script>
+    require([
+      "esri/views/MapView",
+      "esri/Map",
+      "esri/layers/FeatureLayer",
+      "esri/widgets/Legend"
+    ], function(
+      MapView,
+      Map,
+      FeatureLayer,
+      Legend
+    ) {
+      // load a web map containing homicide statistics
+      const layer = new FeatureLayer({
+        url: "https://services.arcgis.com/V6ZHFr6zdgNZuVG0/arcgis/rest/services/homicide_wp_time/FeatureServer",
+        renderer: {
+            type: "simple",
+            symbol: {
+                type: "simple-marker",
+                size: 5,
+                color: "#ff4d6a",
+                outline: {  // autocasts as new SimpleLineSymbol()
+                    color: "#453437",
+                    width: "0.5px"
+                }
+            }
+        },
+        featureReduction: {
+          type: "cluster",
+        }
+      })
+      const map = new Map({
+        basemap: "dark-gray-vector",
+        layers: [layer]
+      });
+      const view = new MapView({
+        map: map,
+        container: "viewDiv",
+        center: [-75.1652, 39.9526],
+        zoom: 11
+      });
+      const legendExpand = new Expand({
+        view: view,
+        content: new Legend({
+          view: view
+        }),
+        expanded: view.widthBreakpoint !== "xsmall"
+      });
+      view.ui.add(legendExpand, "bottom-left");
+    });
+  </script>
+</head>
+
+<body>
+  <div id="viewDiv"></div>
+</body>
+
+</html>

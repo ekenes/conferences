@@ -1,0 +1,217 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="initial-scale=1,maximum-scale=1,user-scalable=no" />
+    <title>Election 2020 results</title>
+
+    <link rel="stylesheet" href="https://js.arcgis.com/next/esri/themes/light/main.css"/>
+    <script src="https://js.arcgis.com/next/"></script>
+
+    <style>
+      html,
+      body,
+      #viewDiv {
+        padding: 0;
+        margin: 0;
+        height: 100%;
+        width: 100%;
+      }
+    </style>
+
+    <script>
+      require([
+        "esri/Map",
+        "esri/views/MapView",
+        "esri/layers/FeatureLayer",
+        "esri/widgets/Legend"
+      ], function (Map, MapView, FeatureLayer, Legend) {
+
+        const layer = new FeatureLayer({
+          title: "2020 U.S. presidential election",
+          portalItem: {
+            id: "d579b818c80145ca894c45f53c639e30"
+          },
+          opacity: 1,
+          renderer: {
+            type: "unique-value",
+            valueExpression: `
+              var r = $feature.rep_2020;
+              var d = $feature.dem_2020;
+              var o = $feature.oth_2020;
+              var all = [r, d, o];
+
+              return Decode( Max(all),
+                r, 'republican',
+                d, 'democrat',
+                o, 'other',
+              'n/a' );
+            `,
+            valueExpressionTitle: "Winner",
+            uniqueValueInfos: [{
+              value: "republican",
+              label: "Trump",
+              symbol: createSymbol("rgba(220, 75, 0, 1)", "simple-marker")
+            }, {
+              value: "democrat",
+              label: "Biden",
+              symbol: createSymbol("rgba(60, 108, 204,1)", "simple-marker")
+            }, {
+              value: "other",
+              label: "Other",
+              symbol: createSymbol("rgba(181, 166, 0, 1)", "simple-marker")
+            }],
+            visualVariables: [
+              {
+              type: "opacity",
+              valueExpression: `
+                var r = $feature.rep_2020;
+                var d = $feature.dem_2020;
+                var o = $feature.oth_2020;
+                var all = [r, d, o];
+
+                var total = Sum(all);
+                var max = Max(all);
+
+                return (max / total) * 100;
+              `,
+              valueExpressionTitle:
+                "% of total votes earned",
+              stops: [
+                { value: 40, opacity: 0.05, label: "< 40%" },
+                { value: 85, opacity: 1.0, label: "> 75%" }
+              ]
+            },
+            {
+              type: "size",
+              valueExpression: `
+                var r = $feature.rep_2020;
+                var d = $feature.dem_2020;
+                var o = $feature.oth_2020;
+                var all = Reverse(Sort([r, d, o]))
+
+                var total = Sum(all);
+
+                return all[0] - all[1];
+              `,
+              valueExpressionTitle: "Margin of victory",
+              minDataValue: 100,
+              maxDataValue: 500000,
+              // maxSize: 40,
+              // minSize: 2,
+              maxSize: {
+                type: "size",
+                valueExpression: "$view.scale",
+                stops: [
+                  { size: 60, value: 288895 },
+                  { size: 32, value: 2311162 },
+                  { size: 26, value: 18489297 },
+                  { size: 8, value: 147914381 }
+                ]
+              },
+              minSize: {
+                type: "size",
+                valueExpression: "$view.scale",
+                stops: [
+                  { size: 12, value: 288895 },
+                  { size: 4, value: 2311162 },
+                  { size: 2, value: 18489297 },
+                  { size: 1, value: 147914381 }
+                ]
+              }
+            }
+          ]
+          },
+          popupTemplate: {
+            title: "{COUNTY}, {STATE}",
+            content: [
+              {
+                type: "fields",
+                fieldInfos: [
+                  {
+                    fieldName: `dem_2020`,
+                    label: "Democrat",
+                    format: {
+                      digitSeparator: true,
+                      places: 0
+                    }
+                  },
+                  {
+                    fieldName: `rep_2020`,
+                    label: "Republican",
+                    format: {
+                      digitSeparator: true,
+                      places: 0
+                    }
+                  },
+                  {
+                    fieldName: `oth_2020`,
+                    label: "Other",
+                    format: {
+                      digitSeparator: true,
+                      places: 0
+                    }
+                  }
+                ]
+              }
+            ]
+          }
+        });
+
+        function createSymbol(color, type){
+          return {
+            type: type || "simple-fill",
+            color,
+            outline: {
+              width: 0.5,
+              color: [ 255,255,255,0.3 ]
+            }
+          }
+        }
+
+        const map = new Map({
+          basemap: {
+            portalItem: {
+              id: "fbfb62f3599f41e5a77845f863e2872f"
+            }
+          },
+          layers: [ layer ]
+        });
+
+        const view = new MapView({
+          container: `viewDiv`,
+          map,
+          center: [-95, 40],
+          scale: 2311162 * 8,
+          constraints: {
+            minScale: 0,
+            maxScale: 4622324/16,
+            snapToZoom: false,
+            rotationEnabled: false
+          },
+          highlightOptions: {
+            fillOpacity: 0
+          },
+          breakpoints: {
+            large: 1200,
+            medium: 992,
+            small: 768,
+            xsmall: 544
+          },
+          popup: {
+            collapseEnabled: false
+          }
+        });
+
+        view.ui.add(new Legend({ view }), "bottom-left");
+      });
+    </script>
+  </head>
+
+  <body>
+    <div id="viewDiv"></div>
+  </body>
+</html>
+
+
+
