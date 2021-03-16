@@ -83,36 +83,21 @@
           const dotDensityRenderer = new DotDensityRenderer({
             dotValue: 400,
             outline: null,
-            referenceScale: 18489297, // 1:18,489,297 view scale
+            referenceScale: 18489297, // 1:577,790 view scale
             legendOptions: {
               unit: "people"
             },
-            blendDots: false,
+            blendDots: true,
             attributes: [
               {
-                field: "NOHS_CY",
+                valueExpression: "$feature.NOHS_CY + $feature.SOMEHS_CY",
                 color: "#ffa300",
-                label: "No high school"
+                label: "No high school diploma"
               },
               {
-                field: "SOMEHS_CY",
-                color: "#dc0ab4",
-                label: "Some high school"
-              },
-              {
-                field: "HSGRAD_CY",
+                valueExpression: "$feature.HSGRAD_CY + $feature.SMCOLL_CY + $feature.ASSCDEG_CY",
                 color: "#50e991",
                 label: "High school diploma"
-              },
-              {
-                field: "SMCOLL_CY",
-                color: "#9b19f5",
-                label: "Some college"
-              },
-              {
-                field: "ASSCDEG_CY",
-                color: "#e6d800",
-                label: "Associate's degree"
               },
               {
                 field: "BACHDEG_CY",

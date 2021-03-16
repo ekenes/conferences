@@ -79,7 +79,7 @@
                 "% of total votes earned",
               stops: [
                 { value: 40, opacity: 0.05, label: "< 40%" },
-                { value: 85, opacity: 1.0, label: "> 75%" }
+                { value: 85, opacity: 1.0, label: "> 85%" }
               ]
             },
             {
@@ -162,6 +162,7 @@
           return {
             type: type || "simple-fill",
             color,
+            size: 5,
             outline: {
               width: 0.5,
               color: [ 255,255,255,0.3 ]

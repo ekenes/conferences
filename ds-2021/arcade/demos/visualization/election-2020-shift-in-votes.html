@@ -27,8 +27,9 @@
         "esri/Map",
         "esri/views/MapView",
         "esri/layers/FeatureLayer",
+        "esri/widgets/Expand",
         "esri/widgets/Legend"
-      ], function (Map, MapView, FeatureLayer, Legend) {
+      ], function (Map, MapView, FeatureLayer, Expand, Legend) {
 
         const layer = new FeatureLayer({
           title: "2020 U.S. presidential election",
@@ -168,7 +169,10 @@
           }
         });
 
-        view.ui.add(new Legend({ view }), "bottom-left");
+        view.ui.add(new Expand({
+          content: new Legend({ view }),
+          view
+        }), "bottom-left");
       });
     </script>
   </head>
