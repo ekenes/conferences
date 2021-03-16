@@ -1,0 +1,230 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <meta charset="utf-8" />
+    <meta
+      name="viewport"
+      content="initial-scale=1,maximum-scale=1,user-scalable=no"
+    />
+    <title>
+      Generate a predominance visualization | Sample | ArcGIS API for JavaScript
+      4.18
+    </title>
+
+    <link
+      rel="stylesheet"
+      href="https://js.arcgis.com/4.18/esri/themes/light/main.css"
+    />
+    <script src="https://js.arcgis.com/4.18/"></script>
+
+    <style>
+      html,
+      body {
+        padding: 0;
+        margin: 0;
+        height: 100%;
+        width: 100%;
+        overflow: hidden;
+      }
+
+      #viewDiv {
+        position: absolute;
+        left: 0;
+        right: 250px;
+        top: 0;
+        bottom: 0;
+        height: 100%;
+      }
+
+      #panel {
+        position: absolute;
+        right: 0;
+        height: 100%;
+        width: 250px;
+        overflow: scroll;
+        text-align: center;
+      }
+
+      #fieldList {
+        width: 100%;
+      }
+
+      #checkboxDiv {
+        text-align: left;
+        padding-top: 10px;
+      }
+    </style>
+
+    <script>
+      require([
+        "esri/views/MapView",
+        "esri/Map",
+        "esri/layers/FeatureLayer",
+        "esri/widgets/Legend",
+        "esri/smartMapping/renderers/predominance",
+        "esri/smartMapping/popup/templates"
+      ], function (
+        MapView,
+        Map,
+        FeatureLayer,
+        Legend,
+        predominanceRendererCreator,
+        popupTemplateCreator
+      ) {
+        layer = new FeatureLayer({
+          portalItem: {
+            id: "e1f194d5f3184402a8a39b60b44693f4"
+          },
+          outFields: ["*"],
+          title: "Boise Block Groups",
+          opacity: 0.9
+        });
+
+        const map = new Map({
+          basemap: {
+            portalItem: {
+              id: "75a3ce8990674a5ebd5b9ab66bdab893"
+            }
+          }
+        });
+
+        const view = new MapView({
+          container: "viewDiv",
+          map: map,
+          center: [-116.3126, 43.60703],
+          zoom: 11,
+          constraints: {
+            minScale: 600000
+          }
+        });
+
+        view
+          .when()
+          .then(createPredominanceRenderer)
+          .then(applyRenderer)
+          .then(createPopupTemplate)
+          .catch(function (error) {
+            console.error(error);
+          });
+
+        view.ui.add(
+          new Legend({
+            view: view
+          }),
+          "bottom-left"
+        );
+
+        const fieldList = document.getElementById("fieldList");
+        const includeSizeCheckbox = document.getElementById("includeSize");
+        const includeOpacityCheckbox = document.getElementById(
+          "includeOpacity"
+        );
+
+        const elements = [
+          fieldList,
+          includeOpacityCheckbox,
+          includeSizeCheckbox
+        ];
+
+        // Each time the user changes the value of one of the DOM elements
+        // (list box and two checkboxes), then generate a new predominance visualization
+
+        elements.forEach(function (element) {
+          element.addEventListener("change", function (event) {
+            createPredominanceRenderer()
+              .then(applyRenderer)
+              .then(createPopupTemplate);
+          });
+        });
+
+        /**
+         * Generates a new predominance renderer based on the selected fields in the
+         * list box. Returns a promise that resolves to an object containing the renderer.
+         */
+        function createPredominanceRenderer() {
+          const selectedOptions = [].slice.call(fieldList.selectedOptions);
+          const fields = selectedOptions.map(function (option) {
+            return {
+              name: option.value,
+              label: option.text
+            };
+          });
+
+          const params = {
+            view: view,
+            layer: layer,
+            fields: fields,
+            includeSizeVariable: includeSizeCheckbox.checked,
+            includeOpacityVariable: includeOpacityCheckbox.checked,
+            legendOptions: {
+              title: "Most common decade in which homes were built"
+            },
+            sortBy: "value"
+          };
+
+          return predominanceRendererCreator.createRenderer(params);
+        }
+
+        function applyRenderer(response) {
+          console.log("renderer", response);
+          layer.renderer = response.renderer;
+          if (!map.layers.includes(layer)) {
+            map.add(layer);
+          }
+          return layer;
+        }
+
+        // Creates a popup template only containing
+        // information related to the renderer
+        function createPopupTemplate(layer) {
+          popupTemplateCreator.getTemplates({ layer })
+            .then(function (response) {
+              // the response may also contain secondary
+              // templates you can choose from
+              console.log("popups", response);
+              layer.popupTemplate = response.primaryTemplate.value;
+            });
+        }
+      });
+    </script>
+  </head>
+
+  <body>
+    <div id="viewDiv"></div>
+    <div id="panel" class="esri-widget">
+      <div style="padding: 10px">
+        <h3>Predominant decade in which homes were built</h3>
+        <div style="padding-bottom: 10px">
+          This map colors Census Block Groups by the predominant decade, or the
+          most common decade in which homes were built.
+          <strong>Selecting two or more decades</strong> will visualize
+          construction year predominance for only those decades.
+          <strong>Use Ctrl or Cmd to select and deselect values.</strong>
+        </div>
+        <select
+          id="fieldList"
+          multiple="multiple"
+          size="10"
+          class="esri-widget"
+        >
+          <option value="ACSBLT1939" selected>Before 1940</option>
+          <option value="ACSBLT1940" selected>1940-1949</option>
+          <option value="ACSBLT1950" selected>1950-1959</option>
+          <option value="ACSBLT1960" selected>1960-1969</option>
+          <option value="ACSBLT1970" selected>1970-1979</option>
+          <option value="ACSBLT1980" selected>1980-1989</option>
+          <option value="ACSBLT1990" selected>1990-1999</option>
+          <option value="ACSBLT2000" selected>2000-2009</option>
+          <option value="ACSBLT2010" selected>2010-2013</option>
+          <option value="ACSBLT2014" selected>After 2013</option>
+        </select>
+        <div id="checkboxDiv">
+          <input type="checkbox" class="esri-widget" id="includeSize" /> Show
+          total number of homes<br />
+          <input type="checkbox" class="esri-widget" id="includeOpacity" /> Show
+          % of total homes comprised by predominant decade
+        </div>
+      </div>
+    </div>
+  </body>
+</html>

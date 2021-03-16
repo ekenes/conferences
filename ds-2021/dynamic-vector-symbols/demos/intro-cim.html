@@ -1,0 +1,899 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="initial-scale=1,maximum-scale=1,user-scalable=no" />
+  <title>CIMSymbol | DevSummit 2021</title>
+  <style>
+    html,
+    body,
+    #viewDiv {
+      padding: 0;
+      margin: 0;
+      height: 100%;
+      width: 100%;
+    }
+  </style>
+
+  <link rel="stylesheet" href="https://js.arcgis.com/4.18/esri/themes/light/main.css" />
+  <script src="https://js.arcgis.com/4.18/"></script>
+
+  <script>
+    require([
+      "esri/views/MapView",
+      "esri/Map",
+      "esri/layers/FeatureLayer",
+      "esri/layers/VectorTileLayer"
+    ], function (MapView, Map, FeatureLayer, VectorTileLayer) {
+      // Tahoe Rim Trail feature layer
+      const rimTrail = new FeatureLayer({
+        portalItem: {
+          id: "9a61ba12e9904388a0d17c48ce6a5662"
+        },
+        renderer: {
+          type: "simple",
+          symbol: {
+            type: "cim",
+            data: {
+              type: "CIMSymbolReference",
+              symbol: {
+                type: "CIMLineSymbol",
+                symbolLayers: [{
+                    // white dashed layer at center of the line
+                    type: "CIMSolidStroke",
+                    effects: [{
+                      type: "CIMGeometricEffectDashes",
+                      dashTemplate: [2, 2, 2, 2], // width of dashes and spacing between the dashes
+                      lineDashEnding: "NoConstraint",
+                      controlPointEnding: "NoConstraint"
+                    }],
+                    enable: true, // must be set to true in order for the symbol layer to be visible
+                    capStyle: "Butt",
+                    joinStyle: "Round",
+                    width: 1,
+                    color: [
+                      255,
+                      255,
+                      255,
+                      255
+                    ]
+                  },
+                  {
+                    // lighter green line layer that surrounds the dashes
+                    type: "CIMSolidStroke",
+                    enable: true,
+                    capStyle: "Butt",
+                    joinStyle: "Round",
+                    width: 3,
+                    color: [
+                      56,
+                      168,
+                      0,
+                      255
+                    ]
+                  }, {
+                    // darker green stroke
+                    type: "CIMSolidStroke",
+                    enable: true,
+                    capStyle: "Butt",
+                    joinStyle: "Round",
+                    width: 6,
+                    color: [
+                      0,
+                      115,
+                      76,
+                      255
+                    ]
+                  }
+                ]
+              }
+            }
+          }
+        }
+      });
+
+      // add trailheads feature layer as webstyle symbol
+      const trailheads = new FeatureLayer({
+        url: "https://services.arcgis.com/V6ZHFr6zdgNZuVG0/arcgis/rest/services/TahoeTrailheads/FeatureServer",
+        renderer: {
+          type: "simple",
+          symbol: {
+            type: "cim",
+            data: {
+              type: "CIMSymbolReference",
+              symbol: {
+  "type": "CIMPointSymbol",
+  "symbolLayers": [
+    {
+      "type": "CIMVectorMarker",
+      "enable": true,
+      "anchorPointUnits": "Relative",
+      "dominantSizeAxis3D": "Y",
+      "size": 12,
+      "billboardMode3D": "FaceNearPlane",
+      "frame": {
+        "xmin": 0,
+        "ymin": 0,
+        "xmax": 21,
+        "ymax": 21
+      },
+      "markerGraphics": [
+        {
+          "type": "CIMMarkerGraphic",
+          "geometry": {
+            "rings": [
+              [
+                [
+                  15,
+                  15
+                ],
+                [
+                  12,
+                  15
+                ],
+                [
+                  16,
+                  10
+                ],
+                [
+                  13,
+                  10
+                ],
+                [
+                  17,
+                  5
+                ],
+                [
+                  11,
+                  5
+                ],
+                [
+                  11,
+                  2
+                ],
+                [
+                  10,
+                  2
+                ],
+                [
+                  10,
+                  5
+                ],
+                [
+                  4,
+                  5
+                ],
+                [
+                  8,
+                  10
+                ],
+                [
+                  5,
+                  10
+                ],
+                [
+                  9,
+                  15
+                ],
+                [
+                  6,
+                  15
+                ],
+                [
+                  10.5,
+                  19
+                ],
+                [
+                  15,
+                  15
+                ]
+              ]
+            ]
+          },
+          "symbol": {
+            "type": "CIMPolygonSymbol",
+            "symbolLayers": [
+              {
+                "type": "CIMSolidStroke",
+                "enable": true,
+                "capStyle": "Round",
+                "joinStyle": "Round",
+                "lineStyle3D": "Strip",
+                "miterLimit": 10,
+                "width": 0,
+                "color": [
+                  0,
+                  0,
+                  0,
+                  255
+                ]
+              },
+              {
+                "type": "CIMSolidFill",
+                "enable": true,
+                "color": [
+                  60,
+                  88,
+                  74,
+                  255
+                ]
+              }
+            ]
+          }
+        }
+      ],
+      "scaleSymbolsProportionally": true,
+      "respectFrame": true,
+      "offsetX": -3,
+      "offsetY": 2
+    },
+    {
+      "type": "CIMVectorMarker",
+      "enable": true,
+      "anchorPointUnits": "Relative",
+      "dominantSizeAxis3D": "Y",
+      "size": 12,
+      "billboardMode3D": "FaceNearPlane",
+      "frame": {
+        "xmin": 0,
+        "ymin": 0,
+        "xmax": 21,
+        "ymax": 21
+      },
+      "markerGraphics": [
+        {
+          "type": "CIMMarkerGraphic",
+          "geometry": {
+            "rings": [
+              [
+                [
+                  11.67,
+                  14.51
+                ],
+                [
+                  13,
+                  13
+                ],
+                [
+                  14.6,
+                  13
+                ],
+                [
+                  14.61,
+                  13
+                ],
+                [
+                  15.05,
+                  12.82
+                ],
+                [
+                  15.25,
+                  12.38
+                ],
+                [
+                  15.14,
+                  11.99
+                ],
+                [
+                  14.78,
+                  11.74
+                ],
+                [
+                  14.78,
+                  4
+                ],
+                [
+                  14,
+                  4
+                ],
+                [
+                  14,
+                  11.7
+                ],
+                [
+                  12.38,
+                  11.7
+                ],
+                [
+                  11.31,
+                  12.81
+                ],
+                [
+                  10.45,
+                  10.39
+                ],
+                [
+                  12.19,
+                  8.42
+                ],
+                [
+                  12.41,
+                  8.14
+                ],
+                [
+                  12.49,
+                  7.85
+                ],
+                [
+                  12.5,
+                  4.13
+                ],
+                [
+                  12.44,
+                  3.84
+                ],
+                [
+                  12.28,
+                  3.6
+                ],
+                [
+                  12.04,
+                  3.44
+                ],
+                [
+                  11.75,
+                  3.38
+                ],
+                [
+                  11.46,
+                  3.44
+                ],
+                [
+                  11.22,
+                  3.6
+                ],
+                [
+                  11.06,
+                  3.84
+                ],
+                [
+                  11,
+                  4.13
+                ],
+                [
+                  11,
+                  7.66
+                ],
+                [
+                  9.64,
+                  9.02
+                ],
+                [
+                  8.46,
+                  6.61
+                ],
+                [
+                  6.25,
+                  3.94
+                ],
+                [
+                  5.79,
+                  3.6
+                ],
+                [
+                  5.35,
+                  3.63
+                ],
+                [
+                  5,
+                  3.91
+                ],
+                [
+                  4.87,
+                  4.33
+                ],
+                [
+                  5.09,
+                  4.87
+                ],
+                [
+                  7.45,
+                  7.88
+                ],
+                [
+                  9.35,
+                  13.84
+                ],
+                [
+                  9.6,
+                  14.38
+                ],
+                [
+                  9.89,
+                  14.8
+                ],
+                [
+                  10.2,
+                  15.06
+                ],
+                [
+                  10.52,
+                  15.14
+                ],
+                [
+                  11.15,
+                  14.98
+                ],
+                [
+                  11.67,
+                  14.51
+                ]
+              ],
+              [
+                [
+                  7.04,
+                  10.98
+                ],
+                [
+                  5.8,
+                  11.38
+                ],
+                [
+                  5.51,
+                  11.63
+                ],
+                [
+                  5.48,
+                  12
+                ],
+                [
+                  6.69,
+                  15.77
+                ],
+                [
+                  6.94,
+                  16.06
+                ],
+                [
+                  7.32,
+                  16.09
+                ],
+                [
+                  8.55,
+                  15.69
+                ],
+                [
+                  8.84,
+                  15.45
+                ],
+                [
+                  8.88,
+                  15.06
+                ],
+                [
+                  7.66,
+                  11.3
+                ],
+                [
+                  7.41,
+                  11.01
+                ],
+                [
+                  7.04,
+                  10.98
+                ]
+              ],
+              [
+                [
+                  11.5,
+                  15.15
+                ],
+                [
+                  10.98,
+                  15.25
+                ],
+                [
+                  10.55,
+                  15.55
+                ],
+                [
+                  10.25,
+                  15.98
+                ],
+                [
+                  10.15,
+                  16.5
+                ],
+                [
+                  10.25,
+                  17.02
+                ],
+                [
+                  10.54,
+                  17.46
+                ],
+                [
+                  10.98,
+                  17.75
+                ],
+                [
+                  11.5,
+                  17.85
+                ],
+                [
+                  12.02,
+                  17.75
+                ],
+                [
+                  12.46,
+                  17.46
+                ],
+                [
+                  12.75,
+                  17.02
+                ],
+                [
+                  12.85,
+                  16.5
+                ],
+                [
+                  12.75,
+                  15.98
+                ],
+                [
+                  12.45,
+                  15.55
+                ],
+                [
+                  12.02,
+                  15.25
+                ],
+                [
+                  11.5,
+                  15.15
+                ]
+              ]
+            ]
+          },
+          "symbol": {
+            "type": "CIMPolygonSymbol",
+            "symbolLayers": [
+              {
+                "type": "CIMSolidStroke",
+                "enable": true,
+                "capStyle": "Round",
+                "joinStyle": "Round",
+                "lineStyle3D": "Strip",
+                "miterLimit": 10,
+                "width": 0,
+                "color": [
+                  0,
+                  0,
+                  0,
+                  255
+                ]
+              },
+              {
+                "type": "CIMSolidFill",
+                "enable": true,
+                "color": [
+                  49,
+                  56,
+                  109,
+                  255
+                ]
+              }
+            ]
+          }
+        }
+      ],
+      "scaleSymbolsProportionally": true,
+      "respectFrame": true,
+      "offsetX": 4
+    },
+    {
+      "type": "CIMVectorMarker",
+      "enable": true,
+      "colorLocked": true,
+      "anchorPointUnits": "Relative",
+      "dominantSizeAxis3D": "Y",
+      "size": 20,
+      "billboardMode3D": "FaceNearPlane",
+      "frame": {
+        "xmin": -5,
+        "ymin": -5,
+        "xmax": 5,
+        "ymax": 5
+      },
+      "markerGraphics": [
+        {
+          "type": "CIMMarkerGraphic",
+          "geometry": {
+            "rings": [
+              [
+                [
+                  0,
+                  5
+                ],
+                [
+                  0.87,
+                  4.92
+                ],
+                [
+                  1.71,
+                  4.7
+                ],
+                [
+                  2.5,
+                  4.33
+                ],
+                [
+                  3.21,
+                  3.83
+                ],
+                [
+                  3.83,
+                  3.21
+                ],
+                [
+                  4.33,
+                  2.5
+                ],
+                [
+                  4.7,
+                  1.71
+                ],
+                [
+                  4.92,
+                  0.87
+                ],
+                [
+                  5,
+                  0
+                ],
+                [
+                  4.92,
+                  -0.87
+                ],
+                [
+                  4.7,
+                  -1.71
+                ],
+                [
+                  4.33,
+                  -2.5
+                ],
+                [
+                  3.83,
+                  -3.21
+                ],
+                [
+                  3.21,
+                  -3.83
+                ],
+                [
+                  2.5,
+                  -4.33
+                ],
+                [
+                  1.71,
+                  -4.7
+                ],
+                [
+                  0.87,
+                  -4.92
+                ],
+                [
+                  0,
+                  -5
+                ],
+                [
+                  -0.87,
+                  -4.92
+                ],
+                [
+                  -1.71,
+                  -4.7
+                ],
+                [
+                  -2.5,
+                  -4.33
+                ],
+                [
+                  -3.21,
+                  -3.83
+                ],
+                [
+                  -3.83,
+                  -3.21
+                ],
+                [
+                  -4.33,
+                  -2.5
+                ],
+                [
+                  -4.7,
+                  -1.71
+                ],
+                [
+                  -4.92,
+                  -0.87
+                ],
+                [
+                  -5,
+                  0
+                ],
+                [
+                  -4.92,
+                  0.87
+                ],
+                [
+                  -4.7,
+                  1.71
+                ],
+                [
+                  -4.33,
+                  2.5
+                ],
+                [
+                  -3.83,
+                  3.21
+                ],
+                [
+                  -3.21,
+                  3.83
+                ],
+                [
+                  -2.5,
+                  4.33
+                ],
+                [
+                  -1.71,
+                  4.7
+                ],
+                [
+                  -0.87,
+                  4.92
+                ],
+                [
+                  0,
+                  5
+                ]
+              ]
+            ]
+          },
+          "symbol": {
+            "type": "CIMPolygonSymbol",
+            "symbolLayers": [
+              {
+                "type": "CIMSolidStroke",
+                "enable": true,
+                "capStyle": "Round",
+                "joinStyle": "Round",
+                "lineStyle3D": "Strip",
+                "miterLimit": 10,
+                "width": 0.5,
+                "color": [
+                  26,
+                  34,
+                  45,
+                  255
+                ]
+              },
+              {
+                "type": "CIMSolidFill",
+                "enable": true,
+                "color": [
+                  224,
+                  234,
+                  255,
+                  255
+                ]
+              }
+            ]
+          }
+        }
+      ],
+      "scaleSymbolsProportionally": true,
+      "respectFrame": true
+    }
+  ]
+}
+            }
+          }
+        }
+      });
+
+      // Lake Tahoe feature layer
+      const lakeLayer = new FeatureLayer({
+        url: "https://services.arcgis.com/V6ZHFr6zdgNZuVG0/arcgis/rest/services/Lake_Tahoe/FeatureServer",
+        renderer: {
+          type: "simple",
+          symbol: {
+            type: "cim",
+            data: {
+              type: "CIMSymbolReference",
+              symbol: {
+                // CIM polygon symbol
+                type: "CIMPolygonSymbol",
+                symbolLayers: [{
+                    // light blue outline around the polygon
+                    type: "CIMSolidStroke",
+                    enable: true,
+                    width: 0.4,
+                    color: [
+                      0,
+                      92,
+                      230,
+                      255
+                    ]
+                  },
+                  {
+                    // light blue hatch fill
+                    type: "CIMHatchFill",
+                    enable: true,
+                    lineSymbol: {
+                      type: "CIMLineSymbol", // CIM line symbol that makes up the line inside the hatch fill
+                      symbolLayers: [{
+                        type: "CIMSolidStroke",
+                        effects: [{
+                          type: "CIMGeometricEffectDashes",
+                          dashTemplate: [1, 2],
+                          lineDashEnding: "FullPattern",
+                        }],
+                        enable: true,
+                        width: 1,
+                        color: [
+                          0,
+                          92,
+                          230,
+                          255
+                        ]
+                      }]
+                    },
+                    rotation: 45, // rotation of the lines
+                    separation: 4 // distance between lines in hatch fill
+                  },
+                  {
+                    // solid blue fill background
+                    type: "CIMSolidFill",
+                    enable: true,
+                    color: [
+                      151,
+                      219,
+                      242,
+                      150
+                    ]
+                  }
+                ]
+              }
+            }
+          }
+        }
+
+      });
+      // set up the map and view
+      const map = new Map({
+        basemap: { // using a custom basemap from ArcGIS Online
+          baseLayers: new VectorTileLayer({
+            portalItem: {
+              id: "b5676525747f499687f12746441101ef"
+            }
+          }),
+          referenceLayers: new VectorTileLayer({
+            portalItem: {
+              id: "94329802cbfa44a18f423e6f1a0b875c"
+            }
+          })
+        },
+        layers: [rimTrail, lakeLayer, trailheads] // add layers to the map
+      });
+
+      const view = new MapView({
+        container: "viewDiv",
+        map: map,
+        center: [-120, 39.05], // centered at Lake Tahoe
+        zoom: 9
+      });
+
+
+    });
+  </script>
+</head>
+
+<body>
+  <div id="viewDiv"></div>
+</body>
+
+</html>
