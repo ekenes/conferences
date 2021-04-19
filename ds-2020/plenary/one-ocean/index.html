@@ -62,15 +62,15 @@
           return check;
         };
 
-        if(!isMobileBrowser()){
+        // if(!isMobileBrowser()){
           loadApp();
-        } else {
-          document.body.innerHTML = null;
-          const mobileMessage = document.createElement("div");
-          mobileMessage.classList.add("mobile-message");
-          mobileMessage.innerHTML = `This app loads too much data for mobile devices. 🤷‍♂️ Please try again on a desktop browser.`;
-          document.body.appendChild(mobileMessage);
-        }
+        // } else {
+        //   document.body.innerHTML = null;
+        //   const mobileMessage = document.createElement("div");
+        //   mobileMessage.classList.add("mobile-message");
+        //   mobileMessage.innerHTML = `This app loads too much data for mobile devices. 🤷‍♂️ Please try again on a desktop browser.`;
+        //   document.body.appendChild(mobileMessage);
+        // }
 
         // display the body style so message or content renders
         document.body.style.visibility = "visible";
