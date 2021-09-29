@@ -62,15 +62,15 @@
           return check;
         };
 
-        if(!isMobileBrowser()){
+        // if(!isMobileBrowser()){
           loadApp();
-        } else {
-          document.body.innerHTML = null;
-          const mobileMessage = document.createElement("div");
-          mobileMessage.classList.add("mobile-message");
-          mobileMessage.innerHTML = `This app loads too much data for mobile devices. 🤷‍♂️ Please try again on a desktop browser.`;
-          document.body.appendChild(mobileMessage);
-        }
+        // } else {
+        //   document.body.innerHTML = null;
+        //   const mobileMessage = document.createElement("div");
+        //   mobileMessage.classList.add("mobile-message");
+        //   mobileMessage.innerHTML = `This app loads too much data for mobile devices. 🤷‍♂️ Please try again on a desktop browser.`;
+        //   document.body.appendChild(mobileMessage);
+        // }
 
         // display the body style so message or content renders
         document.body.style.visibility = "visible";
@@ -342,7 +342,19 @@
               components: [ "attribution" ]
             },
             constraints: {
-              snapToZoom: false
+              snapToZoom: false,
+              minScale: 376568270,
+              geometry: {
+                type: "extent",
+                "spatialReference": {
+                    "latestWkid": 54099,
+                    "wkid": 54099
+                },
+                "xmin": -26711169.80197662,
+                "ymin": -18667648.470968474,
+                "xmax": 26172604.436993644,
+                "ymax": 18612609.34060244
+              }
             },
             center: {
               spatialReference: {

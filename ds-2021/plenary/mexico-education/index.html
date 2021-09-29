@@ -115,6 +115,7 @@
       view.ui.add(legend, "bottom-left");
 
       const genderLayers = map.allLayers.find( layer => layer.title === "Educational attainment by gender").layers;
+      const edLayers = map.allLayers.find( layer => layer.title === "Average educational attainment").layers;
 
       genderLayers.forEach( genderLayer => {
         const renderer = genderLayer.renderer.clone();
@@ -123,6 +124,18 @@
         colorVV.stops[2].label = "Equal attainment";
         colorVV.stops[4].label = "Women outperform men";
         genderLayer.renderer = renderer;
+      });
+
+      edLayers.forEach( edLayer => {
+        const renderer = edLayer.renderer.clone();
+        const colorVV = renderer.visualVariables.filter( vv => vv.type === "color")[0];
+        colorVV.legendOptions = {
+          title: "Average educational attainment"
+        };
+        colorVV.stops[0].label = "Elementary school";
+        colorVV.stops[2].label = "Middle school";
+        colorVV.stops[4].label = "High school";
+        edLayer.renderer = renderer;
       });
     })();
 

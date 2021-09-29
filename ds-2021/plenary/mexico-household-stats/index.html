@@ -26,6 +26,19 @@
       font-size: 12pt;
       padding: 10px 5px 0px 5px;
     }
+    #layerList{
+      padding: 10px;
+    }
+    #view2010Title{
+      padding: 10px;
+      font-size: 48pt;
+      font-weight: 700;
+    }
+    #view2020Title{
+      padding: 10px;
+      font-size: 48pt;
+      font-weight: 700;
+    }
   </style>
 
 <link rel="stylesheet" href="https://js.arcgis.com/4.19/esri/themes/light/main.css" />
@@ -42,6 +55,8 @@
       "esri/widgets/Bookmarks",
       "esri/widgets/LayerList",
       "esri/widgets/Legend",
+      "esri/widgets/LayerList/LayerListViewModel",
+      "esri/widgets/LayerList/ListItem",
       "esri/widgets/Swipe"
     ], function(
       WebMap,
@@ -53,6 +68,8 @@
       Bookmarks,
       LayerList,
       Legend,
+      LayerListVM,
+      ListItem,
       Swipe
     ) {
 
@@ -102,17 +119,31 @@
         }
       });
       view.ui.add("titleDiv", "top-right");
+      view.ui.add("layerList", "top-right");
 
-      const layerList = new LayerList({
-        view,
-        listItemCreatedFunction: (event) => {  event.item.open = true }
-      });
-      view.ui.add(layerList, "top-right");
+      const bedsInput = document.getElementById("beds");
+      bedsInput.addEventListener("change", toggleLayer);
+      const peopleInput = document.getElementById("people");
+      peopleInput.addEventListener("change", toggleLayer);
+
+      function toggleLayer(){
+        beds2010.visible = bedsInput.checked;
+        beds2020.visible = bedsInput.checked;
+        ppl2010.visible = !bedsInput.checked;
+        ppl2020.visible = !bedsInput.checked;
+      }
 
       const legend = new Legend({
-        view
+        view,
+        layerInfos: [{
+          layer: beds2010,
+          title: "Bedrooms per home"
+        }, {
+          layer: ppl2010,
+          title: "Average occupants per room"
+        }]
       });
-      view.ui.add(legend, "bottom-left");
+      view.ui.add(legend, "top-right");
 
       // create a new Swipe widget
       const swipe = new Swipe({
@@ -123,6 +154,9 @@
       });
       // add the widget to the view
       view.ui.add(swipe);
+
+      view.ui.add("view2010Title", "bottom-left");
+      view.ui.add("view2020Title", "bottom-right");
     })();
 
     });
@@ -135,5 +169,11 @@
     <div id="titleText">Webmap title</div>
     <div id="dataDescription">Explore Mexico's 2020 census data</div>
   </div>
+  <div id="layerList" class="esri-widget">
+    <input type="radio" name="layers" id="beds"> Bedrooms per home
+    <input type="radio" name="layers" id="people" checked> Average occupants per room
+  </div>
+  <div id="view2010Title" class="esri-widget">2010</div>
+  <div id="view2020Title" class="esri-widget">2020</div>
 </body>
 </html>
