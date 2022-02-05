@@ -27,23 +27,17 @@ In this session, you will learn several ways you can visualize change over time 
 <https://www.esri.com/arcgis-blog/products/js-api-arcgis/mapping/six-ways-to-visualize-change-over-time-in-web-maps/>
 <https://www.esri.com/about/newsroom/arcuser/animations/>
 
-### Part I - Techniques
-
-Swipe widget - demo (Anne)
-Above and below theme - demo (kristian)
-Side-by-side views - demo (anne)
-
-### Part II - Animations
-
-Geometry (Anne)
-Attribute (Kristian)
-2-3 demos
-
-### Conclusion
-
-Gotchas
-When to use which technique
-modified matrix
+I. Techniques
+   A. Swipe widget - demo (Anne)
+   B. Above and below theme - demo (kristian)
+   C. Side-by-side views - demo (anne)
+II. Animations
+   A. Geometry (Anne)
+   B. Attribute (Kristian)
+III. Conclusion
+   A. Gotchas
+   B. When to use which technique
+   C. modified matrix
 
 ## Demos
 
