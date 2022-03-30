@@ -70,7 +70,7 @@
               color: [255, 255, 255, 0.7],
               width: 0.5
             },
-            size: "3px"
+            size: "4px"
           }
         });
 
@@ -221,7 +221,9 @@
             sizeOptimizationEnabled = true;
           } else {
             toggleButton.innerText = "Enable auto size by scale";
+            layer.renderer = renderer;
             clearInfoDisplay();
+            return;
           }
 
           // generates a new renderer with a scale-dependent

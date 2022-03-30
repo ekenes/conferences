@@ -82,6 +82,12 @@
 
           const colors = ["#00b6f1", "#d9bf0d", "#c44245", "#6a28c7", "#b9a087", "#ab579d", "#78aea0", "#1e8553", "#ada016"];
 
+          // #e65154|#26b6ff|#67e6d1|#cd76d6|#ffca8c|#fff2b3|#ff8cd9|#d99d5b|#c8f2a9|#d4b8ff
+          // const colors = ["#e65154", "#26b6ff", "#67e6d1", "#cd76d6", "#ffca8c", "#fff2b3", "#ff8cd9", "#d99d5b", "#c8f2a9", "#d4b8ff"];
+
+          // #f22f00|#ffff80|#26ffff|#a040ff|#d99800|#c0ff73|#ffdd00|#ff4dc4|#5ff500|#0040ff
+          // const colors = ["#f22f00", "#ffff80", "#26ffff", "#a040ff", "#d99800", "#c0ff73", "#ffdd00", "#ff4dc4", "#5ff500", "#0040ff"];
+
           const dotDensityRenderer = new DotDensityRenderer({
             dotValue: 800,
             outline: null,
@@ -91,11 +97,11 @@
             },
             blendDots: true,
             attributes: [
-              {
-                field: "B16007_calc_numEngOnlyE",
-                color: colors[0],
-                label: "English"
-              },
+              // {
+              //   field: "B16007_calc_numEngOnlyE",
+              //   color: colors[0],
+              //   label: "English"
+              // },
               {
                 field: "B16007_calc_numSpanE",
                 color: colors[1],

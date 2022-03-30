@@ -24,20 +24,26 @@ Multivariate data visualization involves using two or more data variables in the
 
 ## Outline
 
-I. Intro - What is CIM?
-  A. Points
-  B. Lines
-  C. Polygons
-II. Create a symbol from scratch
-  A. JS Code
-  B. CIM symbol builder
-III. Creating a web style - Russ
-  A. What do you get OOB
-  B. Creating my own style
-IV. Data-driven CIM - primitive overrides
-  A. Election app
-  B. Arcade snippets
-V. Conclusion - wrap up
+Talk about pros vs. cons; when to use it when not to.
+
+Type + Size (Jeremy)
+Visual variables (Jeremy)
+color + size, opacity, rotation (Jeremy) - <https://developers.arcgis.com/javascript/latest/sample-code/visualization-multivariate-2d/>
+flow renderer (Jeremy)
+univariate color/size (above and below) (Kristian)
+3D size axis (Jeremy) Awful trees
+% change vs total change (magnitude) (Jeremy)
+predominance (Kristian)
+relationship (Kristian)
+dot density (Kristian) - talk about new things
+CIM - start with Wurman, then show election (Kristian)
+alpha blending (Kristian) -
+
+Each section
+
+Image showing example
+Key points ... pros/cons, configuration suggestions
+code snippet
 
 ## Demos
 

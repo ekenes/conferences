@@ -2,17 +2,11 @@
 <html>
   <head>
     <meta charset="utf-8" />
-    <meta
-      name="viewport"
-      content="initial-scale=1,maximum-scale=1,user-scalable=no"
-    />
+    <meta name="viewport" content="initial-scale=1,maximum-scale=1,user-scalable=no" />
 
-    <title>Dot density | Sample | ArcGIS API for JavaScript 4.16</title>
+    <title>Owned, rented, and vacant units</title>
 
-    <link
-      rel="stylesheet"
-      href="https://js.arcgis.com/next/esri/themes/light/main.css"
-    />
+    <link rel="stylesheet" href="https://js.arcgis.com/next/esri/themes/light/main.css" />
 
     <style>
       html,
@@ -58,9 +52,9 @@
 
         const view = new MapView({
           container: "viewDiv",
-          map: map,
-          center: [ -87.621, 41.848 ],
-          scale: 288895,
+          map,
+          center: [ -83.05587, 42.37958 ],
+          scale: 300000,
           highlightOptions: {
             fillOpacity: 0,
             color: [50, 50, 50]
@@ -80,40 +74,50 @@
 
         view.when().then(function () {
 
+          // #d92b30|#3cccb4|#ffdf3c
+          // const colors = ["#d92b30", "#3cccb4", "#ffdf3c"];
+          // #32b8a6|#f5cb11|#eb7200|#c461eb|#6c7000|#bf2e2e|#46e39c|#9fd40c|#ad00f2|#fffb00|#7ff2fa|#e8a784
+          const colors = ["#32b8a6", "#f5cb11", "#eb7200", "#c461eb", "#6c7000", "#bf2e2e", "#46e39c", "#9fd40c", "#ad00f2", "#fffb00", "#7ff2fa", "#e8a784"];
+
           const dotDensityRenderer = new DotDensityRenderer({
-            dotValue: 400,
+            dotValue: 1,
+            dotSize: 4,
             outline: null,
-            referenceScale: 18489297, // 1:577,790 view scale
-            legendOptions: {
-              unit: "people"
-            },
             blendDots: true,
             attributes: [
               {
-                valueExpression: "$feature.NOHS_CY + $feature.SOMEHS_CY",
-                color: "#ffa300",
-                label: "No high school diploma"
+                field: "B25003_002E",
+                color: colors[0],
+                label: "Owner-occupied units"
               },
               {
-                valueExpression: "$feature.HSGRAD_CY + $feature.SMCOLL_CY + $feature.ASSCDEG_CY",
-                color: "#50e991",
-                label: "High school diploma"
+                field: "B25003_003E",
+                color: colors[1],
+                label: "Renter-occupied units"
               },
               {
-                valueExpression: "$feature.BACHDEG_CY + $feature.GRADDEG_CY",
-                color: "#e60049",
-                label: "College degree"
+                field: "B25002_003E",
+                color: colors[2],
+                label: "Vacant units"
               }
-            ].reverse()
+            ],
+            legendOptions: {
+              unit: "units"
+            }
           });
+
+          view.watch("scale", (scale) => {
+            console.log("view scale", scale, view.center.longitude, view.center.latitude);
+          })
 
           const layer = new FeatureLayer({
             portalItem: {
-              id: "1cbb0faa0f1f424bbe213bfae9319309"
+              id: "4a7ee18ac4f7414ca61b8598f3ea2ccd"
             },
+            layerId: 2,
             minScale: 20000000,
             maxScale: 35000,
-            title: "Educational attainment (ACS)",
+            title: "Housing units",
             popupTemplate: {
               title: "{County}, {State}",
               content: [
@@ -121,56 +125,24 @@
                   type: "fields",
                   fieldInfos: [
                     {
-                      fieldName: "NOHS_CY",
-                      label: "No high school",
+                      fieldName: "B25003_002E",
+                      label: "Owner-occupied",
                       format: {
                         digitSeparator: true,
                         places: 0
                       }
                     },
                     {
-                      fieldName: "SOMEHS_CY",
-                      label: "Some high school",
+                      fieldName: "B25003_003E",
+                      label: "Renter-occupied",
                       format: {
                         digitSeparator: true,
                         places: 0
                       }
                     },
                     {
-                      fieldName: "HSGRAD_CY",
-                      label: "High school diploma",
-                      format: {
-                        digitSeparator: true,
-                        places: 0
-                      }
-                    },
-                    {
-                      fieldName: "SMCOLL_CY",
-                      label: "Some college",
-                      format: {
-                        digitSeparator: true,
-                        places: 0
-                      }
-                    },
-                    {
-                      fieldName: "ASSCDEG_CY",
-                      label: "Associate's degree",
-                      format: {
-                        digitSeparator: true,
-                        places: 0
-                      }
-                    },
-                    {
-                      fieldName: "BACHDEG_CY",
-                      label: "Bachelor's degree",
-                      format: {
-                        digitSeparator: true,
-                        places: 0
-                      }
-                    },
-                    {
-                      fieldName: "GRADDEG_CY",
-                      label: "Graduate degree",
+                      fieldName: "B25002_003E",
+                      label: "Vacant",
                       format: {
                         digitSeparator: true,
                         places: 0

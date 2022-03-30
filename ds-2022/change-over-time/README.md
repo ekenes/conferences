@@ -28,12 +28,18 @@ In this session, you will learn several ways you can visualize change over time 
 <https://www.esri.com/about/newsroom/arcuser/animations/>
 
 I. Techniques
-   A. Swipe widget - demo (Anne)
-   B. Above and below theme - demo (kristian)
-   C. Side-by-side views - demo (anne)
+   A. Swipe widget - demo (Anne) <5
+   B. Above and below theme - demo (kristian) 5
+      1. election swing - https://ekenes.github.io/election-party-swing/?year=2020&party=all
+      2. nps visits - https://ekenes.github.io/national-park-visits/?viewType=all&variable=total-change&year=2021
+      3. soil floors - https://ekenes.github.io/mexico-census-2020/mexico-soil-floors/
+   C. Side-by-side views - demo (anne) 3
 II. Animations
    A. Geometry (Anne)
    B. Attribute (Kristian)
+      - COVID (try to get updated data)
+      - nps visits
+      - climate
 III. Conclusion
    A. Gotchas
    B. When to use which technique

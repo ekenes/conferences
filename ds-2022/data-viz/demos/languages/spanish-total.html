@@ -30,39 +30,67 @@
         "esri/widgets/Legend"
       ], function (Map, MapView, FeatureLayer, Legend) {
 
+        // const colors = [ "#f2f0f7", "#cbc9e2", "#9e9ac8", "#756bb1", "#54278f" ];
+        // #a00000|#df7b7b|#dae695|#47b0df|#008fbf
+        const colors = ["#a00000", "#df7b7b", "#dae695", "#47b0df", "#008fbf"];
+
+        const renderer = {
+          type: "simple",
+          symbol: {
+            type: "simple-marker",
+            style: "diamond",
+            size: 3,
+            color: "rgba(100,100,100,1)",
+            outline: {
+              width: 0.5,
+              color: [ 200,200,200,0.3 ]
+            }
+          },
+          visualVariables: [
+          {
+            type: "size",
+            field: "B16007_calc_numSpanE",
+            legendOptions: {
+              label: "Population that speaks Spanish in the home",
+            },
+            minDataValue: 0,
+            maxDataValue: 20000,
+            minSize: "4px",
+            maxSize: "40px"
+          },
+            {
+            type: "color",
+            valueExpression: `
+              var asian = $feature.B16007_calc_numAPIE;
+              var english = $feature.B16007_calc_numEngOnlyE;
+              var european = $feature.B16007_calc_numIEE;
+              var other = $feature.B16007_calc_numOtherE;
+              var spanish = $feature.B16007_calc_numSpanE;
+
+              var all = Sum([ asian, english, european, other, spanish]);
+
+              return (spanish / all) * 100;
+            `,
+            valueExpressionTitle: "% Spanish speakers",
+            stops: [
+              { value: 0, color: colors[0], label: "0%" },
+              { value: 5, color: colors[1] },
+              { value: 13, color: colors[2], label: "National average (13%)" },
+              { value: 23, color: colors[3] },
+              { value: 33, color: colors[4], label: ">33%" }
+            ]
+          }
+          ],
+          label: "Census tracts"
+        };
+
         const layer = new FeatureLayer({
           title: "People who speak Spanish at home",
           portalItem: {
             id: "25f21cb5e352415aa03fdef93a35939a"
           },
-          blendMode: "multiply",
           opacity: 1,
-          renderer: {
-            type: "simple",
-            symbol: {
-              type: "simple-marker",
-              style: "diamond",
-              color: "rgba(100,100,100,1)",
-              outline: {
-                width: 0.5,
-                color: "rgba(255,255,255,1)",
-              }
-            },
-            label: "County",
-            visualVariables: [
-              {
-                type: "size",
-                field: "B16007_calc_numSpanE",
-                legendOptions: {
-                  label: "Votes for third party",
-                },
-                minDataValue: 0,
-                maxDataValue: 20000,
-                minSize: "4px",
-                maxSize: "40px"
-              }
-            ]
-          },
+          renderer,
           popupTemplate: {
             title: "{County}, {State}",
             content: [
@@ -118,6 +146,7 @@
         function createSymbol(color, type){
           return {
             type: type || "simple-fill",
+            style: type === "simple-fill" ? "solid" : "diamond",
             color,
             outline: {
               width: 0.5,
