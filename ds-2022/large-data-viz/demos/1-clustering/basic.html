@@ -1,0 +1,130 @@
+<html>
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="initial-scale=1,maximum-scale=1,user-scalable=no" />
+
+    <title>Point clustering - basic configuration</title>
+
+    <link rel="stylesheet" href="https://js.arcgis.com/4.22/esri/themes/light/main.css" />
+    <script src="https://js.arcgis.com/4.22/"></script>
+
+    <style>
+      html,
+      body,
+      #viewDiv {
+        height: 100%;
+        width: 100%;
+        margin: 0;
+        padding: 0;
+        background-color: white;
+      }
+    </style>
+
+    <script>
+      require([
+        "esri/WebMap",
+        "esri/views/MapView",
+        "esri/layers/FeatureLayer"
+      ], (
+        WebMap,
+        MapView,
+        FeatureLayer
+      ) => {
+
+        const clusteredLayer = new FeatureLayer({
+          portalItem: {
+            id: "eb54b44c65b846cca12914b87b315169"
+          },
+          renderer: {
+            type: "simple",
+            symbol: {
+              type: "simple-marker",
+              size: 6,
+              color: "teal",
+              outline: {
+                color: "white",
+                width: 0.5
+              }
+            }
+          }
+        });
+
+
+        clusteredLayer.featureReduction = {
+          type: "cluster",
+          clusterMinSize: 16.5,
+          // defines the label within each cluster
+          labelingInfo: [
+            {
+              deconflictionStrategy: "none",
+              labelExpressionInfo: {
+                expression: "Text($feature.cluster_count, '#,###')"
+              },
+              symbol: {
+                type: "text",
+                color: "white",
+                font: {
+                  family: "Noto Sans",
+                  size: "12px"
+                }
+              },
+              labelPlacement: "center-center"
+            }
+          ],
+          // information to display when the user clicks a cluster
+          popupTemplate: {
+            title: "Cluster Summary",
+            content: "This cluster represents <b>{cluster_count}</b> features.",
+            fieldInfos: [{
+              fieldName: "cluster_count",
+              format: {
+                places: 0,
+                digitSeparator: true
+              }
+            }]
+          }
+        };
+
+
+        const map = new WebMap({
+          basemap: {
+            portalItem: {
+              id: "75a08e8cd8b64dcfa6945bb7f624ccc5"
+            }
+          },
+          layers: [clusteredLayer]
+        });
+
+        const view = new MapView({
+          container: "viewDiv",
+          map,
+          extent: {
+            spatialReference: {
+              latestWkid: 3857,
+              wkid: 102100
+            },
+            xmin: -15327459,
+            ymin: 2740044,
+            xmax: -6076744,
+            ymax: 6878650
+          },
+          popup: {
+            dockEnabled: true,
+            dockOptions: {
+              breakpoint: false,
+              position: "top-right"
+            }
+          },
+          constraints: {
+            snapToZoom: false
+          }
+        });
+
+      });
+    </script>
+  </head>
+
+  <body>
+    <div id="viewDiv"></div>
+  </body>
+</html>

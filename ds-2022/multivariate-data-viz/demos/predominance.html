@@ -1,0 +1,232 @@
+<html>
+  <head>
+    <meta charset="utf-8" />
+    <meta
+      name="viewport"
+      content="initial-scale=1,maximum-scale=1,user-scalable=no"
+    />
+    <title>
+      Generate a predominance visualization | Sample | ArcGIS API for JavaScript
+      4.22
+    </title>
+
+    <link
+      rel="stylesheet"
+      href="https://js.arcgis.com/4.22/esri/themes/light/main.css"
+    />
+    <script src="https://js.arcgis.com/4.22/"></script>
+
+    <style>
+      html,
+      body {
+        padding: 0;
+        margin: 0;
+        height: 100%;
+        width: 100%;
+        overflow: hidden;
+      }
+
+      #viewDiv {
+        position: absolute;
+        left: 0;
+        right: 250px;
+        top: 0;
+        bottom: 0;
+        height: 100%;
+      }
+
+      #panel {
+        position: absolute;
+        right: 0;
+        height: 100%;
+        width: 250px;
+        overflow: scroll;
+        text-align: center;
+      }
+
+      #fieldList {
+        width: 100%;
+      }
+
+      #checkboxDiv {
+        text-align: left;
+        padding-top: 10px;
+      }
+    </style>
+
+    <script>
+      require([
+        "esri/views/MapView",
+        "esri/Map",
+        "esri/layers/FeatureLayer",
+        "esri/widgets/Legend",
+        "esri/smartMapping/renderers/color",
+        "esri/smartMapping/renderers/predominance",
+        "esri/smartMapping/popup/templates"
+      ], (
+        MapView,
+        Map,
+        FeatureLayer,
+        Legend,
+        colorRendererCreator,
+        predominanceRendererCreator,
+        popupTemplateCreator
+      ) => {
+        const layer = new FeatureLayer({
+          portalItem: {
+            id: "25f21cb5e352415aa03fdef93a35939a"
+          },
+          // outFields: ["*"],
+          title: "Languages spoken in the home"
+        });
+
+        const map = new Map({
+          basemap: {
+            portalItem: {
+              id: "75a3ce8990674a5ebd5b9ab66bdab893"
+            }
+          }
+        });
+
+        const view = new MapView({
+          container: "viewDiv",
+          map: map,
+          center: [-116.3126, 43.60703],
+          zoom: 11
+        });
+
+        view
+          .when()
+          .then(createPredominanceRenderer)
+          .then(applyRenderer)
+          .then(createPopupTemplate)
+          .catch((error) => {
+            console.error(error);
+          });
+
+        view.ui.add(
+          new Legend({
+            view: view
+          }),
+          "bottom-left"
+        );
+
+        const fieldList = document.getElementById("fieldList");
+        const includeSizeCheckbox = document.getElementById("includeSize");
+        const includeOpacityCheckbox =
+          document.getElementById("includeOpacity");
+
+        const elements = [
+          fieldList,
+          includeOpacityCheckbox,
+          includeSizeCheckbox
+        ];
+
+        // Each time the user changes the value of one of the DOM elements
+        // (list box and two checkboxes), then generate a new predominance visualization
+
+        elements.forEach((element) => {
+          element.addEventListener("change", (event) => {
+            createPredominanceRenderer()
+              .then(applyRenderer)
+              .then(createPopupTemplate);
+          });
+        });
+
+        /**
+         * Generates a new predominance renderer based on the selected fields in the
+         * list box. Returns a promise that resolves to an object containing the renderer.
+         */
+        function createPredominanceRenderer() {
+          const selectedOptions = [].slice.call(fieldList.selectedOptions);
+          const fields = selectedOptions.map((option) => {
+            return {
+              name: option.value,
+              label: option.text
+            };
+          });
+
+          if(fields.length === 1){
+            const params = {
+              view: view,
+              layer: layer,
+              field: fields[0].name,
+              legendOptions: {
+                title: fields[0].label
+              }
+            };
+
+            return colorRendererCreator.createContinuousRenderer(params);
+          }
+
+          const params = {
+            view: view,
+            layer: layer,
+            fields: fields,
+            includeSizeVariable: includeSizeCheckbox.checked,
+            includeOpacityVariable: includeOpacityCheckbox.checked,
+            legendOptions: {
+              title: "Predominant language spoken in the home"
+            },
+            sortBy: "count"
+          };
+
+          return predominanceRendererCreator.createRenderer(params);
+        }
+
+        function applyRenderer(response) {
+          layer.renderer = response.renderer;
+          if (!map.layers.includes(layer)) {
+            map.add(layer);
+          }
+          return layer;
+        }
+
+        // Creates a popup template only containing
+        // information related to the renderer
+        function createPopupTemplate(layer) {
+          popupTemplateCreator
+            .getTemplates({
+              layer: layer
+            })
+            .then((response) => {
+              // the response may also contain secondary
+              // templates you can choose from
+              layer.popupTemplate = response.primaryTemplate.value;
+            });
+        }
+      });
+    </script>
+  </head>
+
+  <body>
+    <div id="viewDiv"></div>
+    <div id="panel" class="esri-widget">
+      <div style="padding: 10px">
+        <h3>Languages spoken in the home</h3>
+        <div style="padding-bottom: 10px">
+          This map colors Census Tracts by the predominant language spoken in the home.
+          <strong>Use Ctrl or Cmd to select and deselect values.</strong>
+        </div>
+        <select
+          id="fieldList"
+          multiple="multiple"
+          size="5"
+          class="esri-widget"
+        >
+          <option value="B16007_calc_numEngOnlyE" selected>English</option>
+          <option value="B16007_calc_numSpanE" selected>Spanish</option>
+          <option value="B16007_calc_numAPIE" selected>Asian</option>
+          <option value="B16007_calc_numIEE" selected>Other Indo-European</option>
+          <option value="B16007_calc_numOtherE" selected>Other</option>
+        </select>
+        <div id="checkboxDiv">
+          <input type="checkbox" class="esri-widget" id="includeSize" /> Show
+          size by population<br />
+          <input type="checkbox" class="esri-widget" id="includeOpacity" /> Show
+          % of total comprised by predominant language
+        </div>
+      </div>
+    </div>
+  </body>
+</html>
