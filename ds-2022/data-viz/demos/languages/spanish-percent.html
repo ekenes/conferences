@@ -1,0 +1,185 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <meta charset="utf-8" />
+    <meta
+      name="viewport"
+      content="initial-scale=1,maximum-scale=1,user-scalable=no"
+    />
+    <title>Election 2020 results</title>
+
+    <link rel="stylesheet" href="https://js.arcgis.com/next/esri/themes/light/main.css"/>
+    <script src="https://js.arcgis.com/next/"></script>
+
+    <style>
+      html,
+      body,
+      #viewDiv {
+        padding: 0;
+        margin: 0;
+        height: 100%;
+        width: 100%;
+      }
+    </style>
+
+    <script>
+      require([
+        "esri/Map",
+        "esri/views/MapView",
+        "esri/layers/FeatureLayer",
+        "esri/widgets/Legend"
+      ], function (Map, MapView, FeatureLayer, Legend) {
+
+        const colors = [ "#f2f0f7", "#cbc9e2", "#9e9ac8", "#756bb1", "#54278f" ];
+        // const colors = [ "#a6611a", "#dfc27d", "#f5f5f5", "#80cdc1", "#018571" ];
+
+        const layer = new FeatureLayer({
+          title: "Languages spoken in the home",
+          portalItem: {
+            id: "25f21cb5e352415aa03fdef93a35939a"
+          },
+          opacity: 1,
+          renderer: {
+            type: "simple",
+            symbol: {
+              type: "simple-fill",
+              outline: {
+                width: 0.5,
+                color: [ 200,200,200,0.3 ]
+              }
+            },
+            label: "County",
+            visualVariables: [
+              {
+                type: "color",
+                valueExpression: `
+                  var asian = $feature.B16007_calc_numAPIE;
+                  var english = $feature.B16007_calc_numEngOnlyE;
+                  var european = $feature.B16007_calc_numIEE;
+                  var other = $feature.B16007_calc_numOtherE;
+                  var spanish = $feature.B16007_calc_numSpanE;
+
+                  var all = Sum([ asian, english, european, other, spanish]);
+
+                  return (spanish / all) * 100;
+                `,
+                valueExpressionTitle: "% Spanish speakers",
+                stops: [
+                  { value: 0, color: colors[0], label: "0%" },
+                  { value: 5, color: colors[1] },
+                  { value: 13, color: colors[2], label: "National average 13%)" },
+                  { value: 23, color: colors[3] },
+                  { value: 33, color: colors[4], label: ">33%" }
+                ]
+              }
+            ]
+          },
+          popupTemplate: {
+            title: "{County}, {State}",
+            content: [
+              {
+                type: "fields",
+                fieldInfos: [
+                  {
+                    fieldName: "B16007_calc_numEngOnlyE",
+                    label: "English",
+                    format: {
+                      digitSeparator: true,
+                      places: 0
+                    }
+                  },
+                  {
+                    fieldName: "B16007_calc_numSpanE",
+                    label: "Spanish",
+                    format: {
+                      digitSeparator: true,
+                      places: 0
+                    }
+                  },
+                  {
+                    fieldName: "B16007_calc_numAPIE",
+                    label: "Asian/Pacific Islander",
+                    format: {
+                      digitSeparator: true,
+                      places: 0
+                    }
+                  },
+                  {
+                    fieldName: "B16007_calc_numIEE",
+                    label: "Indo-European",
+                    format: {
+                      digitSeparator: true,
+                      places: 0
+                    }
+                  },
+                  {
+                    fieldName: "B16007_calc_numOtherE",
+                    label: "Other",
+                    format: {
+                      digitSeparator: true,
+                      places: 0
+                    }
+                  }
+                ]
+              }
+            ]
+          }
+        });
+
+        function createSymbol(color, type){
+          return {
+            type: type || "simple-fill",
+            color,
+            outline: {
+              width: 0.5,
+              color: [ 200,200,200,0.3 ]
+            }
+          }
+        }
+
+        const map = new Map({
+          basemap: {
+            portalItem: {
+              id: "fbfb62f3599f41e5a77845f863e2872f"
+            }
+          },
+          layers: [ layer ]
+        });
+
+        const view = new MapView({
+          container: `viewDiv`,
+          map,
+          center: [-95, 40],
+          scale: 2311162 * 8,
+          constraints: {
+            minScale: 0,
+            maxScale: 4622324/16,
+            snapToZoom: false,
+            rotationEnabled: false
+          },
+          highlightOptions: {
+            fillOpacity: 0
+          },
+          breakpoints: {
+            large: 1200,
+            medium: 992,
+            small: 768,
+            xsmall: 544
+          },
+          popup: {
+            collapseEnabled: false
+          }
+        });
+
+        view.ui.add(new Legend({ view }), "bottom-left");
+      });
+    </script>
+  </head>
+
+  <body>
+    <div id="viewDiv"></div>
+  </body>
+</html>
+
+
+

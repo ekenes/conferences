@@ -1,0 +1,125 @@
+<html>
+  <head>
+    <meta charset="utf-8" />
+    <meta
+      name="viewport"
+      content="initial-scale=1,maximum-scale=1,user-scalable=no"
+    />
+    <title>
+      Magnitude 4.0 earthquakes
+    </title>
+    <style>
+      html,
+      body,
+      #viewDiv {
+        padding: 0;
+        margin: 0;
+        height: 100%;
+        width: 100%;
+        background-color: rgba(50,50,50,1);
+      }
+    </style>
+
+    <link rel="stylesheet" href="https://js.arcgis.com/4.22/esri/themes/dark/main.css" />
+    <script src="https://js.arcgis.com/4.22/"></script>
+
+    <script>
+      require([
+        "esri/views/MapView",
+        "esri/Map",
+        "esri/geometry/SpatialReference",
+        "esri/layers/FeatureLayer"
+      ], (
+        MapView,
+        Map,
+        SpatialReference,
+        FeatureLayer
+      ) => {
+
+
+        const earthquakesLayer = new FeatureLayer({
+          url: "https://services.arcgis.com/6DIQcwlPy8knb6sg/arcgis/rest/services/quakes/FeatureServer/0/",
+          renderer: {
+            type: "simple",
+            symbol: {
+              type: "simple-marker",
+              color: "#fd7f6f",
+              size: 1,
+              outline: null
+            }
+          }
+        });
+
+        earthquakesLayer.effect = "bloom(1.3, 0.1px, 15%)";
+
+
+
+        const viewSpatialReference = new SpatialReference({
+          wkid: 8857
+        });
+        let centerPoint = {
+          x: 0,
+          y: 0,
+          spatialReference: viewSpatialReference
+        };
+
+
+        const countriesLayer = new FeatureLayer({
+          portalItem: {
+            id: "2b93b06dc0dc4e809d3c8db5cb96ba69"
+          },
+          renderer: {
+            type: "simple",
+            symbol: {
+              type: "simple-fill",
+              color: "rgba(75,75,75,1)",
+              outline: {
+                color: [255, 255, 255, 0.1],
+                width: 0.5
+              }
+            }
+          }
+        });
+
+        const view = new MapView({
+          container: "viewDiv",
+          map: new Map({
+            layers: [countriesLayer, earthquakesLayer]
+          }),
+          spatialReference: viewSpatialReference,
+          center: centerPoint,
+          scale: 206418924,
+          constraints: {
+            snapToZoom: false,
+            minScale: 1100424194
+          }
+        });
+
+        view.graphics.add({
+          symbol: {
+            type: "simple-fill",
+            color: null,
+            outline: {
+              width: 0.5,
+              color: [208, 208, 203, 0.7]
+            }
+          },
+          geometry: {
+            type: "extent",
+            xmin: -180,
+            xmax: 180,
+            ymin: -90,
+            ymax: 90,
+            // This geometry automatically reprojects
+            // when added to the view
+            spatialReference: SpatialReference.WGS84
+          }
+        });
+      });
+    </script>
+  </head>
+
+  <body>
+    <div id="viewDiv"></div>
+  </body>
+</html>

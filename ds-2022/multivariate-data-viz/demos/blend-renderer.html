@@ -1,0 +1,174 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="initial-scale=1,maximum-scale=1,user-scalable=no" />
+
+    <title>Owned, rented, and vacant units</title>
+
+    <link rel="stylesheet" href="https://js.arcgis.com/next/esri/themes/light/main.css" />
+
+    <style>
+      html,
+      body,
+      #viewDiv {
+        padding: 0;
+        margin: 0;
+        height: 100%;
+        width: 100%;
+      }
+    </style>
+
+    <script src="https://js.arcgis.com/next/"></script>
+
+    <script>
+      require([
+        "esri/config",
+        "esri/WebMap",
+        "esri/views/MapView",
+        "esri/layers/FeatureLayer",
+        "esri/renderers/DotDensityRenderer",
+        "esri/widgets/Legend",
+        "esri/widgets/Bookmarks",
+        "esri/widgets/Expand"
+      ], function (
+        esriConfig,
+        WebMap,
+        MapView,
+        FeatureLayer,
+        DotDensityRenderer,
+        Legend,
+        Bookmarks,
+        Expand
+      ) {
+
+        const map = new WebMap({
+          basemap: {
+            portalItem: {
+              id: "3582b744bba84668b52a16b0b6942544"
+            }
+          }
+        });
+
+        const view = new MapView({
+          container: "viewDiv",
+          map,
+          center: [ -83.05587, 42.37958 ],
+          scale: 300000,
+          highlightOptions: {
+            fillOpacity: 0,
+            color: [50, 50, 50]
+          },
+          popup: {
+            dockEnabled: true,
+            dockOptions: {
+              position: "top-right",
+              breakpoint: false
+            }
+          },
+          constraints: {
+            maxScale: 35000,
+            snapToZoom: false
+          }
+        });
+
+        view.when().then(function () {
+
+          // #d92b30|#3cccb4|#ffdf3c
+          // const colors = ["#d92b30", "#3cccb4", "#ffdf3c"];
+          // #32b8a6|#f5cb11|#eb7200|#c461eb|#6c7000|#bf2e2e|#46e39c|#9fd40c|#ad00f2|#fffb00|#7ff2fa|#e8a784
+          const colors = ["#32b8a6", "#f5cb11", "#eb7200", "#c461eb", "#6c7000", "#bf2e2e", "#46e39c", "#9fd40c", "#ad00f2", "#fffb00", "#7ff2fa", "#e8a784"];
+
+          const dotDensityRenderer = new DotDensityRenderer({
+            dotValue: 1,
+            dotSize: 4,
+            outline: null,
+            blendDots: true,
+            attributes: [
+              {
+                field: "B25003_002E",
+                color: colors[0],
+                label: "Owner-occupied units"
+              },
+              {
+                field: "B25003_003E",
+                color: colors[1],
+                label: "Renter-occupied units"
+              },
+              {
+                field: "B25002_003E",
+                color: colors[2],
+                label: "Vacant units"
+              }
+            ],
+            legendOptions: {
+              unit: "units"
+            }
+          });
+
+          view.watch("scale", (scale) => {
+            console.log("view scale", scale, view.center.longitude, view.center.latitude);
+          })
+
+          const layer = new FeatureLayer({
+            portalItem: {
+              id: "4a7ee18ac4f7414ca61b8598f3ea2ccd"
+            },
+            layerId: 2,
+            minScale: 20000000,
+            maxScale: 35000,
+            title: "Housing units",
+            popupTemplate: {
+              title: "{County}, {State}",
+              content: [
+                {
+                  type: "fields",
+                  fieldInfos: [
+                    {
+                      fieldName: "B25003_002E",
+                      label: "Owner-occupied",
+                      format: {
+                        digitSeparator: true,
+                        places: 0
+                      }
+                    },
+                    {
+                      fieldName: "B25003_003E",
+                      label: "Renter-occupied",
+                      format: {
+                        digitSeparator: true,
+                        places: 0
+                      }
+                    },
+                    {
+                      fieldName: "B25002_003E",
+                      label: "Vacant",
+                      format: {
+                        digitSeparator: true,
+                        places: 0
+                      }
+                    }
+                  ]
+                }
+              ]
+            },
+            renderer: dotDensityRenderer
+          });
+
+          map.add(layer);
+
+          view.ui.add( new Expand({
+            view: view,
+            content: new Legend({ view: view }),
+            group: "top-right",
+            expanded: true
+          }), "top-right" );
+        });
+      });
+    </script>
+  </head>
+
+  <body>
+    <div id="viewDiv"></div>
+  </body>
+</html>
