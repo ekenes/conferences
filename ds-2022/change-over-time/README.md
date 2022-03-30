@@ -30,9 +30,9 @@ In this session, you will learn several ways you can visualize change over time 
 I. Techniques
    A. Swipe widget - demo (Anne) <5
    B. Above and below theme - demo (kristian) 5
-      1. election swing - https://ekenes.github.io/election-party-swing/?year=2020&party=all
-      2. nps visits - https://ekenes.github.io/national-park-visits/?viewType=all&variable=total-change&year=2021
-      3. soil floors - https://ekenes.github.io/mexico-census-2020/mexico-soil-floors/
+      1. election swing - <https://ekenes.github.io/election-party-swing/?year=2020&party=all>
+      2. nps visits - <https://ekenes.github.io/national-park-visits/?viewType=all&variable=total-change&year=2021>
+      3. soil floors - <https://ekenes.github.io/mexico-census-2020/mexico-soil-floors/>
    C. Side-by-side views - demo (anne) 3
 II. Animations
    A. Geometry (Anne)
@@ -90,7 +90,7 @@ The [following app](https://ekenes.github.io/covid19viz/) demonstrates how you c
 
 ## Licensing
 
-Copyright 2021 Esri
+Copyright 2022 Esri
 
 Licensed under the Apache License, Version 2.0 (the "License");
 you may not use this file except in compliance with the License.

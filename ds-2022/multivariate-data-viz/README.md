@@ -26,37 +26,31 @@ Multivariate data visualization involves using two or more data variables in the
 
 Talk about pros vs. cons; when to use it when not to.
 
-Type + Size (Jeremy)
-Visual variables (Jeremy)
-color + size, opacity, rotation (Jeremy) - <https://developers.arcgis.com/javascript/latest/sample-code/visualization-multivariate-2d/>
-flow renderer (Jeremy)
-univariate color/size (above and below) (Kristian)
-3D size axis (Jeremy) Awful trees
-% change vs total change (magnitude) (Jeremy)
-predominance (Kristian)
-relationship (Kristian)
-dot density (Kristian) - talk about new things
-CIM - start with Wurman, then show election (Kristian)
-alpha blending (Kristian) -
-
-Each section
-
-Image showing example
-Key points ... pros/cons, configuration suggestions
-code snippet
+- Type + Size (Jeremy)
+- Visual variables (Jeremy)
+- color + size, opacity, rotation (Jeremy) - <https://developers.arcgis.com/javascript/latest/sample-code/visualization-multivariate-2d/>
+- flow renderer (Jeremy)
+- univariate color/size (above and below) (Kristian)
+- 3D size axis (Jeremy) Awful trees
+- % change vs total change (magnitude) (Jeremy)
+- predominance (Kristian)
+- relationship (Kristian)
+- dot density (Kristian) - talk about new things
+- CIM - start with Wurman, then show election (Kristian)
+- alpha blending (Kristian) -
 
 ## Demos
 
 ## Resources
 
-* [Community](https://developers.arcgis.com/en/javascript/jshelp/community.html)
-* [ArcGIS for JavaScript API Resource Center](http://help.arcgis.com/en/webapi/javascript/arcgis/index.html)
-* [ArcGIS Blog](https://www.esri.com/arcgis-blog/author/kekenes/)
-* [Twitter @kekenes](http://twitter.com/kekenes)
+- [Community](https://developers.arcgis.com/en/javascript/jshelp/community.html)
+- [ArcGIS for JavaScript API Resource Center](http://help.arcgis.com/en/webapi/javascript/arcgis/index.html)
+- [ArcGIS Blog](https://www.esri.com/arcgis-blog/author/kekenes/)
+- [Twitter @kekenes](http://twitter.com/kekenes)
 
 ## Licensing
 
-Copyright 2021 Esri
+Copyright 2022 Esri
 
 Licensed under the Apache License, Version 2.0 (the "License");
 you may not use this file except in compliance with the License.
