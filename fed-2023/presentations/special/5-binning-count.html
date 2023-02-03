@@ -1,0 +1,217 @@
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta
+      name="viewport"
+      content="initial-scale=1,maximum-scale=1,user-scalable=no"
+    />
+
+    <title>
+      Binning - basic configuration | Sample | ArcGIS Maps SDK for JavaScript
+      4.25
+    </title>
+
+    <style>
+      html,
+      body,
+      #viewDiv {
+        padding: 0;
+        margin: 0;
+        height: 100%;
+        width: 100%;
+      }
+      #infoDiv {
+        padding: 10px;
+      }
+    </style>
+
+    <script
+      type="module"
+      src="https://js.arcgis.com/calcite-components/1.0.0-beta.97/calcite.esm.js"
+    ></script>
+    <link
+      rel="stylesheet"
+      type="text/css"
+      href="https://js.arcgis.com/calcite-components/1.0.0-beta.97/calcite.css"
+    />
+
+    <link
+      rel="stylesheet"
+      href="https://js.arcgis.com/4.25/esri/themes/light/main.css"
+    />
+    <script src="https://js.arcgis.com/4.25/"></script>
+
+    <script type="text/javascript">
+      require([
+        "esri/Map",
+        "esri/views/MapView",
+        "esri/layers/FeatureLayer",
+        "esri/layers/support/LabelClass",
+        "esri/layers/support/AggregateField",
+        "esri/widgets/Legend",
+        "esri/widgets/Expand",
+        "esri/widgets/Home"
+      ], function (
+        Map,
+        MapView,
+        FeatureLayer,
+        LabelClass,
+        AggregateField,
+        Legend,
+        Expand,
+        Home
+      ) {
+        const colors = ["#d7e1ee", "#cbd6e4", "#b3bfd1", "#c86558", "#991f17"];
+
+        const featureReduction = {
+          type: "binning",
+          fields: [
+            new AggregateField({
+              name: "aggregateCount",
+              statisticType: "count"
+            })
+          ],
+          fixedBinLevel: 6,
+          labelsVisible: true,
+          labelingInfo: [
+            new LabelClass({
+              minScale: 144448,
+              maxScale: 0,
+              deconflictionStrategy: "none",
+              symbol: {
+                type: "text", // autocasts as new TextSymbol()
+                color: "white",
+                font: {
+                  family: "Noto Sans",
+                  size: 10,
+                  weight: "bold"
+                },
+                haloColor: colors[4],
+                haloSize: 0.5
+              },
+              labelExpressionInfo: {
+                expression: "Text($feature.aggregateCount, '#,###')"
+              },
+              where: "aggregateCount >= 200"
+            })
+          ],
+          popupEnabled: true,
+          popupTemplate: {
+            title: "Car crashes",
+            content: "{aggregateCount} car crashes occurred in this area."
+          },
+          renderer: {
+            type: "simple",
+            symbol: {
+              type: "simple-fill",
+              color: [0, 255, 71, 1],
+              outline: null,
+              outline: {
+                color: "rgba(153, 31, 23, 0.3)",
+                width: 0.3
+              }
+            },
+            visualVariables: [
+              {
+                type: "color",
+                field: "aggregateCount",
+                legendOptions: {
+                  title: "Number of crashes"
+                },
+                stops: [
+                  { value: 0, color: colors[0] },
+                  { value: 25, color: colors[1] },
+                  { value: 75, color: colors[2] },
+                  { value: 200, color: colors[3] },
+                  { value: 300, color: colors[4] }
+                ]
+              }
+            ]
+          }
+        };
+
+        const year = 2020;
+        const layer = new FeatureLayer({
+          title: "Motor vehicle crashes (2020)",
+          url: "https://services.arcgis.com/V6ZHFr6zdgNZuVG0/ArcGIS/rest/services/NYC_motor_crashes/FeatureServer/0",
+
+          definitionExpression: `CRASH_DATE > Date '12-31-${
+            year - 1
+          }' AND CRASH_DATE < Date '01-01-${year + 1}'`,
+          renderer: {
+            type: "simple",
+            symbol: {
+              type: "simple-marker",
+              color: "rgba(153, 31, 23, 1)",
+              size: 6,
+              outline: {
+                color: "rgba(255,255,255,0.5)",
+                width: 0.5
+              }
+            }
+          }
+        });
+
+        const map = new Map({
+          basemap: "gray-vector",
+          layers: [layer]
+        });
+
+        const view = new MapView({
+          container: "viewDiv",
+          map: map,
+          center: [-73.9304, 40.6971],
+          scale: 144447,
+          constraints: {
+            snapToZoom: false
+          }
+        });
+
+        view.when().then(() => {
+          // dims the basemap labels so they don't conflict with the bin counts
+          const referenceLayer = view.map.basemap.referenceLayers.getItemAt(0);
+          referenceLayer.opacity = 0.2;
+        });
+
+        view.ui.add(
+          new Home({
+            view: view
+          }),
+          "top-left"
+        );
+
+        const legend = new Legend({
+          view: view,
+          container: "legendDiv"
+        });
+
+        const infoDiv = document.getElementById("infoDiv");
+        view.ui.add(
+          new Expand({
+            view: view,
+            content: infoDiv,
+            expandIconClass: "esri-icon-layer-list",
+            expanded: true
+          }),
+          "top-left"
+        );
+
+        const toggleButton = document.getElementById("showBins");
+        toggleButton.onclick = () => {
+          layer.featureReduction = layer.featureReduction
+            ? null
+            : featureReduction;
+        };
+      });
+    </script>
+  </head>
+  <body>
+    <div id="viewDiv"></div>
+    <div id="infoDiv" class="esri-widget">
+      <calcite-button id="showBins" secondary width="full"
+        >Toggle Binning</calcite-button
+      >
+      <div id="legendDiv"></div>
+    </div>
+  </body>
+</html>

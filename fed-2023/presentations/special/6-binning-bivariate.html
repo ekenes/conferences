@@ -1,0 +1,343 @@
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta
+      name="viewport"
+      content="initial-scale=1,maximum-scale=1,user-scalable=no"
+    />
+
+    <title>
+      Binning with aggregate fields | Sample | ArcGIS Maps SDK for JavaScript
+      4.25
+    </title>
+
+    <style>
+      html,
+      body,
+      #viewDiv {
+        padding: 0;
+        margin: 0;
+        height: 100%;
+        width: 100%;
+      }
+      #infoDiv {
+        padding: 10px;
+      }
+    </style>
+
+    <script
+      type="module"
+      src="https://js.arcgis.com/calcite-components/1.0.0-beta.97/calcite.esm.js"
+    ></script>
+    <link
+      rel="stylesheet"
+      type="text/css"
+      href="https://js.arcgis.com/calcite-components/1.0.0-beta.97/calcite.css"
+    />
+
+    <link
+      rel="stylesheet"
+      href="https://js.arcgis.com/4.25/esri/themes/light/main.css"
+    />
+    <script src="https://js.arcgis.com/4.25/"></script>
+
+    <script type="text/javascript">
+      require([
+        "esri/Map",
+        "esri/views/MapView",
+        "esri/layers/FeatureLayer",
+        "esri/layers/support/LabelClass",
+        "esri/layers/support/AggregateField",
+        "esri/widgets/Legend",
+        "esri/widgets/Expand",
+        "esri/widgets/Home"
+      ], function (
+        Map,
+        MapView,
+        FeatureLayer,
+        LabelClass,
+        AggregateField,
+        Legend,
+        Expand,
+        Home
+      ) {
+        const colors = ["#d7e1ee", "#cbd6e4", "#b3bfd1", "#c86558", "#991f17"];
+
+        const featureReduction = {
+          type: "binning",
+          fixedBinLevel: 6,
+
+          fields: [
+            new AggregateField({
+              name: "SUM_PERSONS_INJURED",
+              alias: "Total number of persons injured",
+              onStatisticField: "NUMBER_OF_PERSONS_INJURED",
+              statisticType: "sum"
+            }),
+            new AggregateField({
+              name: "SUM_PEDESTRIANS_INJURED",
+              alias: "Number of pedestrians injured",
+              onStatisticField: "NUMBER_OF_PEDESTRIANS_INJURED",
+              statisticType: "sum"
+            }),
+            new AggregateField({
+              name: "SUM_CYCLIST_INJURED",
+              alias: "Number of cyclists injured",
+              onStatisticField: "NUMBER_OF_CYCLIST_INJURED",
+              statisticType: "sum"
+            }),
+            new AggregateField({
+              name: "SUM_MOTORIST_INJURED",
+              alias: "Number of cyclists injured",
+              onStatisticField: "NUMBER_OF_MOTORIST_INJURED",
+              statisticType: "sum"
+            }),
+            new AggregateField({
+              name: "AVG_MOTORIST_INJURED",
+              alias: "Ratio of motorist injuries to crashes",
+              onStatisticField: "NUMBER_OF_MOTORIST_INJURED",
+              statisticType: "avg"
+            }),
+            new AggregateField({
+              name: "SUM_KILLED",
+              alias: "Total fatalities",
+              onStatisticField: "NUMBER_OF_PERSONS_KILLED",
+              statisticType: "sum"
+            })
+          ],
+
+          labelsVisible: true,
+          labelingInfo: [
+            new LabelClass({
+              minScale: 36112,
+              maxScale: 0,
+              deconflictionStrategy: "none",
+              symbol: {
+                type: "text", // autocasts as new TextSymbol()
+                color: "white",
+                font: {
+                  family: "Noto Sans",
+                  size: 12,
+                  weight: "bold"
+                },
+                haloColor: colors[4],
+                haloSize: 0.5
+              },
+              labelExpressionInfo: {
+                expression: "Text($feature.AVG_MOTORIST_INJURED, '#%')"
+              }
+            })
+          ],
+          popupEnabled: true,
+          popupTemplate: {
+            title: "Crash summary",
+            content: [
+              {
+                type: "text",
+                text: "{aggregateCount} car crashes occurred in this area."
+              },
+              {
+                type: "fields",
+                fieldInfos: [
+                  {
+                    fieldName: "aggregateCount",
+                    label: "Total crashes",
+                    format: {
+                      places: 0,
+                      digitSeparator: true
+                    }
+                  },
+                  {
+                    fieldName: "SUM_PERSONS_INJURED",
+                    label: "Total injured",
+                    format: {
+                      places: 0,
+                      digitSeparator: true
+                    }
+                  },
+                  {
+                    fieldName: "SUM_PEDESTRIANS_INJURED",
+                    label: "Pedestrians injured"
+                  },
+                  {
+                    fieldName: "SUM_CYCLIST_INJURED",
+                    label: "Cyclists injured"
+                  },
+                  {
+                    fieldName: "SUM_MOTORIST_INJURED",
+                    label: "Motorists injured"
+                  },
+                  {
+                    fieldName: "SUM_KILLED",
+                    label: "Total killed"
+                  }
+                ]
+              }
+            ]
+          },
+          renderer: {
+            type: "simple",
+            symbol: {
+              type: "simple-marker",
+              color: [0, 255, 71, 1],
+              outline: null,
+              outline: {
+                color: "rgba(153, 31, 23, 0.3)",
+                width: 0.3
+              }
+            },
+            visualVariables: [
+              {
+                type: "size",
+                field: "aggregateCount",
+                legendOptions: {
+                  title: "Total crashes"
+                },
+                minSize: {
+                  type: "size",
+                  valueExpression: "$view.scale",
+                  stops: [
+                    { value: 18055, size: 18 },
+                    { value: 36111, size: 12 },
+                    { value: 72223, size: 8 },
+                    { value: 144447, size: 4 },
+                    { value: 288895, size: 2 },
+                    { value: 577790, size: 1 }
+                  ]
+                },
+                maxSize: {
+                  type: "size",
+                  valueExpression: "$view.scale",
+                  stops: [
+                    { value: 18055, size: 48 },
+                    { value: 36111, size: 32 },
+                    { value: 72223, size: 24 },
+                    { value: 144447, size: 18 },
+                    { value: 288895, size: 12 },
+                    { value: 577790, size: 6 }
+                  ]
+                },
+                minDataValue: 10,
+                maxDataValue: 300
+              },
+              {
+                type: "color",
+                field: "AVG_MOTORIST_INJURED",
+                legendOptions: {
+                  title: "% of motorists injured per crash"
+                },
+                stops: [
+                  { value: 0, color: colors[0], label: "No injuries" },
+                  { value: 0.1, color: colors[1] },
+                  { value: 0.3, color: colors[2], label: "30%" },
+                  { value: 0.5, color: colors[3] },
+                  { value: 0.75, color: colors[4], label: ">75%" }
+                ]
+              }
+            ]
+          }
+        };
+
+        const year = 2020;
+
+        const layer = new FeatureLayer({
+          title: "Motor vehicle crashes (2020)",
+          url: "https://services.arcgis.com/V6ZHFr6zdgNZuVG0/ArcGIS/rest/services/NYC_motor_crashes/FeatureServer/0",
+          featureReduction,
+          popupTemplate: {
+            title: "Crash location",
+            content: [
+              {
+                type: "fields",
+                fieldInfos: [
+                  {
+                    fieldName: "CRASH_DATE",
+                    label: "Date",
+                    dateFormat: "day-short-month-year-long-time"
+                  },
+                  {
+                    fieldName: "NUMBER_OF_PERSONS_KILLED",
+                    label: "Fatalities"
+                  },
+                  {
+                    fieldName: "NUMBER_OF_PERSONS_INJURED",
+                    label: "Injuries"
+                  }
+                ]
+              }
+            ]
+          },
+          definitionExpression: `CRASH_DATE > Date '12-31-${
+            year - 1
+          }' AND CRASH_DATE < Date '01-01-${year + 1}'`,
+          renderer: {
+            type: "simple",
+            label: "Crash location",
+            symbol: {
+              type: "simple-marker",
+              style: "circle",
+              size: 5,
+              color: colors[3],
+              outline: {
+                style: "solid",
+                color: [15, 15, 15, 0.3],
+                width: 0.5
+              }
+            }
+          }
+        });
+
+        const map = new Map({
+          basemap: "gray-vector",
+          layers: [layer]
+        });
+
+        const view = new MapView({
+          container: "viewDiv",
+          map: map,
+          center: [-73.94226, 40.7163],
+          scale: 288895
+        });
+
+        view.ui.add(
+          new Home({
+            view: view
+          }),
+          "top-left"
+        );
+
+        const legend = new Legend({
+          view: view,
+          container: "legendDiv"
+        });
+
+        const infoDiv = document.getElementById("infoDiv");
+        view.ui.add(
+          new Expand({
+            view: view,
+            content: infoDiv,
+            expandIconClass: "esri-icon-layer-list",
+            expanded: true
+          }),
+          "top-left"
+        );
+
+        const toggleButton = document.getElementById("showBins");
+        toggleButton.onclick = () => {
+          layer.featureReduction = layer.featureReduction
+            ? null
+            : featureReduction;
+        };
+      });
+    </script>
+  </head>
+  <body>
+    <div id="viewDiv"></div>
+    <div id="infoDiv" class="esri-widget">
+      <calcite-button id="showBins" secondary width="full"
+        >Toggle Binning</calcite-button
+      >
+      <div id="legendDiv"></div>
+    </div>
+  </body>
+</html>
