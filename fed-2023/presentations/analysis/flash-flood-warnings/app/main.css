@@ -1,0 +1,113 @@
+
+html,
+body, #viewDiv {
+  padding: 0;
+  margin: 0;
+  height: 100%;
+  width: 100%;
+}
+
+#chartDiv {
+  padding: 10px;
+  background-color: white;
+}
+
+#resetBtn {
+  float: right;
+  cursor: pointer;
+  width: 100%;
+  height: 100%;
+}
+
+#seasons-filter {
+  height: 160px;
+  width: 100%;
+  background-color: white;
+  visibility: hidden;
+}
+
+.season-item {
+  background-color: rgba(50,50,50,0.5);
+  color: #fff;
+  margin: 1px;
+  width: 100%;
+  padding: 12px;
+  text-align: center;
+  vertical-align: baseline;
+  cursor: pointer;
+  height: 40px;
+}
+
+.visible-season {
+  color: #fff;
+  background-color: rgba(50,50,50,0.9);
+}
+
+.chart-widget {
+  padding: 12px;
+}
+.grid-container {
+  display: grid;
+  grid-template-columns: 60px 75px 75px 75px 75px;
+  grid-template-rows: 75px 75px 75px 75px 40px;
+  grid-template-areas: "row-label1 canvas canvas canvas canvas" "row-label2 canvas canvas canvas canvas" "row3 canvas canvas canvas canvas" "row4 canvas canvas canvas canvas" ". col1 col2 col3 col4";
+
+  justify-items: stretch;
+  align-items: stretch;
+}
+.col-label {
+  justify-self: center;
+  padding: 12px;
+}
+.row-label {
+  align-self: center;
+  justify-self: end;
+  padding: 12px;
+}
+.canvas { grid-area: canvas; }
+.canvas > canvas {
+  width: 100%;
+  height: 100%;
+}
+.col1 { grid-area: col1; }
+.col2 { grid-area: col2; }
+.col3 { grid-area: col3; }
+.col4 { grid-area: col4; }
+.row-label1 { grid-area: row-label1; }
+.row-label2 { grid-area: row-label2; }
+.row3 { grid-area: row3; }
+.row4 { grid-area: row4; }
+
+#titleDiv {
+ padding: 10px;
+ background-color: rgba(50,50,50,0.9);
+ color: white;
+}
+#titleText {
+  font-size: 32pt;
+  font-weight: 600;
+  padding: 10px 5px 10px 5px;
+}
+
+#dataDescription {
+  font-size: 12pt;
+  padding: 10px 5px 0px 5px;
+}
+
+.esri-widget--button {
+  font-size: 14px;
+  background-color: rgba(50,50,50,0.9);
+  color: white;
+  width: 32px;
+  height: 32px;
+  padding: 0;
+  margin: 0;
+  overflow: hidden;
+  cursor: pointer;
+  text-align: center;
+  display: flex;
+  flex-flow: row nowrap;
+  justify-content: center;
+  align-items: center;
+  transition: background-color 125ms ease-in-out;
+}

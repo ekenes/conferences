@@ -1,0 +1,52 @@
+<html>
+  <head>
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8">
+    <meta name="viewport" content="initial-scale=1, maximum-scale=1,user-scalable=no"/>
+    <title>Flash Flood Warnings (2002-2012)</title>
+    <link rel="stylesheet" href="https://js.arcgis.com/4.11/esri/themes/light/main.css">
+    <link rel="stylesheet" href="app/main.css">
+
+    <script>
+      var locationPath = location.pathname.replace(/\/[^\/]+$/, "");
+      window.dojoConfig = {
+        packages: [
+          {
+            name: "app",
+            location: locationPath + "/app"
+          }
+        ]
+      };
+    </script>
+    <script src="https://js.arcgis.com/4.11"></script>
+  </head>
+  <body>
+    <div id="seasons-filter">
+      <div class="season-item visible-season" data-season="Winter">Winter</div>
+      <div class="season-item visible-season" data-season="Spring">Spring</div>
+      <div class="season-item visible-season" data-season="Summer">Summer</div>
+      <div class="season-item visible-season" data-season="Fall">Fall</div>
+    </div>
+    <div id="viewDiv"></div>
+    <div id="chartDiv" class="chart-widget esri-widget">
+      <div class="grid-container">
+        <div class="canvas">
+          <canvas id="chartCanvas"></canvas>
+        </div>
+        <div class="col1 col-label">2 hours</div>
+        <div class="col2 col-label">4 hours</div>
+        <div class="col3 col-label">6 hours</div>
+        <div class="col4 col-label">8 hours</div>
+        <div class="row-label1 row-label">Winter</div>
+        <div class="row-label2 row-label">Spring</div>
+        <div class="row3 row-label">Summer</div>
+        <div class="row4 row-label">Fall</div>
+        <button class="esri-widget--button" id="resetBtn" type="button" title="Clear Filter">Reset</button>
+        <div id="titleDiv" class="esri-widget">
+          <div id="titleText">Flash Floods by Season</div>
+          <div id="dataDescription">Flash Flood Warnings (2002 - 2012)</div>
+        </div>
+      </div>
+    </div>
+    <script>require(["app/main"]);</script>
+  </body>
+</html>
