@@ -1,0 +1,146 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="initial-scale=1,maximum-scale=1,user-scalable=no" />
+    <title>ArcGIS Developer Guide: Multiple visual variables</title>
+    <style>
+      html,
+      body,
+      #viewDiv {
+        padding: 0;
+        margin: 0;
+        height: 100%;
+        width: 100%;
+      }
+    </style>
+
+    <link rel="stylesheet" href="https://js.arcgis.com/next/esri/themes/light/main.css" />
+    <script src="https://js.arcgis.com/next/"></script>
+
+    <script>
+      require([
+        "esri/config",
+        "esri/Map",
+        "esri/views/MapView",
+        "esri/layers/FeatureLayer",
+        "esri/widgets/Legend",
+        "esri/widgets/Expand"
+      ], function(
+        esriConfig,
+        Map,
+        MapView,
+        FeatureLayer,
+        Legend,
+        Expand
+      ) {
+
+        const referenceScale = 9244650*2;
+
+        const renderer = {
+          type: "simple",
+          symbol: {
+            type: "simple-marker",
+            // Arrow marker defined as SVG path
+            path: "M14.5,29 23.5,0 14.5,9 5.5,0z",
+            color: [50, 50, 50],
+            outline: {
+              color: [255, 255, 255, 0.5],
+              width: 0.5
+            },
+            angle: 180,
+            size: 6// 15
+          },
+
+          visualVariables: [
+            {
+              type: "rotation",
+              field: "WIND_DIRECT",
+              rotationType: "geographic"
+            },
+            {
+              type: "size",
+              field: "WIND_SPEED",
+              minDataValue: 5,
+              maxDataValue: 60,
+              minSize: {
+                type: "size",
+                valueExpression: "$view.scale",
+                // adjust the min size by scale
+                stops: [
+                  { value: referenceScale, size: 8 },
+                  { value: referenceScale*2, size: 6 },
+                  { value: referenceScale*4, size: 4 },
+                  { value: referenceScale*8, size: 2 }
+                ]
+              },
+              maxSize: {
+                type: "size",
+                valueExpression: "$view.scale",
+                // adjust the max size by scale
+                stops: [
+                  { value: referenceScale, size: 30 },
+                  { value: referenceScale*2, size: 25 },
+                  { value: referenceScale*4, size: 20 },
+                  { value: referenceScale*8, size: 10 }
+                ]
+              }
+            },
+            {
+              type: "color",
+              field: "TEMP",
+              stops: [
+                { value: 20, color: "#2b83ba" },
+                { value: 35, color: "#abdda4" },
+                { value: 50, color: "#ffffbf" },
+                { value: 65, color: "#fdae61" },
+                { value: 80, color: "#d7191c" }
+              ]
+            }
+          ]
+
+        };
+
+
+        // Set the renderer on the feature layer
+        const layer = new FeatureLayer({
+          portalItem: {
+            id: "cb1886ff0a9d4156ba4d2fadd7e8a139"
+          },
+          title: "Current weather conditions",
+          renderer: renderer
+        });
+
+        const map = new Map({
+          basemap: {
+            portalItem: {
+              id: "ba223f982a3c4a0ea8c9953346e2a201"
+            }
+          },
+          layers: [layer]
+        });
+
+        const view = new MapView({
+          container: "viewDiv",
+          map: map,
+          scale: referenceScale,
+          center: [ -95, 38.5 ],
+          constraints: {
+            snapToZoom: false
+          }
+        });
+
+        view.ui.add(new Expand({
+          content: new Legend({
+            view: view
+          }),
+          view: view,
+          expanded: false
+        }), "top-right");
+      });
+    </script>
+  </head>
+  <body>
+    <div id="viewDiv"></div>
+  </body>
+</html>
