@@ -1,0 +1,472 @@
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta
+      name="viewport"
+      content="initial-scale=1,maximum-scale=1,user-scalable=no"
+    />
+
+    <!--
+     ArcGIS Maps SDK for JavaScript, https://js.arcgis.com
+     For more information about the featurereduction-binning sample,
+     read the original sample description at developers.arcgis.com.
+     https://developers.arcgis.com/javascript/latest/sample-code/featurereduction-binning/
+     -->
+    <title>
+      Binning - basic configuration | Sample | ArcGIS Maps SDK for JavaScript
+      4.25
+    </title>
+
+    <style>
+      html,
+      body,
+      #viewDiv {
+        padding: 0;
+        margin: 0;
+        height: 100%;
+        width: 100%;
+      }
+      #infoDiv {
+        padding: 10px;
+      }
+    </style>
+
+    <script
+      type="module"
+      src="https://js.arcgis.com/calcite-components/1.0.0-beta.97/calcite.esm.js"
+    ></script>
+    <link
+      rel="stylesheet"
+      type="text/css"
+      href="https://js.arcgis.com/calcite-components/1.0.0-beta.97/calcite.css"
+    />
+
+    <link
+      rel="stylesheet"
+      href="https://jsdev.arcgis.com/4.26/esri/themes/light/main.css"
+    />
+    <script src="https://jsdev.arcgis.com/4.26/"></script>
+
+    <script type="text/javascript">
+      require([
+        "esri/Map",
+        "esri/views/MapView",
+        "esri/layers/FeatureLayer",
+        "esri/layers/support/LabelClass",
+        "esri/layers/support/AggregateField",
+        "esri/widgets/Legend",
+        "esri/widgets/Expand",
+        "esri/widgets/Home",
+        "esri/widgets/TimeSlider"
+      ], function (
+        Map,
+        MapView,
+        FeatureLayer,
+        LabelClass,
+        AggregateField,
+        Legend,
+        Expand,
+        Home,
+        TimeSlider
+      ) {
+        const colors = ["#d7e1ee", "#cbd6e4", "#b3bfd1", "#c86558", "#991f17"];
+
+        const bufferR = 25;
+        const bufferG = 25;
+        const bufferB = 25;
+
+        const featureReduction = {
+          type: "binning",
+          fields: [
+            new AggregateField({
+              name: "aggregateCount",
+              statisticType: "count"
+            }),
+            new AggregateField({
+              name: "SUM_KILLED",
+              alias: "Total fatalities",
+              onStatisticField: "NUMBER_OF_PERSONS_KILLED",
+              statisticType: "sum"
+            })
+          ],
+          fixedBinLevel: 6,
+          labelsVisible: true,
+          labelingInfo: [
+            new LabelClass({
+              minScale: 144448,
+              maxScale: 0,
+              deconflictionStrategy: "none",
+              symbol: {
+                type: "text", // autocasts as new TextSymbol()
+                color: "white",
+                font: {
+                  family: "Noto Sans",
+                  size: 10,
+                  weight: "bold"
+                },
+                haloColor: colors[4],
+                haloSize: 0.5
+              },
+              labelExpressionInfo: {
+                expression: "Text($feature.aggregateCount, '#,###')"
+              },
+              where: "aggregateCount > 20"
+            })
+          ],
+          popupEnabled: true,
+          popupTemplate: {
+            title: "Car crashes",
+            content: "{aggregateCount} car crashes occurred in this area."
+          },
+          renderer: {
+            type: "class-breaks",
+            defaultSymbol: {
+              type: "simple-fill",
+              color: [0, 255, 71, 1],
+              outline: {
+                color: "rgba(153, 31, 23, 0.3)",
+                width: 0.3
+              }
+            },
+            field: "SUM_KILLED",
+            classBreakInfos: [
+              {
+                minValue: 0,
+                maxValue: 0,
+                symbol: {
+                  type: "simple-fill",
+                  color: [0, 255, 71, 1],
+                  outline: {
+                    color: "rgba(153, 31, 23, 0.3)",
+                    width: 0.3
+                  }
+                }
+              },
+              {
+                minValue: 1,
+                maxValue: 9999999999,
+                symbol: {
+                  type: "cim",
+                    data: {
+                        type: "CIMSymbolReference",
+                        symbol: {
+                          "type": "CIMPolygonSymbol",
+                          "symbolLayers": [
+                            {
+                              "type": "CIMSolidFill",
+                              "enable": true,
+                              "color": [
+                                0,
+                                0,
+                                0,
+                                255
+                              ]
+                            },
+
+
+                            {
+                              "type": "CIMSolidStroke",
+                              "effects": [{
+                                 "type": "CIMGeometricEffectOffset",
+                                 "offset": -0.25,
+                                 "method": "Square",
+                                 "option": "Fast"
+                              }],
+                              "enable": true,
+                              "capStyle": "Round",
+                              "joinStyle": "Round",
+                              "lineStyle3D": "Strip",
+                              "miterLimit": 10,
+                              "width": 2,
+                              "color": [
+                                bufferR,
+                                bufferG,
+                                bufferB,
+                                100
+                              ]
+                            },
+                            {
+                              "type": "CIMSolidStroke",
+                              "effects": [{
+                                 "type": "CIMGeometricEffectOffset",
+                                 "offset": -0.5,
+                                 "method": "Square",
+                                 "option": "Fast"
+                              }],
+                              "enable": true,
+                              "capStyle": "Round",
+                              "joinStyle": "Round",
+                              "lineStyle3D": "Strip",
+                              "miterLimit": 10,
+                              "width": 2,
+                              "color": [
+                                bufferR,
+                                bufferG,
+                                bufferB,
+                                100
+                              ]
+                            },
+                            {
+                              "type": "CIMSolidStroke",
+                              "effects": [{
+                                 "type": "CIMGeometricEffectOffset",
+                                 "offset": -1,
+                                 "method": "Square",
+                                 "option": "Fast"
+                              }],
+                              "enable": true,
+                              "capStyle": "Round",
+                              "joinStyle": "Round",
+                              "lineStyle3D": "Strip",
+                              "miterLimit": 10,
+                              "width": 2,
+                              "color": [
+                                bufferR,
+                                bufferG,
+                                bufferB,
+                                100
+                              ]
+                            },
+                            {
+                              "type": "CIMSolidStroke",
+                              "effects": [{
+                                 "type": "CIMGeometricEffectOffset",
+                                 "offset": -1.5,
+                                 "method": "Square",
+                                 "option": "Fast"
+                              }],
+                              "enable": true,
+                              "capStyle": "Round",
+                              "joinStyle": "Round",
+                              "lineStyle3D": "Strip",
+                              "miterLimit": 10,
+                              "width": 3,
+                              "color": [
+                                bufferR,
+                                bufferG,
+                                bufferB,
+                                100
+                              ]
+                            },
+                            {
+                              "type": "CIMSolidStroke",
+                              "effects": [{
+                                 "type": "CIMGeometricEffectOffset",
+                                 "offset": -2,
+                                 "method": "Square",
+                                 "option": "Fast"
+                              }],
+                              "enable": true,
+                              "capStyle": "Round",
+                              "joinStyle": "Round",
+                              "lineStyle3D": "Strip",
+                              "miterLimit": 10,
+                              "width": 4,
+                              "color": [
+                                bufferR,
+                                bufferG,
+                                bufferB,
+                                50
+                              ]
+                            },
+
+
+                            {
+                              "type": "CIMHatchFill",
+                              "enable": true,
+                              // "effects": [{
+                              //    "type": "CIMGeometricEffectBuffer",
+                              //    "size": 15
+                              // }],
+                              "lineSymbol": {
+                                "type": "CIMLineSymbol",
+                                "symbolLayers": [
+                                  {
+                                    "type": "CIMSolidStroke",
+                                    "enable": true,
+                                    "capStyle": "Butt",
+                                    "joinStyle": "Miter",
+                                    "lineStyle3D": "Strip",
+                                    "miterLimit": 10,
+                                    "width": 0.5,
+                                    "colorLocked": true,
+                                    "color": [
+                                      0,
+                                      0,
+                                      0,
+                                      255
+                                    ]
+                                  }
+                                ]
+                              },
+                              "rotation": 45,
+                              "separation": 3
+                            }
+                          ]
+                        }
+                    }
+                }
+              }
+            ],
+            visualVariables: [
+              {
+                type: "color",
+                field: "aggregateCount",
+                legendOptions: {
+                  title: "Number of crashes"
+                },
+                stops: [
+                  { value: 0, color: colors[0] },
+                  { value: 2.5, color: colors[1] },
+                  { value: 7.5, color: colors[2] },
+                  { value: 20, color: colors[3] },
+                  { value: 30, color: colors[4] }
+                ]
+              }
+            ]
+          }
+        };
+
+        const year = 2020;
+        const layer = new FeatureLayer({
+          title: "Motor vehicle crashes (2020)",
+          url: "https://services.arcgis.com/V6ZHFr6zdgNZuVG0/ArcGIS/rest/services/NYC_motor_crashes/FeatureServer/0",
+          featureReduction,
+          popupTemplate: {
+            title: "Crash location",
+            content: [
+              {
+                type: "fields",
+                fieldInfos: [
+                  {
+                    fieldName: "CRASH_DATE",
+                    label: "Date",
+                    dateFormat: "day-short-month-year-long-time"
+                  },
+                  {
+                    fieldName: "NUMBER_OF_PERSONS_KILLED",
+                    label: "Fatalities"
+                  },
+                  {
+                    fieldName: "NUMBER_OF_PERSONS_INJURED",
+                    label: "Injuries"
+                  }
+                ]
+              }
+            ]
+          },
+          definitionExpression: `CRASH_DATE > Date '12-31-${
+            year - 1
+          }' AND CRASH_DATE < Date '01-01-${year + 1}'`,
+          renderer: {
+            type: "simple",
+            label: "Crash location",
+            symbol: {
+              type: "simple-marker",
+              style: "circle",
+              size: 5,
+              color: colors[3],
+              outline: {
+                style: "solid",
+                color: [15, 15, 15, 0.3],
+                width: 0.5
+              }
+            }
+          }
+        });
+
+        const map = new Map({
+          basemap: "gray-vector",
+          layers: [layer]
+        });
+
+        const view = new MapView({
+          container: "viewDiv",
+          map: map,
+          center: [-73.9304, 40.6971],
+          scale: 144447,
+          constraints: {
+            snapToZoom: false
+          }
+        });
+
+        view.when().then(() => {
+          // dims the basemap labels so they don't conflict with the bin counts
+          const referenceLayer = view.map.basemap.referenceLayers.getItemAt(0);
+          referenceLayer.opacity = 0.2;
+        });
+
+        view.ui.add(
+          new Home({
+            view: view
+          }),
+          "top-left"
+        );
+
+        const legend = new Legend({
+          view: view,
+          container: "legendDiv"
+        });
+
+        const infoDiv = document.getElementById("infoDiv");
+        view.ui.add(
+          new Expand({
+            view: view,
+            content: infoDiv,
+            expandIconClass: "esri-icon-layer-list",
+            expanded: false
+          }),
+          "top-left"
+        );
+
+        const toggleButton = document.getElementById("showBins");
+        toggleButton.onclick = () => {
+          layer.featureReduction = layer.featureReduction
+            ? null
+            : featureReduction;
+        };
+
+        const timeSlider = new TimeSlider({
+          view,
+           stops: {
+            interval: {
+              value: 1,
+              unit: "months"
+            }
+          }
+        });
+
+        // wait for the time-aware layer to load
+        layer.when(() => {
+          // set up time slider properties based on layer timeInfo
+
+          var start = new Date(2020, 0, 1);
+          var end = new Date(2021, 0, 1);
+          const fullTimeExtent = {
+            start,
+            end
+          };
+          timeSlider.fullTimeExtent = fullTimeExtent;
+          // timeSlider.stops = {
+          //   interval: layer.timeInfo.interval
+          // };
+          timeSlider.timeExtent = {
+            start,
+            end: new Date(2020, 1, 1)
+          };
+        });
+
+        view.ui.add(timeSlider, "bottom-left");
+      });
+    </script>
+  </head>
+  <body>
+    <div id="viewDiv"></div>
+    <div id="infoDiv" class="esri-widget">
+      <calcite-button id="showBins" secondary width="full"
+        >Toggle Binning</calcite-button
+      >
+      <div id="legendDiv"></div>
+    </div>
+  </body>
+</html>
