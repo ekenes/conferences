@@ -1,0 +1,98 @@
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta
+      name="viewport"
+      content="initial-scale=1,maximum-scale=1,user-scalable=no"
+    />
+    <title>
+      Intro to FeatureLayer | Sample | ArcGIS Maps SDK for JavaScript 4.26
+    </title>
+
+    <link
+      rel="stylesheet"
+      href="https://js.arcgis.com/4.26/esri/themes/light/main.css"
+    />
+    <script src="https://js.arcgis.com/4.26/"></script>
+
+    <style>
+      html,
+      body,
+      #viewDiv {
+        padding: 0;
+        margin: 0;
+        height: 100%;
+        width: 100%;
+      }
+    </style>
+
+    <script>
+      require([
+        "esri/Map",
+        "esri/views/MapView",
+        "esri/layers/FeatureLayer",
+        "esri/widgets/Legend"
+      ], (Map, MapView, FeatureLayer, Legend) => {
+        const map = new Map({
+          basemap: "gray-vector"
+        });
+
+        const view = new MapView({
+          container: "viewDiv",
+          map: map,
+          constraints: {
+            snapToZoom: false
+          },
+          zoom: 4,
+          center: [-100, 40]
+        });
+
+        view.ui.add(new Legend({ view }), "bottom-left");
+
+        const featureLayer = new FeatureLayer({
+          portalItem: {
+            id: "0e3fd5de259f46acb169c54eb501cfe5"
+          },
+
+          labelingInfo: [
+           {
+              labelExpressionInfo: {
+                expression: "Replace($feature.Park, 'National Park', '', false)"
+              },
+              labelPlacement: "above-right",
+              symbol: {
+                type: "text",
+                font: {
+                  size: 6,
+                  family: "Noto Sans"
+                },
+                horizontalAlignment: "left",
+                color: "#2b2b2b",
+                yoffset: 0
+              }
+            }
+          ],
+          renderer: {
+            type: "simple",
+            symbol: {
+              type: "simple-marker",
+              color: "green",
+              size: 12
+            }
+          }
+        });
+
+        map.add(featureLayer);
+
+        view.when().then(async () => {
+          const rl = view.map.basemap.referenceLayers.getItemAt(0);
+          rl.opacity = 0.25;
+        });
+      });
+    </script>
+  </head>
+
+  <body>
+    <div id="viewDiv"></div>
+  </body>
+</html>
