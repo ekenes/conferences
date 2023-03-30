@@ -1,0 +1,118 @@
+<html>
+  <head>
+    <meta charset="utf-8" />
+    <meta
+      name="viewport"
+      content="initial-scale=1,maximum-scale=1,user-scalable=no"
+    />
+    <title>
+      Highways in Singapore
+    </title>
+    <style>
+      html,
+      body,
+      #viewDiv {
+        padding: 0;
+        margin: 0;
+        height: 100%;
+        width: 100%;
+        background-color: white;
+      }
+    </style>
+
+    <link rel="stylesheet" href="https://js.arcgis.com/4.22/esri/themes/light/main.css" />
+    <script src="https://js.arcgis.com/4.22/"></script>
+
+    <script>
+      require([
+        "esri/views/MapView",
+        "esri/WebMap",
+        "esri/layers/FeatureLayer"
+      ], (
+        MapView,
+        WebMap,
+        FeatureLayer
+      ) => {
+
+
+        const highwaysLayer = new FeatureLayer({
+          portalItem: {
+            id: "af989f50f24040e4890dce13ee1b1561"
+          },
+          minScale: 1000000,
+          maxScale: 0
+        });
+
+
+        const view = new MapView({
+          container: "viewDiv",
+          map: new WebMap({
+            basemap: "gray-vector",
+            layers: [ highwaysLayer ]
+          }),
+          constraints: {
+            snapToZoom: false
+          },
+          viewpoint: {
+            rotation: 0,
+            scale: 175000,
+            targetGeometry: {
+              type: "point",
+              spatialReference: {
+                latestWkid: 3857,
+                wkid: 102100
+              },
+              x: 11557036.825180829,
+              y: 147507.71438237422
+            }
+          }
+        });
+
+
+        const levels = [{
+          minScale: Infinity,
+          maxScale: 150000,
+          definitionExpression: "highway IN ('motorway')"
+        }, {
+          minScale: 150000,
+          maxScale: 60000,
+          definitionExpression: "highway IN ('motorway', 'trunk', 'trunk_link')"
+        }, {
+          minScale: 60000,
+          maxScale: 45000,
+          definitionExpression: "highway IN ('motorway', 'motorway_link', 'trunk', 'trunk_link', 'primary', 'primary_link')"
+        }, {
+          minScale: 45000,
+          maxScale: 30000,
+          definitionExpression: "highway IN ('motorway', 'motorway_link', 'trunk', 'trunk_link', 'primary', 'primary_link')"
+        }, {
+          minScale: 30000,
+          maxScale: 10000,
+          definitionExpression: "highway IN ('motorway', 'motorway_link', 'trunk', 'trunk_link', 'primary', 'primary_link', 'secondary', 'secondary_link')"
+        }];
+
+        // Update the definition expression based on view scale
+        view.watch("scale", function(scale){
+          let definitionExpression = null;
+          const level = levels.find(
+            level =>
+            scale < level.minScale && scale >= level.maxScale
+          );
+
+          if(level){
+            definitionExpression = level.definitionExpression;
+          }
+          if(definitionExpression !== highwaysLayer.definitionExpression){
+            highwaysLayer.definitionExpression = definitionExpression;
+          }
+        });
+
+
+      });
+    </script>
+  </head>
+
+  <body>
+    <div id="viewDiv"></div>
+  </body>
+</html>

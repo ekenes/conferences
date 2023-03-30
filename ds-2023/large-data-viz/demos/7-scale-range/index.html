@@ -1,0 +1,126 @@
+<html>
+  <head>
+    <meta charset="utf-8" />
+    <meta
+      name="viewport"
+      content="initial-scale=1,maximum-scale=1,user-scalable=no"
+    />
+    <title>
+      Visible scale range
+    </title>
+    <style>
+      html,
+      body,
+      #viewDiv {
+        padding: 0;
+        margin: 0;
+        height: 100%;
+        width: 100%;
+        background-color: rgba(50,50,50,1);
+      }
+    </style>
+
+    <link rel="stylesheet" href="https://js.arcgis.com/4.22/esri/themes/light/main.css" />
+    <script src="https://js.arcgis.com/4.22/"></script>
+
+    <script>
+      require([
+        "esri/views/MapView",
+        "esri/Map",
+        "esri/geometry/SpatialReference",
+        "esri/layers/FeatureLayer",
+        "esri/widgets/LayerList",
+        "esri/widgets/Expand"
+      ], (
+        MapView,
+        Map,
+        SpatialReference,
+        FeatureLayer,
+        LayerList,
+        Expand
+      ) => {
+
+        const effect = "drop-shadow(4px, 4px, 2px, rgb(100,100,100))"
+
+
+        const url = "https://services.arcgis.com/P3ePLMYs2RVChkJx/ArcGIS/rest/services/ACS_Vehicle_Availability_Boundaries/FeatureServer";
+
+        const statesLayer = new FeatureLayer({
+          url,
+          layerId: 0,
+          minScale: 0,
+          maxScale: 30000000,
+          effect
+        });
+        const countiesLayer = new FeatureLayer({
+          url,
+          layerId: 1,
+          minScale: 30000000,
+          maxScale: 2000000,
+          effect
+        });
+        const tractsLayer = new FeatureLayer({
+          url,
+          layerId: 2,
+          // This prevents the app from loading all census tracts at small scales
+          minScale: 2000000,
+          maxScale: 0,
+          effect
+        });
+
+
+        const viewSpatialReference = new SpatialReference({
+          wkid: 5070
+        });
+        let centerPoint = {
+          x: 0,
+          y: 0,
+          spatialReference: viewSpatialReference
+        };
+
+        const view = new MapView({
+          container: "viewDiv",
+          map: new Map({
+            layers: [
+              tractsLayer,
+              countiesLayer,
+              statesLayer
+            ]
+          }),
+          spatialReference: viewSpatialReference,
+          viewpoint: {
+            rotation: 0,
+            scale: 34809209,
+            targetGeometry: {
+              type: "point",
+                spatialReference: {
+                    wkid: 5070
+                },
+                x: -77487.07615764029,
+                y: 1780211.54390861
+            }
+          }
+        });
+
+        const layerlist = new LayerList({
+          view,
+          listItemCreatedFunction: (event) => {
+            const item = event.item;
+            item.panel = {
+              content: "legend"
+            }
+          }
+        });
+
+        view.ui.add(new Expand({
+          view,
+          content: layerlist
+        }), "top-right");
+      });
+    </script>
+  </head>
+
+  <body>
+    <div id="viewDiv"></div>
+  </body>
+</html>

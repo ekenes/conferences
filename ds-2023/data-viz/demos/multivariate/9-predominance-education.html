@@ -46,6 +46,29 @@
         Color
       ) {
 
+        const fields = [{
+          name: "NOHS_CY",
+          label: "No high school"
+        }, {
+          name: "SOMEHS_CY",
+          label: "Some high school"
+        }, {
+          name: "HSGRAD_CY",
+          label: "High school diploma"
+        }, {
+          name: "SMCOLL_CY",
+          label: "Some college"
+        }, {
+          name: "ASSCDEG_CY",
+          label: "Associate's degree"
+        }, {
+          name: "BACHDEG_CY",
+          label: "Bachelor's degree"
+        }, {
+          name: "GRADDEG_CY",
+          label: "Graduate degree"
+        }];
+
         const layer = new FeatureLayer({
           portalItem: {
             id: "1cbb0faa0f1f424bbe213bfae9319309"
@@ -57,65 +80,77 @@
             title: "{County}, {State}",
             content: [
               {
-                type: "fields",
-                fieldInfos: [
+                type: "media",
+                mediaInfos: [
                   {
-                    fieldName: "NOHS_CY",
-                    label: "No high school",
-                    format: {
-                      digitSeparator: true,
-                      places: 0
-                    }
-                  },
-                  {
-                    fieldName: "SOMEHS_CY",
-                    label: "Some high school",
-                    format: {
-                      digitSeparator: true,
-                      places: 0
-                    }
-                  },
-                  {
-                    fieldName: "HSGRAD_CY",
-                    label: "High school diploma",
-                    format: {
-                      digitSeparator: true,
-                      places: 0
-                    }
-                  },
-                  {
-                    fieldName: "SMCOLL_CY",
-                    label: "Some college",
-                    format: {
-                      digitSeparator: true,
-                      places: 0
-                    }
-                  },
-                  {
-                    fieldName: "ASSCDEG_CY",
-                    label: "Associate's degree",
-                    format: {
-                      digitSeparator: true,
-                      places: 0
-                    }
-                  },
-                  {
-                    fieldName: "BACHDEG_CY",
-                    label: "Bachelor's degree",
-                    format: {
-                      digitSeparator: true,
-                      places: 0
-                    }
-                  },
-                  {
-                    fieldName: "GRADDEG_CY",
-                    label: "Graduate degree",
-                    format: {
-                      digitSeparator: true,
-                      places: 0
+                    title: "Educational attainment by category",
+                    type: "pie-chart",
+                    value: {
+                      fields: fields.map( field => field.name )
                     }
                   }
                 ]
+              },
+              {
+                type: "fields"
+              }
+            ],
+            fieldInfos: [
+              {
+                fieldName: "NOHS_CY",
+                label: "No high school",
+                format: {
+                  digitSeparator: true,
+                  places: 0
+                }
+              },
+              {
+                fieldName: "SOMEHS_CY",
+                label: "Some high school",
+                format: {
+                  digitSeparator: true,
+                  places: 0
+                }
+              },
+              {
+                fieldName: "HSGRAD_CY",
+                label: "High school diploma",
+                format: {
+                  digitSeparator: true,
+                  places: 0
+                }
+              },
+              {
+                fieldName: "SMCOLL_CY",
+                label: "Some college",
+                format: {
+                  digitSeparator: true,
+                  places: 0
+                }
+              },
+              {
+                fieldName: "ASSCDEG_CY",
+                label: "Associate's degree",
+                format: {
+                  digitSeparator: true,
+                  places: 0
+                }
+              },
+              {
+                fieldName: "BACHDEG_CY",
+                label: "Bachelor's degree",
+                format: {
+                  digitSeparator: true,
+                  places: 0
+                }
+              },
+              {
+                fieldName: "GRADDEG_CY",
+                label: "Graduate degree",
+                format: {
+                  digitSeparator: true,
+                  places: 0
+                }
               }
             ]
           },
@@ -145,7 +180,7 @@
           popup: {
             dockEnabled: true,
             dockOptions: {
-              position: "top-right",
+              position: "top-left",
               breakpoint: false
             }
           },
@@ -213,30 +248,30 @@
 
           const rs = 800000;
 
-          const sizeVariable = renderer.visualVariables.filter( vv => vv.type === "size")[0];
-          sizeVariable.minDataValue = 0;
-          sizeVariable.maxDataValue = 40000;
-          sizeVariable.legendOptions.title = "Population age 25+";
-          sizeVariable.minSize = {
-            type: "size",
-            valueExpression: "$view.scale",
-            stops: [
-              { value: rs, size: 1},
-              { value: rs/2, size: 2},
-              { value: rs/4, size: 3},
-              { value: rs/8, size: 4}
-            ]
-          };
-          sizeVariable.maxSize = {
-            type: "size",
-            valueExpression: "$view.scale",
-            stops: [
-              { value: rs, size: 20},
-              { value: rs/2, size: 25},
-              { value: rs/4, size: 30},
-              { value: rs/8, size: 35}
-            ]
-          };
+          // const sizeVariable = renderer.visualVariables.filter( vv => vv.type === "size")[0];
+          // sizeVariable.minDataValue = 0;
+          // sizeVariable.maxDataValue = 40000;
+          // sizeVariable.legendOptions.title = "Population age 25+";
+          // sizeVariable.minSize = {
+          //   type: "size",
+          //   valueExpression: "$view.scale",
+          //   stops: [
+          //     { value: rs, size: 1},
+          //     { value: rs/2, size: 2},
+          //     { value: rs/4, size: 3},
+          //     { value: rs/8, size: 4}
+          //   ]
+          // };
+          // sizeVariable.maxSize = {
+          //   type: "size",
+          //   valueExpression: "$view.scale",
+          //   stops: [
+          //     { value: rs, size: 20},
+          //     { value: rs/2, size: 25},
+          //     { value: rs/4, size: 30},
+          //     { value: rs/8, size: 35}
+          //   ]
+          // };
 
           view.map.basemap = "dark-gray-vector";
 

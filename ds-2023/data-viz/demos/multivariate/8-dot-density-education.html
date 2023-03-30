@@ -80,14 +80,27 @@
 
         view.when().then(function () {
 
-          const dotDensityRenderer = new DotDensityRenderer({
-            dotValue: 400,
-            outline: null,
-            referenceScale: 18489297, // 1:18,489,297 view scale
-            legendOptions: {
-              unit: "people"
-            },
-            blendDots: false,
+          //EDUCBASECY
+
+          // visualVariables: [{
+          //     type: "size",
+          //     field: "EDUCBASECY",
+          //     minDataValue: 100,
+          //     maxDataValue: 4000,
+          //     minSize: 4,
+          //     maxSize: 16
+          //   }],
+
+          const dotDensityRenderer = {
+            type: "pie-chart",
+            visualVariables: [{
+              type: "size",
+              field: "EDUCBASECY",
+              minDataValue: 100,
+              maxDataValue: 4000,
+              minSize: 4,
+              maxSize: 16
+            }],
             attributes: [
               {
                 field: "NOHS_CY",
@@ -125,7 +138,7 @@
                 label: "Graduate degree"
               }
             ].reverse()
-          });
+          };
 
           const layer = new FeatureLayer({
             portalItem: {

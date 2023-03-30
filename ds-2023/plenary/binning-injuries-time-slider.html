@@ -90,24 +90,6 @@
               statisticType: "sum"
             }),
             new AggregateField({
-              name: "SUM_PEDESTRIANS_INJURED",
-              alias: "Number of pedestrians injured",
-              onStatisticField: "NUMBER_OF_PEDESTRIANS_INJURED",
-              statisticType: "sum"
-            }),
-            new AggregateField({
-              name: "SUM_CYCLIST_INJURED",
-              alias: "Number of cyclists injured",
-              onStatisticField: "NUMBER_OF_CYCLIST_INJURED",
-              statisticType: "sum"
-            }),
-            new AggregateField({
-              name: "SUM_MOTORIST_INJURED",
-              alias: "Number of cyclists injured",
-              onStatisticField: "NUMBER_OF_MOTORIST_INJURED",
-              statisticType: "sum"
-            }),
-            new AggregateField({
               name: "AVG_PERSONS_INJURED",
               alias: "Average number of injuries per crash",
               onStatisticField: "NUMBER_OF_PERSONS_INJURED",
@@ -255,10 +237,10 @@
         const year = 2020;
         const layer = new FeatureLayer({
           title: "Motor vehicle crashes (2020)",
-          // url: "https://services.arcgis.com/V6ZHFr6zdgNZuVG0/ArcGIS/rest/services/NYC_motor_crashes/FeatureServer/0",
           portalItem: {
             id: "180d17ee444e4af997a0731b13fc861e"
           },
+          blendMode: "multiply",
           featureReduction,
           popupTemplate: {
             title: "Crash location",
@@ -318,20 +300,15 @@
         view.when().then(() => {
           // dims the basemap labels so they don't conflict with the bin counts
           const referenceLayer = view.map.basemap.referenceLayers.getItemAt(0);
-          referenceLayer.opacity = 0.2;
+          referenceLayer.opacity = 0.5;
         });
-
-        view.ui.add(
-          new Home({
-            view: view
-          }),
-          "top-left"
-        );
 
         const legend = new Legend({
           view: view,
           container: "legendDiv"
         });
+
+        view.ui.components = [];
 
         const infoDiv = document.getElementById("infoDiv");
         view.ui.add(
@@ -339,17 +316,10 @@
             view: view,
             content: infoDiv,
             expandIconClass: "esri-icon-layer-list",
-            expanded: false
+            expanded: true
           }),
           "top-left"
         );
-
-        const toggleButton = document.getElementById("showBins");
-        toggleButton.onclick = () => {
-          layer.featureReduction = layer.featureReduction
-            ? null
-            : featureReduction;
-        };
 
         const timeSlider = new TimeSlider({
           view,
@@ -390,9 +360,6 @@
     <div id="viewDiv"></div>
     <div id="timeSlider"></div>
     <div id="infoDiv" class="esri-widget">
-      <calcite-button id="showBins" secondary width="full"
-        >Toggle Binning</calcite-button
-      >
       <div id="legendDiv"></div>
     </div>
   </body>
