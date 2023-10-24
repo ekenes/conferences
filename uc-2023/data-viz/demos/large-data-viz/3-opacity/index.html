@@ -1,0 +1,83 @@
+<html>
+
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="initial-scale=1,maximum-scale=1,user-scalable=no" />
+  <title>Location style - polygons</title>
+
+  <link rel="stylesheet" href="https://js.arcgis.com/4.22/esri/themes/light/main.css" />
+  <script src="https://js.arcgis.com/4.22/"></script>
+
+  <style>
+    html,
+    body,
+    #viewDiv {
+      padding: 0;
+      margin: 0;
+      height: 100%;
+      width: 100%;
+    }
+    #titleDiv {
+      padding: 10px;
+    }
+
+    #titleText {
+      font-size: 20pt;
+      font-weight: 60;
+      padding-bottom: 10px;
+    }
+  </style>
+  <script>
+    require([
+      "esri/views/MapView",
+      "esri/Map",
+      "esri/layers/FeatureLayer",
+      "esri/renderers/SimpleRenderer",
+      "esri/symbols/SimpleFillSymbol"
+    ], function (
+      MapView, Map, FeatureLayer, SimpleRenderer, SimpleFillSymbol
+    ) {
+
+      // flash flood warnings layer
+      const layer = new FeatureLayer({
+        portalItem: {
+          id: "f9e348953b3848ec8b69964d5bceae02"
+        }
+      });
+
+
+      layer.renderer = new SimpleRenderer({
+        symbol: new SimpleFillSymbol({
+          color: "rgba(0,76,115,0.04)",
+          outline: null
+        })
+      });
+
+
+      const map = new Map({
+        basemap: "gray-vector",
+        layers: [layer]
+      });
+
+      const view = new MapView({
+        map,
+        container: "viewDiv",
+        center: [-98, 40],
+        zoom: 3
+      });
+      view.ui.add("titleDiv", "top-right");
+
+    });
+
+  </script>
+</head>
+
+<body>
+  <div id="viewDiv"></div>
+  <div id="titleDiv" class="esri-widget">
+    <div id="titleText">Flash Floods by Season</div>
+    <div>Flash Flood Warnings (2002 - 2012)</div>
+  </div>
+</body>
+
+</html>

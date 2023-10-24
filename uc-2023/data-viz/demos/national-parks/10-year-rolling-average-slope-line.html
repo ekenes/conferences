@@ -1,0 +1,809 @@
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta
+      name="viewport"
+      content="initial-scale=1,maximum-scale=1,user-scalable=no"
+    />
+    <title>
+      National Park visitation trends
+    </title>
+
+    <link
+      rel="stylesheet"
+      href="https://js.arcgis.com/4.27/esri/themes/light/main.css"
+    />
+    <script src="https://js.arcgis.com/4.27/"></script>
+
+    <style>
+      html,
+      body,
+      #viewDiv {
+        padding: 0;
+        margin: 0;
+        height: 100%;
+        width: 100%;
+      }
+
+      #sliderDiv {
+        margin: 20px 0;
+        height: 40px;
+        width: 95%;
+      }
+      #sliderContainer{
+        padding: 20px;
+        width: 600px;
+      }
+      #title{
+        text-align: center;
+        font-size: x-large;
+      }
+    </style>
+
+    <script>
+      require([
+        "esri/Map",
+        "esri/views/MapView",
+        "esri/layers/FeatureLayer",
+        "esri/widgets/Legend",
+        "esri/widgets/Slider"
+      ], (Map, MapView, FeatureLayer, Legend, Slider) => {
+
+        const year = 2022;
+        const range = 10;
+
+        const map = new Map({
+          basemap: "gray-vector",
+        });
+
+        const view = new MapView({
+          container: "viewDiv",
+          map: map,
+          constraints: {
+            snapToZoom: false,
+          },
+          zoom: 4,
+          center: [-100, 40],
+          popup: {
+            dockEnabled: true,
+            dockOptions: {
+              breakpoint: false,
+              position: "bottom-right"
+            }
+          }
+        });
+
+        view.ui.add(new Legend({ view }), "bottom-left");
+
+        const slider = new Slider({
+          min: 1905,
+          max: 2022,
+          steps: 1,
+          // minorTicks: ,
+          majorTicks: [1905, 1920, 1940, 1960, 1980, 2000, 2020],
+
+          // labelFormatFunction: (value) => `${value} km`
+          values: [2020],
+          container: "sliderDiv",
+          visibleElements: {
+            labels: true
+          },
+          tickConfigs: [{
+            mode: "position",
+            values: [1905, 1920, 1940, 1960, 1980, 2000, 2020],
+            labelsVisible: true
+          }],
+        });
+
+        // add the UI components to the view
+        const sliderContainer = document.getElementById("sliderContainer");
+        view.ui.add(sliderContainer, "top-right");
+
+        /********************
+         * Add feature layer
+         ********************/
+
+        // Esri color ramps - Sunset Fade
+        // #b30000,#7c1158,#1a53ff,#00b7c7,#8be04e,#ebdc78
+        // const colors = // Esri color ramps - Mushroom Soup
+        // #00b6f1,#d9bf0d,#c44245,#6a28c7,#b9a087,#ab579d
+
+        const colors = [
+          "#b86b53",
+          "#3e756d",
+          "#9c5596",
+          "#5c98ca",
+          "#00b6f1",
+          "#555555",
+        ];
+        // Esri color ramps - Andromeda
+        // #3900b3,#714dbf,#9e6b90,#cf9270,#ebb698
+        const andromeda = [
+          "#3900b3",
+          "#714dbf",
+          "#9e6b90",
+          "#cf9270",
+          "#ebb698",
+        ].reverse();
+
+        // Esri color ramps - Purple and Green 10
+        // #8100e6,#b360d1,#f2cf9e,#6eb830,#2b9900
+        const diverging = ["#8100e6", "#b360d1", "#f2cf9e", "#6eb830", "#2b9900"];
+
+        // Esri color ramps - Purple and Brown 4
+        // #00998c,#69d4cb,#f2f2aa,#d98346,#b34a00
+        // const diverging = ["#00998c", "#69d4cb", "#f2f2aa", "#d98346", "#b34a00"].reverse();
+        // Esri color ramps - Purple and Brown 3
+        // #6000e6,#a069ee,#ffcce6,#ce922e,#b35a00
+        // const diverging = ["#6000e6", "#a069ee", "#ffcce6", "#ce922e", "#b35a00"].reverse();
+
+        // Carbon storage of trees in Warren Wilson College.
+        const featureLayer = new FeatureLayer({
+          portalItem: {
+            id: "0e3fd5de259f46acb169c54eb501cfe5",
+          },
+
+          labelingInfo: [
+            {
+              labelExpressionInfo: {
+                expression: `
+                  var yr = ${year};
+                  var n = 0;
+                  var values = [];
+                  var years = [];
+
+                  var sumXY = 0;
+                  var sumX = 0;
+                  var sumY = 0;
+                  var sumX2 = 0;
+
+                  if(!HasValue($feature, "F"+y)){
+                    return null;
+                  }
+
+                  for (var c = yr-${range-1}; c <= yr; c++){
+                    if(!HasValue($feature, "F"+c) || !HasValue($feature, "F"+(c-1))){
+                      continue;
+                    }
+
+                    n++;
+                    var x = $feature["F"+c];
+                    var y = c;
+
+                    sumXY += (x * y);
+                    sumX += x;
+                    sumY += y;
+                    sumX2 += (x * x);
+                  }
+
+                  console(sumXY, sumX, sumY, sumX2);
+
+                  var slope = (n * sumXY - (sumX * sumY)) / ((n * sumX2) - (sumX * sumX))
+                  console(slope)
+                  return slope;
+                `
+
+                // `
+                //   var y = ${year};
+                //   var numIncreases = 0;
+                //   var numYears = 0;
+                //   var changes = [];
+
+                //   if(!HasValue($feature, "F"+y)){
+                //     return null;
+                //   }
+
+                //   for (var c = y-${range-1}; c <= y; c++){
+                //     if(!HasValue($feature, "F"+c) || !HasValue($feature, "F"+(c-1))){
+                //       continue;
+                //     }
+                //     numYears++;
+                //     var current = $feature["F"+c];
+                //     var previous = $feature["F"+(c-1)];
+                //     var change = Round((current - previous) / previous, 2);
+                //     Push(changes, change);
+
+                //     if(current > previous){
+                //       numIncreases++;
+                //     }
+                //   }
+                //   var avgChange = Average(changes);
+                //   return Text(avgChange, "+#,###.#%;-#,###.#%");
+                // `,
+              },
+              labelPlacement: "center-right",
+              symbol: {
+                type: "text", // autocasts as new TextSymbol()
+                font: {
+                  size: 11,
+                  family: "Noto Sans",
+                  weight: "bold",
+                },
+                horizontalAlignment: "left",
+                color: "#2b2b2b",
+                yoffset: 9,
+                // haloColor: "rgba(255,255,255,0.4)",
+                // haloSize: 2
+              },
+            },
+            {
+              labelExpressionInfo: {
+                expression:
+                  "Replace($feature.Park, 'National Park', '', false)",
+              },
+              labelPlacement: "center-right",
+              // minScale: minScale,
+              symbol: {
+                type: "text", // autocasts as new TextSymbol()
+                font: {
+                  size: 6,
+                  family: "Noto Sans",
+                },
+                horizontalAlignment: "left",
+                color: "#2b2b2b",
+                yoffset: 0,
+              },
+            },
+            {
+              labelExpressionInfo: {
+                expression: `
+                  var y = ${year};
+                  var rollingTotal = 0;
+                  var numYears = 0;
+
+                  if(!HasValue($feature, "F"+y)){
+                    return null;
+                  }
+
+                  for (var c = y-${range-1}; c <= y; c++){
+                    if(!HasValue($feature, "F"+c)){
+                      continue;
+                    }
+                    numYears++;
+                    rollingTotal += $feature["F"+c];
+                  }
+                  return Text(rollingTotal / numYears, "#,###");
+                `,
+              },
+              labelPlacement: "center-right",
+              // minScale: minScale,
+              symbol: {
+                type: "text", // autocasts as new TextSymbol()
+                font: {
+                  size: 6,
+                  family: "Noto Sans",
+                },
+                horizontalAlignment: "left",
+                color: "#2b2b2b",
+                yoffset: -7,
+              },
+            },
+          ],
+          outFields: ["*"],
+          renderer: {
+            type: "simple",
+            label: "Park location",
+            symbol: {
+              type: "cim",
+              data: {
+                type: "CIMSymbolReference",
+                symbol: {
+                  type: "CIMPointSymbol",
+                  symbolLayers: [
+                    {
+                      type: "CIMVectorMarker",
+                      colorLocked: false,
+                      enable: true,
+                      anchorPointUnits: "Relative",
+                      dominantSizeAxis3D: "Y",
+                      size: 15.75,
+                      billboardMode3D: "FaceNearPlane",
+                      frame: {
+                        xmin: 4,
+                        ymin: 2,
+                        xmax: 15,
+                        ymax: 19,
+                      },
+                      markerGraphics: [
+                        {
+                          type: "CIMMarkerGraphic",
+                          geometry: {
+                            rings: [
+                              [
+                                [15, 15],
+                                [12, 15],
+                                [16, 10],
+                                [13, 10],
+                                [17, 5],
+                                [11, 5],
+                                [11, 2],
+                                [10, 2],
+                                [10, 5],
+                                [4, 5],
+                                [8, 10],
+                                [5, 10],
+                                [9, 15],
+                                [6, 15],
+                                [10.5, 19],
+                                [15, 15],
+                              ],
+                            ],
+                          },
+                          symbol: {
+                            type: "CIMPolygonSymbol",
+                            symbolLayers: [
+                              {
+                                type: "CIMSolidStroke",
+                                enable: true,
+                                capStyle: "Round",
+                                joinStyle: "Round",
+                                lineStyle3D: "Strip",
+                                miterLimit: 10,
+                                width: 0,
+                                color: [0, 0, 0, 255],
+                              },
+                              {
+                                type: "CIMSolidFill",
+                                enable: true,
+                                color: [113, 201, 110, 0],
+                              },
+                            ],
+                          },
+                        },
+                      ],
+                      scaleSymbolsProportionally: true,
+                      respectFrame: true,
+                    },
+                    {
+                      type: "CIMVectorMarker",
+                      enable: false,
+                      colorLocked: true,
+                      anchorPointUnits: "Relative",
+                      dominantSizeAxis3D: "Y",
+                      size: 18.5,
+                      billboardMode3D: "FaceNearPlane",
+                      frame: {
+                        xmin: -5,
+                        ymin: -5,
+                        xmax: 5,
+                        ymax: 5,
+                      },
+                      markerGraphics: [
+                        {
+                          type: "CIMMarkerGraphic",
+                          geometry: {
+                            rings: [
+                              [
+                                [0, 5],
+                                [0.87, 4.92],
+                                [1.71, 4.7],
+                                [2.5, 4.33],
+                                [3.21, 3.83],
+                                [3.83, 3.21],
+                                [4.33, 2.5],
+                                [4.7, 1.71],
+                                [4.92, 0.87],
+                                [5, 0],
+                                [4.92, -0.87],
+                                [4.7, -1.71],
+                                [4.33, -2.5],
+                                [3.83, -3.21],
+                                [3.21, -3.83],
+                                [2.5, -4.33],
+                                [1.71, -4.7],
+                                [0.87, -4.92],
+                                [0, -5],
+                                [-0.87, -4.92],
+                                [-1.71, -4.7],
+                                [-2.5, -4.33],
+                                [-3.21, -3.83],
+                                [-3.83, -3.21],
+                                [-4.33, -2.5],
+                                [-4.7, -1.71],
+                                [-4.92, -0.87],
+                                [-5, 0],
+                                [-4.92, 0.87],
+                                [-4.7, 1.71],
+                                [-4.33, 2.5],
+                                [-3.83, 3.21],
+                                [-3.21, 3.83],
+                                [-2.5, 4.33],
+                                [-1.71, 4.7],
+                                [-0.87, 4.92],
+                                [0, 5],
+                              ],
+                            ],
+                          },
+                          symbol: {
+                            type: "CIMPolygonSymbol",
+                            symbolLayers: [
+                              {
+                                type: "CIMSolidStroke",
+                                enable: true,
+                                capStyle: "Round",
+                                joinStyle: "Round",
+                                lineStyle3D: "Strip",
+                                miterLimit: 10,
+                                width: 0.5,
+                                color: [167, 169, 172, 255],
+                              },
+                              {
+                                type: "CIMSolidFill",
+                                enable: true,
+                                color: [255, 255, 255, 255],
+                              },
+                            ],
+                          },
+                        },
+                      ],
+                      scaleSymbolsProportionally: true,
+                      respectFrame: true,
+                    },
+                  ],
+                  haloSize: 1,
+                  scaleX: 1,
+                  angleAlignment: "Display",
+                  version: "2.0.0",
+                  build: "8933",
+                },
+              },
+            },
+            visualVariables: [
+              {
+                type: "size",
+                valueExpressionTitle: "10-year rolling average (2022)",
+                valueExpression: `
+                  var y = ${year};
+                  var rollingTotal = 0;
+                  var numYears = 0;
+
+                  if(!HasValue($feature, "F"+y)){
+                    return null;
+                  }
+
+                  for (var c = y-${range-1}; c <= y; c++){
+                    if(!HasValue($feature, "F"+c)){
+                      continue;
+                    }
+                    numYears++;
+                    rollingTotal += $feature["F"+c];
+                  }
+                  return Round(rollingTotal / numYears);
+                `,
+                stops: [
+                  { value: 50_000, label: "10,000", size: "15px" },
+                  { value: 500_000, label: "500,000", size: "24px" },
+                  { value: 1_000_000, label: "1,000,000", size: "32px" },
+                  { value: 10_000_000, label: "10,000,000", size: "64px" },
+                ]
+              },
+              {
+                type: "color",
+                valueExpressionTitle: "Growth trend",
+                valueExpression:
+                `
+                  var yr = ${year};
+                  var n = 0;
+                  var values = [];
+                  var years = [];
+
+                  var sumXY = 0;
+                  var sumX = 0;
+                  var sumY = 0;
+                  var sumX2 = 0;
+
+                  if(!HasValue($feature, "F"+y)){
+                    return null;
+                  }
+
+                  for (var c = yr-${range-1}; c <= yr; c++){
+                    if(!HasValue($feature, "F"+c) || !HasValue($feature, "F"+(c-1))){
+                      continue;
+                    }
+
+                    n++;
+                    var x = $feature["F"+c];
+                    var y = c;
+
+                    sumXY += (x * y);
+                    sumX += x;
+                    sumY += y;
+                    sumX2 += (x * x);
+                  }
+
+                  var slope = (n * sumXY - (sumX * sumY)) / ((n * sumX2) - (sumX * sumX))
+
+                  return slope;
+                `,
+
+                // `
+                //   var y = ${year};
+                //   var numIncreases = 0;
+                //   var numYears = 0;
+                //   var changes = [];
+
+                //   if(!HasValue($feature, "F"+y)){
+                //     return null;
+                //   }
+
+                //   for (var c = y-${range-1}; c <= y; c++){
+                //     if(!HasValue($feature, "F"+c) || !HasValue($feature, "F"+(c-1))){
+                //       continue;
+                //     }
+                //     numYears++;
+                //     var current = $feature["F"+c];
+                //     var previous = $feature["F"+(c-1)];
+                //     var change = Round((current - previous) / previous, 2);
+                //     Push(changes, change);
+
+                //     if(current > previous){
+                //       numIncreases++;
+                //     }
+                //   }
+                //   var avgChange = Average(changes);
+                //   return avgChange;
+                // `,
+                stops: [
+                  { value: -0.1, label: "Trending down", color: diverging[0] },
+                  { value: -0.05, label: null, color: diverging[1] },
+                  { value: 0, label: "Flat trend", color: diverging[2] },
+                  { value: 0.05, label: null, color: diverging[3] },
+                  { value: 0.1, label: "Trending up", color: diverging[4] },
+                ]
+              }
+            ],
+          },
+        });
+
+        map.add(featureLayer);
+
+        view.when().then(async () => {
+          const rl = view.map.basemap.referenceLayers.getItemAt(0);
+          rl.opacity = 0.25;
+        });
+
+        slider.watch("values", (values) => {
+          const renderer = featureLayer.renderer.clone();
+          const sizeVariable = renderer.visualVariables.find(vv => vv.type === "size");
+          const colorVariable = renderer.visualVariables.find(vv => vv.type === "color");
+          const year = values[0];
+
+          colorVariable.valueExpression = `
+            var yr = ${year};
+            var n = 0;
+            var values = [];
+            var years = [];
+
+            var sumXY = 0;
+            var sumX = 0;
+            var sumY = 0;
+            var sumX2 = 0;
+
+            if(!HasValue($feature, "F"+y)){
+              return null;
+            }
+
+            for (var c = yr-${range-1}; c <= yr; c++){
+              if(!HasValue($feature, "F"+c) || !HasValue($feature, "F"+(c-1))){
+                continue;
+              }
+
+              n++;
+              var x = $feature["F"+c];
+              var y = c;
+
+              sumXY += (x * y);
+              sumX += x;
+              sumY += y;
+              sumX2 += (x * x);
+            }
+
+            var slope = (n * sumXY - (sumX * sumY)) / ((n * sumX2) - (sumX * sumX))
+
+            return slope;
+          `;
+
+          // `
+          //   var y = ${year};
+          //   var numIncreases = 0;
+          //   var numYears = 0;
+          //   var changes = [];
+
+          //   if(!HasValue($feature, "F"+${year}) || !HasValue($feature, "F"+${year-range})){
+          //     return null;
+          //   }
+
+          //   for (var c = y-${range-1}; c <= y; c++){
+          //     if(!HasValue($feature, "F"+c) || !HasValue($feature, "F"+(c-1))){
+          //       continue;
+          //     }
+          //     numYears++;
+          //     var current = $feature["F"+c];
+          //     var previous = $feature["F"+(c-1)];
+          //     var change = Round((current - previous) / previous, 2);
+          //     Push(changes, change);
+
+          //     if(current > previous){
+          //       numIncreases++;
+          //     }
+          //   }
+          //   var avgChange = Average(changes);
+          //   return avgChange;
+          // `;
+
+          sizeVariable.valueExpression = `
+            var y = ${year};
+            var rollingTotal = 0;
+            var numYears = 0;
+
+            if(!HasValue($feature, "F"+${year}) || !HasValue($feature, "F"+${year-range})){
+              return null;
+            }
+
+            for (var c = y-${range-1}; c <= y; c++){
+              if(!HasValue($feature, "F"+c)){
+                continue;
+              }
+              numYears++;
+              rollingTotal += $feature["F"+c];
+            }
+            return Round(rollingTotal / numYears);
+          `;
+
+          sizeVariable.valueExpressionTitle = `${range}-year rolling average (${year})`;
+
+          renderer.visualVariables = [ sizeVariable, colorVariable ];
+          featureLayer.renderer = renderer;
+
+          featureLayer.labelingInfo = [
+            {
+              labelExpressionInfo: {
+                expression: `
+                  var yr = ${year};
+                  var n = 0;
+                  var values = [];
+                  var years = [];
+
+                  var sumXY = 0;
+                  var sumX = 0;
+                  var sumY = 0;
+                  var sumX2 = 0;
+
+                  if(!HasValue($feature, "F"+y)){
+                    return null;
+                  }
+
+                  for (var c = yr-${range-1}; c <= yr; c++){
+                    if(!HasValue($feature, "F"+c) || !HasValue($feature, "F"+(c-1))){
+                      continue;
+                    }
+
+                    n++;
+                    var x = $feature["F"+c];
+                    var y = c;
+
+                    sumXY += (x * y);
+                    sumX += x;
+                    sumY += y;
+                    sumX2 += (x * x);
+                  }
+
+                  var slope = (n * sumXY - (sumX * sumY)) / ((n * sumX2) - (sumX * sumX))
+
+                  return slope;
+                `
+
+                // `
+                //   var y = ${year};
+                //   var numIncreases = 0;
+                //   var numYears = 0;
+                //   var changes = [];
+
+                //   if(!HasValue($feature, "F"+y) || !HasValue($feature, "F"+${year-range})){
+                //     return null;
+                //   }
+
+                //   for (var c = y-${range-1}; c <= y; c++){
+                //     if(!HasValue($feature, "F"+c) || !HasValue($feature, "F"+(c-1))){
+                //       continue;
+                //     }
+                //     numYears++;
+                //     var current = $feature["F"+c];
+                //     var previous = $feature["F"+(c-1)];
+                //     var change = Round((current - previous) / previous, 2);
+                //     Push(changes, change);
+
+                //     if(current > previous){
+                //       numIncreases++;
+                //     }
+                //   }
+                //   var avgChange = Average(changes);
+                //   return Text(avgChange, "+#,###.#%;-#,###.#%");
+                // `,
+              },
+              labelPlacement: "center-right",
+              symbol: {
+                type: "text", // autocasts as new TextSymbol()
+                font: {
+                  size: 11,
+                  family: "Noto Sans",
+                  weight: "bold",
+                },
+                horizontalAlignment: "left",
+                color: "#2b2b2b",
+                yoffset: 9,
+                // haloColor: "rgba(255,255,255,0.4)",
+                // haloSize: 2
+              },
+            },
+            {
+              labelExpressionInfo: {
+                expression:
+                `
+                  if(!HasValue($feature, "F"+${year}) || !HasValue($feature, "F"+${year-range})){
+                    return null;
+                  }
+                  return Replace($feature.Park, 'National Park', '', false);
+                `
+              },
+              labelPlacement: "center-right",
+              // minScale: minScale,
+              symbol: {
+                type: "text", // autocasts as new TextSymbol()
+                font: {
+                  size: 6,
+                  family: "Noto Sans",
+                },
+                horizontalAlignment: "left",
+                color: "#2b2b2b",
+                yoffset: 0,
+              },
+            },
+            {
+              labelExpressionInfo: {
+                expression: `
+                  var y = ${year};
+                  var rollingTotal = 0;
+                  var numYears = 0;
+
+                  if(!HasValue($feature, "F"+y) || !HasValue($feature, "F"+${year-range})){
+                    return null;
+                  }
+
+                  for (var c = y-${range-1}; c <= y; c++){
+                    if(!HasValue($feature, "F"+c)){
+                      continue;
+                    }
+                    numYears++;
+                    rollingTotal += $feature["F"+c];
+                  }
+                  return Text(rollingTotal / numYears, "#,###");
+                `,
+              },
+              labelPlacement: "center-right",
+              // minScale: minScale,
+              symbol: {
+                type: "text", // autocasts as new TextSymbol()
+                font: {
+                  size: 6,
+                  family: "Noto Sans",
+                },
+                horizontalAlignment: "left",
+                color: "#2b2b2b",
+                yoffset: -7,
+              },
+            },
+          ]
+        });
+      });
+    </script>
+  </head>
+
+  <body>
+    <div id="viewDiv"></div>
+      <div id="sliderContainer" class="esri-widget">
+        <div id="title">National Park Visitation Trends</div>
+        <div id="sliderDiv"></div>
+      </div>
+  </body>
+</html>
