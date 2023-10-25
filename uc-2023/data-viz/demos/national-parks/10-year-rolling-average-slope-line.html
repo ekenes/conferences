@@ -11,9 +11,9 @@
 
     <link
       rel="stylesheet"
-      href="https://js.arcgis.com/4.27/esri/themes/light/main.css"
+      href="https://jsdev.arcgis.com/4.28/esri/themes/light/main.css"
     />
-    <script src="https://js.arcgis.com/4.27/"></script>
+    <script src="https://jsdev.arcgis.com/4.28/"></script>
 
     <style>
       html,
@@ -142,74 +142,20 @@
           portalItem: {
             id: "0e3fd5de259f46acb169c54eb501cfe5",
           },
-
+          
           labelingInfo: [
             {
               labelExpressionInfo: {
                 expression: `
                   var yr = ${year};
-                  var n = 0;
-                  var values = [];
-                  var years = [];
-
-                  var sumXY = 0;
-                  var sumX = 0;
-                  var sumY = 0;
-                  var sumX2 = 0;
-
-                  if(!HasValue($feature, "F"+y)){
+                  var current = $feature["F"+yr];
+                  var previous = $feature["F"+(yr-1)];
+                  if(IsEmpty(current) || IsEmpty(previous)){
                     return null;
                   }
-
-                  for (var c = yr-${range-1}; c <= yr; c++){
-                    if(!HasValue($feature, "F"+c) || !HasValue($feature, "F"+(c-1))){
-                      continue;
-                    }
-
-                    n++;
-                    var x = $feature["F"+c];
-                    var y = c;
-
-                    sumXY += (x * y);
-                    sumX += x;
-                    sumY += y;
-                    sumX2 += (x * x);
-                  }
-
-                  console(sumXY, sumX, sumY, sumX2);
-
-                  var slope = (n * sumXY - (sumX * sumY)) / ((n * sumX2) - (sumX * sumX))
-                  console(slope)
-                  return slope;
+                  var change = Text((current - previous) / previous, "+#.#%;-#.#%");
+                  return change;
                 `
-
-                // `
-                //   var y = ${year};
-                //   var numIncreases = 0;
-                //   var numYears = 0;
-                //   var changes = [];
-
-                //   if(!HasValue($feature, "F"+y)){
-                //     return null;
-                //   }
-
-                //   for (var c = y-${range-1}; c <= y; c++){
-                //     if(!HasValue($feature, "F"+c) || !HasValue($feature, "F"+(c-1))){
-                //       continue;
-                //     }
-                //     numYears++;
-                //     var current = $feature["F"+c];
-                //     var previous = $feature["F"+(c-1)];
-                //     var change = Round((current - previous) / previous, 2);
-                //     Push(changes, change);
-
-                //     if(current > previous){
-                //       numIncreases++;
-                //     }
-                //   }
-                //   var avgChange = Average(changes);
-                //   return Text(avgChange, "+#,###.#%;-#,###.#%");
-                // `,
               },
               labelPlacement: "center-right",
               symbol: {
@@ -483,72 +429,43 @@
                 valueExpression:
                 `
                   var yr = ${year};
+                  var range = ${range};
                   var n = 0;
-                  var values = [];
-                  var years = [];
 
                   var sumXY = 0;
                   var sumX = 0;
                   var sumY = 0;
                   var sumX2 = 0;
 
-                  if(!HasValue($feature, "F"+y)){
+                  if (!HasValue($feature, "F" + yr)) {
                     return null;
                   }
 
-                  for (var c = yr-${range-1}; c <= yr; c++){
-                    if(!HasValue($feature, "F"+c) || !HasValue($feature, "F"+(c-1))){
+                  for (var c = yr - range; c <= yr; c++) {
+                    if (!HasValue($feature, "F" + c)) {
                       continue;
                     }
 
                     n++;
-                    var x = $feature["F"+c];
+                    var x = $feature["F" + c];
                     var y = c;
 
-                    sumXY += (x * y);
+                    sumXY += x * y;
                     sumX += x;
                     sumY += y;
-                    sumX2 += (x * x);
+                    sumX2 += x * x;
                   }
 
-                  var slope = (n * sumXY - (sumX * sumY)) / ((n * sumX2) - (sumX * sumX))
+                  var slope = (n * sumXY - sumX * sumY) / (n * sumX2 - sumX * sumX);
 
-                  return slope;
+                  return pow(10, 6) * slope;
                 `,
-
-                // `
-                //   var y = ${year};
-                //   var numIncreases = 0;
-                //   var numYears = 0;
-                //   var changes = [];
-
-                //   if(!HasValue($feature, "F"+y)){
-                //     return null;
-                //   }
-
-                //   for (var c = y-${range-1}; c <= y; c++){
-                //     if(!HasValue($feature, "F"+c) || !HasValue($feature, "F"+(c-1))){
-                //       continue;
-                //     }
-                //     numYears++;
-                //     var current = $feature["F"+c];
-                //     var previous = $feature["F"+(c-1)];
-                //     var change = Round((current - previous) / previous, 2);
-                //     Push(changes, change);
-
-                //     if(current > previous){
-                //       numIncreases++;
-                //     }
-                //   }
-                //   var avgChange = Average(changes);
-                //   return avgChange;
-                // `,
                 stops: [
-                  { value: -0.1, label: "Trending down", color: diverging[0] },
-                  { value: -0.05, label: null, color: diverging[1] },
+                  { value: -100, label: "Trending down", color: diverging[0] },
+                  { value: -50, label: null, color: diverging[1] },
                   { value: 0, label: "Flat trend", color: diverging[2] },
-                  { value: 0.05, label: null, color: diverging[3] },
-                  { value: 0.1, label: "Trending up", color: diverging[4] },
+                  { value: 50, label: null, color: diverging[3] },
+                  { value: 100, label: "Trending up", color: diverging[4] },
                 ]
               }
             ],
@@ -570,66 +487,37 @@
 
           colorVariable.valueExpression = `
             var yr = ${year};
+            var range = ${range};
             var n = 0;
-            var values = [];
-            var years = [];
 
             var sumXY = 0;
             var sumX = 0;
             var sumY = 0;
             var sumX2 = 0;
 
-            if(!HasValue($feature, "F"+y)){
+            if (!HasValue($feature, "F" + yr)) {
               return null;
             }
 
-            for (var c = yr-${range-1}; c <= yr; c++){
-              if(!HasValue($feature, "F"+c) || !HasValue($feature, "F"+(c-1))){
+            for (var c = yr - range; c <= yr; c++) {
+              if (!HasValue($feature, "F" + c)) {
                 continue;
               }
 
               n++;
-              var x = $feature["F"+c];
+              var x = $feature["F" + c];
               var y = c;
 
-              sumXY += (x * y);
+              sumXY += x * y;
               sumX += x;
               sumY += y;
-              sumX2 += (x * x);
+              sumX2 += x * x;
             }
 
-            var slope = (n * sumXY - (sumX * sumY)) / ((n * sumX2) - (sumX * sumX))
+            var slope = (n * sumXY - sumX * sumY) / (n * sumX2 - sumX * sumX);
 
-            return slope;
+            return pow(10, 6) * slope;
           `;
-
-          // `
-          //   var y = ${year};
-          //   var numIncreases = 0;
-          //   var numYears = 0;
-          //   var changes = [];
-
-          //   if(!HasValue($feature, "F"+${year}) || !HasValue($feature, "F"+${year-range})){
-          //     return null;
-          //   }
-
-          //   for (var c = y-${range-1}; c <= y; c++){
-          //     if(!HasValue($feature, "F"+c) || !HasValue($feature, "F"+(c-1))){
-          //       continue;
-          //     }
-          //     numYears++;
-          //     var current = $feature["F"+c];
-          //     var previous = $feature["F"+(c-1)];
-          //     var change = Round((current - previous) / previous, 2);
-          //     Push(changes, change);
-
-          //     if(current > previous){
-          //       numIncreases++;
-          //     }
-          //   }
-          //   var avgChange = Average(changes);
-          //   return avgChange;
-          // `;
 
           sizeVariable.valueExpression = `
             var y = ${year};
@@ -660,66 +548,14 @@
               labelExpressionInfo: {
                 expression: `
                   var yr = ${year};
-                  var n = 0;
-                  var values = [];
-                  var years = [];
-
-                  var sumXY = 0;
-                  var sumX = 0;
-                  var sumY = 0;
-                  var sumX2 = 0;
-
-                  if(!HasValue($feature, "F"+y)){
+                  var current = $feature["F"+yr];
+                  var previous = $feature["F"+(yr-1)];
+                  if(IsEmpty(current) || IsEmpty(previous)){
                     return null;
                   }
-
-                  for (var c = yr-${range-1}; c <= yr; c++){
-                    if(!HasValue($feature, "F"+c) || !HasValue($feature, "F"+(c-1))){
-                      continue;
-                    }
-
-                    n++;
-                    var x = $feature["F"+c];
-                    var y = c;
-
-                    sumXY += (x * y);
-                    sumX += x;
-                    sumY += y;
-                    sumX2 += (x * x);
-                  }
-
-                  var slope = (n * sumXY - (sumX * sumY)) / ((n * sumX2) - (sumX * sumX))
-
-                  return slope;
+                  var change = Text((current - previous) / previous, "+#.#%;-#.#%");
+                  return change;
                 `
-
-                // `
-                //   var y = ${year};
-                //   var numIncreases = 0;
-                //   var numYears = 0;
-                //   var changes = [];
-
-                //   if(!HasValue($feature, "F"+y) || !HasValue($feature, "F"+${year-range})){
-                //     return null;
-                //   }
-
-                //   for (var c = y-${range-1}; c <= y; c++){
-                //     if(!HasValue($feature, "F"+c) || !HasValue($feature, "F"+(c-1))){
-                //       continue;
-                //     }
-                //     numYears++;
-                //     var current = $feature["F"+c];
-                //     var previous = $feature["F"+(c-1)];
-                //     var change = Round((current - previous) / previous, 2);
-                //     Push(changes, change);
-
-                //     if(current > previous){
-                //       numIncreases++;
-                //     }
-                //   }
-                //   var avgChange = Average(changes);
-                //   return Text(avgChange, "+#,###.#%;-#,###.#%");
-                // `,
               },
               labelPlacement: "center-right",
               symbol: {
@@ -793,7 +629,7 @@
                 yoffset: -7,
               },
             },
-          ]
+          ];
         });
       });
     </script>
