@@ -76,9 +76,9 @@
           visualVariables: [
           {
             type: "size",
-            field: "F2022",
+            field: "F2023",
             legendOptions: {
-              title: "Total visits in 2022"
+              title: "Total visits in 2023"
             },
             minDataValue: 50_000,
             maxDataValue: 10_000_000,
@@ -87,7 +87,7 @@
           },
           {
             type: "color",
-            valueExpression: "(( $feature.F2022 - $feature.F2021 ) / $feature.F2021 ) * 100",
+            valueExpression: "(( $feature.F2023 - $feature.F2021 ) / $feature.F2021 ) * 100",
             valueExpressionTitle: "% change from previous year",
             stops: [
               { value: -50, color: colors[0] },

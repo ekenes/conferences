@@ -49,7 +49,7 @@
         "esri/widgets/Slider"
       ], (Map, MapView, FeatureLayer, Legend, Slider) => {
 
-        const year = 2022;
+        const year = 2023;
         const range = 10;
 
         const map = new Map({
@@ -77,7 +77,7 @@
 
         const slider = new Slider({
           min: 1905,
-          max: 2022,
+          max: 2023,
           steps: 1,
           // minorTicks: ,
           majorTicks: [1905, 1920, 1940, 1960, 1980, 2000, 2020],
@@ -396,7 +396,7 @@
             visualVariables: [
               {
                 type: "size",
-                valueExpressionTitle: "10-year rolling average (2022)",
+                valueExpressionTitle: "10-year rolling average (2023)",
                 valueExpression: `
                   var y = ${year};
                   var rollingTotal = 0;
