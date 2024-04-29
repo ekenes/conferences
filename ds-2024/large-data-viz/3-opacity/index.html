@@ -48,7 +48,7 @@
 
       layer.renderer = new SimpleRenderer({
         symbol: new SimpleFillSymbol({
-          color: "rgba(0,76,115,0.04)",
+          color: "rgba(0,76,115,0.03)",
           outline: null
         })
       });
@@ -63,9 +63,139 @@
         map,
         container: "viewDiv",
         center: [-98, 40],
-        zoom: 3
+        zoom: 3,
+        popup: {
+          highlightEnabled: false
+        }
       });
       view.ui.add("titleDiv", "top-right");
+
+      layer.when(async () => {
+        const popupTemplate = layer.popupTemplate.clone();
+        const expressionContent = [{
+          type: "expression",
+          expressionInfo: {
+            name: "total count",
+            title: "total count",
+            expression: `
+              var num = Text(Count(Intersects($layer, $userInput)), "#,###");
+
+              return {
+                type: "text",
+                text: \`<b>\${num}</b> flash flood warnings have been issued in this area.\`
+              }
+            `
+          }
+        }, {
+          type: "expression",
+          expressionInfo: {
+            name: "average duration",
+            title: "average duration",
+            expression: `
+              var num = Text(Average(Intersects($layer, $userInput), "DURATION"), "#.# hours");
+
+              return {
+                type: "text",
+                text: \`The average duration of flash flood warnings in this location is <b>\${num}</b>.\`
+              }
+            `
+          }
+        }, {
+          type: "expression",
+          expressionInfo: {
+            name: "summary by season",
+            title: "summary by season",
+            expression: `
+              var warnings = Intersects($layer, $userInput);
+
+              var countBySeason = GroupBy(
+                warnings,
+                "SEASON",
+                { name: "total", expression: "1", statistic: "COUNT" }
+              );
+
+              var attributes = {
+                Fall: 0,
+                Spring: 0,
+                Summer: 0,
+                Winter: 0
+              };
+              var fields = ["Fall", "Spring", "Summer", "Winter"];
+
+              for (var season in countBySeason){
+                var name = season.season;
+                attributes[name] = season.total;
+              }
+
+              var colors = [[217, 43, 48], [60, 204, 180], [255, 223, 60], [242, 96, 161]];
+
+              return {
+                type: "media",
+                attributes,
+                mediaInfos: [
+                  {
+                    type: "columnchart",
+                    title: "Warnings by season",
+                    altText: "",
+                    value: { fields, colors }
+                  }
+                ]
+              };
+            `
+          }
+        }, {
+          type: "expression",
+          expressionInfo: {
+            name: "summary by month",
+            title: "summary by month",
+            expression: `
+              var warnings = Intersects($layer, $userInput);
+
+              var attributes = {
+                January: 0,
+                February: 0,
+                March: 0,
+                April: 0,
+                May: 0,
+                June: 0,
+                July: 0,
+                August: 0,
+                September: 0,
+                October: 0,
+                November: 0,
+                December: 0
+              };
+              var fields = ["January", "February", "March", "April", "May", "June", "July", "August", "September", "October", "November", "December"];
+
+              for (var w in warnings){
+                var m = Text(w.IssueDate, "MMMM");
+                attributes[m]++;
+              }
+
+              // SEASON
+              // DURATION
+
+              var colors = [[60, 204, 180], [60, 204, 180], [60, 204, 180], [60, 204, 180], [60, 204, 180], [60, 204, 180], [60, 204, 180], [60, 204, 180], [60, 204, 180], [60, 204, 180], [60, 204, 180], [60, 204, 180], [60, 204, 180]];
+
+              return {
+                type: "media",
+                attributes,
+                mediaInfos: [
+                  {
+                    type: "columnchart",
+                    title: "Warnings by month",
+                    altText: "",
+                    value: { fields, colors }
+                  }
+                ]
+              };
+            `
+          }
+        }];
+
+        popupTemplate.content = expressionContent;
+        layer.popupTemplate = popupTemplate;
+      });
 
     });
 

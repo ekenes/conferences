@@ -31,84 +31,41 @@
         "esri/Map",
         "esri/views/MapView",
         "esri/layers/FeatureLayer",
-        "esri/widgets/Legend",
+        "esri/widgets/Legend"
       ], (Map, MapView, FeatureLayer, Legend) => {
         const map = new Map({
-          basemap: "gray-vector",
+          basemap: "gray-vector"
         });
 
         const view = new MapView({
           container: "viewDiv",
           map: map,
           constraints: {
-            snapToZoom: false,
+            snapToZoom: false
           },
           zoom: 4,
-          center: [-100, 40],
+          center: [-100, 40]
         });
 
         view.ui.add(new Legend({ view }), "bottom-left");
 
-        /********************
-         * Add feature layer
-         ********************/
-
-        // Esri color ramps - Sunset Fade
-        // #b30000,#7c1158,#1a53ff,#00b7c7,#8be04e,#ebdc78
-        // const colors = // Esri color ramps - Mushroom Soup
-        // #00b6f1,#d9bf0d,#c44245,#6a28c7,#b9a087,#ab579d
-
-        const colors = [
-          "#b86b53",
-          "#3e756d",
-          "#9c5596",
-          "#5c98ca",
-          "#00b6f1",
-          "#555555",
-        ];
-        // Esri color ramps - Andromeda
-        // #3900b3,#714dbf,#9e6b90,#cf9270,#ebb698
-        const andromeda = [
-          "#3900b3",
-          "#714dbf",
-          "#9e6b90",
-          "#cf9270",
-          "#ebb698",
-        ].reverse();
+        const colors = ["#850000ff", "#d12020ff", "#b89fa0ff", "#8790bfff", "#50567aff"].reverse();
 
         // Carbon storage of trees in Warren Wilson College.
         const featureLayer = new FeatureLayer({
           portalItem: {
-            id: "0e3fd5de259f46acb169c54eb501cfe5",
+            id: "0e3fd5de259f46acb169c54eb501cfe5"
           },
-          title: "Record increase in visits in single year",
+          title: "Record drop in visits in single year",
           labelingInfo: [
             {
               labelExpressionInfo: {
                 expression: `
-                  var s = 1905;
-                  var e = 2023;
+                  var s = $feature.F2019;  // Average($feature.F2016, $feature.F2017, $feature.F2018, $feature.F2019);
+                  var e = $feature.F2023;
 
-                  var highest = -Infinity;
-                  var highest_year = 1905;
-
-                  var previousValue = null;
-
-                  for (var y = s; y <= e; y++){
-                    var currentYear = $feature["F"+y];
-                    var previousYear = $feature["F"+(y-1)];
-                    if(IsEmpty(currentYear) || IsEmpty(previousYear)){
-                      continue;
-                    }
-                    var change = currentYear - previousYear;
-                    if(change > highest){
-                      highest = change;
-                      highest_year = y;
-                    }
-                  }
-
-                  return highest_year;
-                `,
+                  return Text((e - s) / s, "#.#%");
+                `
               },
               labelPlacement: "center-right",
               symbol: {
@@ -116,19 +73,18 @@
                 font: {
                   size: 11,
                   family: "Noto Sans",
-                  weight: "bold",
+                  weight: "bold"
                 },
                 horizontalAlignment: "left",
                 color: "#2b2b2b",
                 yoffset: 9,
                 // haloColor: "rgba(255,255,255,0.4)",
                 // haloSize: 2
-              },
-            },
-            {
+              }
+            }
+            , {
               labelExpressionInfo: {
-                expression:
-                  "Replace($feature.Park, 'National Park', '', false)",
+                expression: "Replace($feature.Park, 'National Park', '', false)"
               },
               labelPlacement: "center-right",
               // minScale: minScale,
@@ -136,39 +92,21 @@
                 type: "text", // autocasts as new TextSymbol()
                 font: {
                   size: 6,
-                  family: "Noto Sans",
+                  family: "Noto Sans"
                 },
                 horizontalAlignment: "left",
                 color: "#2b2b2b",
-                yoffset: 0,
-              },
-            },
-            {
+                yoffset: 0
+              }
+            }
+            , {
               labelExpressionInfo: {
                 expression: `
-                  var s = 1905;
-                  var e = 2023;
+                  var s = $feature.F2019;  // Average($feature.F2016, $feature.F2017, $feature.F2018, $feature.F2019);
+                  var e = $feature.F2023;
 
-                  var highest = -Infinity;
-                  var highest_year = 1905;
-
-                  var previousValue = null;
-
-                  for (var y = s; y <= e; y++){
-                    var currentYear = $feature["F"+y];
-                    var previousYear = $feature["F"+(y-1)];
-                    if(IsEmpty(currentYear) || IsEmpty(previousYear)){
-                      continue;
-                    }
-                    var change = currentYear - previousYear;
-                    if(change > highest){
-                      highest = change;
-                      highest_year = y;
-                    }
-                  }
-
-                  return Text(highest, "+#,###;-#,###");
-                `,
+                  return Text(e - s, "+#,###;-#,###");
+                `
               },
               labelPlacement: "center-right",
               // minScale: minScale,
@@ -176,13 +114,13 @@
                 type: "text", // autocasts as new TextSymbol()
                 font: {
                   size: 6,
-                  family: "Noto Sans",
+                  family: "Noto Sans"
                 },
                 horizontalAlignment: "left",
                 color: "#2b2b2b",
-                yoffset: -7,
-              },
-            },
+                yoffset: -7
+              }
+            }
           ],
           outFields: ["*"],
           renderer: {
@@ -353,83 +291,34 @@
                 },
               },
             },
-            visualVariables: [
-              {
-                type: "size",
-                valueExpressionTitle: "Total increase from previous year",
-                valueExpression: `
-                var s = 1905;
-                var e = 2023;
-
-                var highest = -Infinity;
-                var highest_year = 1905;
-
-                var previousValue = null;
-
-                for (var y = s; y <= e; y++){
-                  var currentYear = $feature["F"+y];
-                  var previousYear = $feature["F"+(y-1)];
-                  if(IsEmpty(currentYear) || IsEmpty(previousYear)){
-                    continue;
-                  }
-                  var change = currentYear - previousYear;
-                  if(change > highest){
-                    highest = change;
-                    highest_year = y;
-                  }
-                }
-
-                return highest;
-              `,
-                stops: [
-                  { value: 10000, label: "10,000", size: "12px" },
-                  { value: 500000, label: "500,000", size: "24px" },
-                  { value: 1000000, label: "1,000,000", size: "32px" },
-                  { value: 2000000, label: "2,000,000", size: "64px" },
-                ],
+            visualVariables: [{
+              type: "size",
+              legendOptions: {
+                title: "2023 visits"
               },
-              {
-                type: "color",
-                valueExpressionTitle: "Relative increase from previous year",
-                valueExpression: `
-                var s = 1905;
-                var e = 2023;
+              field: "F2023",
+              minDataValue: 50_000,
+              maxDataValue: 10_000_000,
+              minSize: 15,
+              maxSize: 60
+            }, {
+              type: "color",
+              valueExpressionTitle: "Return to pre-pandemic levels?",
+              valueExpression: `
+                var s = Average($feature.F2016, $feature.F2017, $feature.F2018, $feature.F2019);
+                var e = $feature.F2023;
 
-                var highest = -Infinity;
-                var highest_year = 1905;
-                var hightestPercent = null;
-
-                var previousValue = null;
-
-                for (var y = s; y <= e; y++){
-                  var currentYear = $feature["F"+y];
-                  var previousYear = $feature["F"+(y-1)];
-                  if(currentYear < 1 || previousYear < 1){
-                    continue;
-                  }
-                  if(IsEmpty(currentYear) || IsEmpty(previousYear)){
-                    continue;
-                  }
-                  var change = currentYear - previousYear;
-                  if(change > highest){
-                    highest = change;
-                    hightestPercent = change / previousYear;
-                    highest_year = y;
-                  }
-                }
-
-                return hightestPercent;
+                return ((e - s) / s);
               `,
-                stops: [
-                  { value: 0, label: "Similar number of visitors", color: andromeda[0] },
-                  { value: 0.5, label: null, color: andromeda[1] },
-                  { value: 1, label: "2x the previous total", color: andromeda[2] },
-                  { value: 1.5, label: null, color: andromeda[3] },
-                  { value: 2, label: "3x or more", color: andromeda[4] },
-                ],
-              },
-            ],
-          },
+              stops: [
+                { value: 0.25, label: "> pre-pandemic visits", color: colors[0] },
+                { value: 0.1, label: null, color: colors[1] },
+                { value: 0, label: "Similar to pre-pandemic visits", color: colors[2] },
+                { value: -0.1, label: null, color: colors[3] },
+                { value: -0.25, label: "< pre-pandemic visits", color: colors[4] },
+              ]
+            }]
+          }
         });
 
         map.add(featureLayer);

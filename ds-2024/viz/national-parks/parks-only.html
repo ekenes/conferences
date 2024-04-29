@@ -52,25 +52,25 @@
         portalItem: {
           id: "0e3fd5de259f46acb169c54eb501cfe5"
         },
-        // effect: "drop-shadow(2px, 2px, 2px, lightgray)",
-        // labelingInfo: [
-        //   {
-        //     labelExpressionInfo: {
-        //       expression: "Replace($feature.Park, 'National Park', '', false)"
-        //     },
-        //     labelPlacement: "above-right",
-        //     symbol: {
-        //       type: "text",
-        //       font: {
-        //         size: 6,
-        //         family: "Noto Sans"
-        //       },
-        //       horizontalAlignment: "left",
-        //       color: "#2b2b2b",
-        //       yoffset: 0
-        //     }
-        //   }
-        // ],
+        effect: "drop-shadow(2px, 2px, 2px, lightgray)",
+        labelingInfo: [
+          {
+            labelExpressionInfo: {
+              expression: "Replace($feature.Park, 'National Park', '', false)"
+            },
+            labelPlacement: "above-right",
+            symbol: {
+              type: "text",
+              font: {
+                size: 6,
+                family: "Noto Sans"
+              },
+              horizontalAlignment: "left",
+              color: "#2b2b2b",
+              yoffset: 0
+            }
+          }
+        ],
         renderer: {
           type: "simple",
           visualVariables: [
@@ -82,12 +82,12 @@
             },
             minDataValue: 50_000,
             maxDataValue: 10_000_000,
-            minSize: 15,
+            minSize: 8,
             maxSize: 60
           },
           {
             type: "color",
-            valueExpression: "(( $feature.F2023 - $feature.F2021 ) / $feature.F2021 ) * 100",
+            valueExpression: "(( $feature.F2023 - $feature.F2022 ) / $feature.F2022 ) * 100",
             valueExpressionTitle: "% change from previous year",
             stops: [
               { value: -50, color: colors[0] },
