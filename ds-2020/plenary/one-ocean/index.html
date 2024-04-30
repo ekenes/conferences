@@ -528,15 +528,16 @@
           });
 
           function filterByGeometry(geometry, distance){
-            emuLayerView.effect = {
-              excludedEffect: "grayscale(100%) opacity(80%)",
+            emuLayer.featureEffect = {
+              excludedEffect: "grayscale(80%) opacity(80%)",
+              includedEffect: "drop-shadow(2px 2px 2px black)",
               filter: {
                 geometry: geometryEngine.buffer(geometry, distance, "kilometers")
               }
             }
 
             const query = emuLayerView.createQuery();
-            query.geometry = emuLayerView.effect.filter.geometry;
+            query.geometry = emuLayer.featureEffect.filter.geometry;
 
             emuLayerView.queryFeatures(query).then(function(response){
               selectedFeatures = response.features;
@@ -549,7 +550,7 @@
             const velocityField = `Velocity_${getLevelFromDepth(depthSlider.values[0])}`;
             const directionField = `Direction_${getLevelFromDepth(depthSlider.values[0])}`;
 
-            emuLayerView.effect = null;
+            emuLayer.effect = null;
             emuLayerView.filter = null;
             selectedFeatures = [];
             drawBtn.classList.remove("esri-button--secondary");
@@ -567,7 +568,7 @@
 
           tearDropSymbol.fetchCIMSymbol().then(function(cim){
             tearDropCIMSymbol = cim;
-          })
+          });
 
           function updateSalinityTempRelationship(addCurrents){
             const level = getLevelFromDepth(depthSlider.values[0]);
