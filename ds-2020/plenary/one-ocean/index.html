@@ -186,7 +186,6 @@
             portalItem: {
               id: "9ff162e1ea1a4885acd8c4ceeab588a5"
             },
-            outFields: ["*"],
             popupEnabled: false
           });
 
@@ -497,6 +496,7 @@
               reactiveUtils.once(
                 () => !emuLayerView.updating)
                 .then(() => {
+                  emuLayer.outFields = ["*"];
                   view.container.style.opacity = "100%";
                   loadingControl.style.visibility = "hidden";
                   enableViewInteraction(handles);
