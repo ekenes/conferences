@@ -1,0 +1,133 @@
+<html>
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="initial-scale=1,maximum-scale=1,user-scalable=no" />
+
+    <title> Point clustering - unique values</title>
+
+    <link rel="stylesheet" href="https://js.arcgis.com/4.29/esri/themes/light/main.css" />
+    <script src="https://js.arcgis.com/4.29/"></script>
+
+    <style>
+      html,
+      body,
+      #viewDiv {
+        height: 100%;
+        width: 100%;
+        margin: 0;
+        padding: 0;
+        background-color: white;
+      }
+    </style>
+
+    <script>
+      require([
+        "esri/WebMap",
+        "esri/views/MapView",
+        "esri/layers/FeatureLayer",
+        "esri/widgets/Legend",
+        "esri/widgets/Expand",
+        "esri/smartMapping/labels/clusters",
+        "esri/smartMapping/popup/clusters"
+      ], (
+        WebMap,
+        MapView,
+        FeatureLayer,
+        Legend,
+        Expand,
+        clusterLabelCreator,
+        clusterPopupCreator
+      ) => {
+
+        const layer = new FeatureLayer({
+          portalItem: {
+            id: "eb54b44c65b846cca12914b87b315169"
+          }
+        });
+
+        const map = new WebMap({
+          basemap: {
+            portalItem: {
+              id: "75a08e8cd8b64dcfa6945bb7f624ccc5"
+            }
+          },
+          layers: [layer]
+        });
+
+        const view = new MapView({
+          container: "viewDiv",
+          map,
+          extent: {
+            spatialReference: {
+              latestWkid: 3857,
+              wkid: 102100
+            },
+            xmin: -15327459,
+            ymin: 2740044,
+            xmax: -6076744,
+            ymax: 6878650
+          },
+          popup: {
+            dockEnabled: true,
+            dockOptions: {
+              breakpoint: false,
+              position: "top-right"
+            }
+          },
+          constraints: {
+            snapToZoom: false
+          }
+        });
+
+        view.ui.add(
+          new Expand({
+            content: new Legend({ view }),
+            view
+          }),
+          "top-left"
+        );
+
+        layer
+          .when()
+          .then(generateClusterConfig)
+          .then( (featureReduction) => {
+            // sets generated cluster configuration on the layer
+            layer.featureReduction = featureReduction;
+          })
+          .catch((error) => {
+            console.error(error);
+          });
+
+        async function generateClusterConfig(layer) {
+
+          // generates default popupTemplate
+          const popupTemplate = await clusterPopupCreator
+            .getTemplates({ layer })
+            .then( (popupTemplateResponse) => popupTemplateResponse.primaryTemplate.value );
+
+          // generates default labelingInfo
+          const { labelingInfo, clusterMinSize } = await clusterLabelCreator
+            .getLabelSchemes({
+              layer,
+              view
+            })
+            .then((labelSchemes) => labelSchemes.primaryScheme);
+
+          // Set this object on layer.featureReduction
+          return {
+            type: "cluster",
+            popupTemplate,
+            labelingInfo,
+            clusterMinSize
+          };
+
+        }
+
+      });
+    </script>
+  </head>
+
+  <body>
+    <div id="viewDiv"></div>
+  </body>
+</html>

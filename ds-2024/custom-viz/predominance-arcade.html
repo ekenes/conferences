@@ -1,0 +1,177 @@
+<html lang="en">
+
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="initial-scale=1,maximum-scale=1,user-scalable=no" />
+
+  <title>Create a custom visualization using Arcade | Sample | ArcGIS Maps SDK for JavaScript 4.29</title>
+
+  <link rel="stylesheet" href="https://js.arcgis.com/4.29/esri/themes/dark/main.css" />
+  <script src="https://js.arcgis.com/4.29/"></script>
+
+  <style>
+    html,
+    body,
+    #viewDiv {
+      padding: 0;
+      margin: 0;
+      height: 100%;
+      width: 100%;
+    }
+  </style>
+
+  <script>
+    require(["esri/Map", "esri/views/MapView", "esri/layers/FeatureLayer", "esri/widgets/Legend"], (
+      Map,
+      MapView,
+      FeatureLayer,
+      Legend
+    ) => {
+
+      const renderer = {
+        type: "unique-value",
+        valueExpression: `
+          var republican = $feature.MP06025a_B;
+          var democrat = $feature.MP06024a_B;
+          var independent = $feature.MP06026a_B;
+          var parties = [republican, democrat, independent];
+
+          return Decode( Max(parties),
+            republican, 'republican',
+            democrat, 'democrat',
+            independent, 'independent',
+          'n/a' );
+        `,
+        valueExpressionTitle: "Predominant political affiliation",
+        uniqueValueInfos: [
+          {
+            value: "democrat",
+            symbol: createSymbol("#00c3ff"),
+            label: "Democrat"
+          },
+          {
+            value: "republican",
+            symbol: createSymbol("#ff002e"),
+            label: "Republican"
+          },
+          {
+            value: "independent",
+            symbol: createSymbol("#faff00"),
+            label: "Independent/other party"
+          }
+        ]
+      };
+
+      renderer.visualVariables = [
+        {
+          type: "opacity",
+          valueExpression: `
+              var republican = $feature.MP06025a_B;
+              var democrat = $feature.MP06024a_B;
+              var independent = $feature.MP06026a_B;
+              var parties = [republican, democrat, independent];
+              var total = Sum(parties);
+              var max = Max(parties);
+
+              return (max / total) * 100;
+            `,
+          valueExpressionTitle: "Share of registered voters comprising the dominant party",
+          stops: [{ value: 33, opacity: 0.05, label: "< 33%" }, { value: 44, opacity: 1.0, label: "> 44%" }]
+        }
+      ];
+
+      // Create FeatureLayer instance with popupTemplate
+
+      const layer = new FeatureLayer({
+        portalItem: {
+          // autocasts as new PortalItem()
+          id: "8444e275037549c1acab02d2626daaee"
+        },
+        outFields: ["MP06025a_B", "MP06024a_B", "MP06026a_B", "COUNTY", "STATE", "POP18UP_CY"],
+        renderer,
+        popupTemplate: {
+          // autocasts as new PopupTemplate()
+          title: "{COUNTY}, {STATE}",
+          content: [
+            {
+              type: "fields",
+              fieldInfos: [
+                {
+                  fieldName: "MP06024a_B",
+                  label: "Democrat",
+                  format: {
+                    digitSeparator: true,
+                    places: 0
+                  }
+                },
+                {
+                  fieldName: "MP06025a_B",
+                  label: "Republican",
+                  format: {
+                    digitSeparator: true,
+                    places: 0
+                  }
+                },
+                {
+                  fieldName: "MP06026a_B",
+                  label: "Independent/Other",
+                  format: {
+                    digitSeparator: true,
+                    places: 0
+                  }
+                },
+                {
+                  fieldName: "POP18UP_CY",
+                  label: "Adult Population",
+                  format: {
+                    digitSeparator: true,
+                    places: 0
+                  }
+                }
+              ]
+            }
+          ]
+        }
+      });
+
+      const map = new Map({
+        basemap: "dark-gray-vector",
+        layers: [layer]
+      });
+
+      // The minSize and maxSize of volumetric symbols are determined
+      // based on the view/camera the data will be displayed in.
+
+      const view = new MapView({
+        container: "viewDiv",
+        map: map,
+        center: [-95, 38],
+        zoom: 4
+      });
+
+      const legend = new Legend({
+        view
+      });
+      view.ui.add(legend, "bottom-left");
+
+      // Creates a SimpleFillSymbol based on an input color
+
+      function createSymbol(color) {
+        return {
+          type: "simple-fill", // autocasts as new SimpleFillSymbol()
+          color: color,
+          outline: {
+            width: 0.2,
+            color: [0, 0, 0, 0.1]
+          }
+        };
+      }
+    });
+  </script>
+</head>
+
+<body>
+  <div id="viewDiv"></div>
+</body>
+
+</html>

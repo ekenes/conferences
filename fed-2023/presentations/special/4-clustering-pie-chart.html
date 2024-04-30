@@ -1,0 +1,259 @@
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta
+      name="viewport"
+      content="initial-scale=1,maximum-scale=1,user-scalable=no"
+    />
+
+    <title>
+      Clusters as pie charts | Sample | ArcGIS Maps SDK for JavaScript 4.25
+    </title>
+
+    <style>
+      html,
+      body,
+      #viewDiv {
+        padding: 0;
+        margin: 0;
+        height: 100%;
+        width: 100%;
+      }
+      #infoDiv {
+        padding: 10px;
+      }
+    </style>
+
+    <link rel="stylesheet" href="https://js.arcgis.com/4.25/esri/themes/light/main.css"/>
+    <script src="https://js.arcgis.com/4.25/"></script>
+
+    <script type="text/javascript">
+      require([
+        "esri/WebMap",
+        "esri/views/MapView",
+        "esri/widgets/Legend",
+        "esri/widgets/Expand",
+        "esri/widgets/Home",
+        "esri/smartMapping/labels/clusters",
+        "esri/smartMapping/renderers/pieChart",
+        "esri/widgets/Bookmarks"
+      ], function (
+        WebMap,
+        MapView,
+        Legend,
+        Expand,
+        Home,
+        clusterLabelCreator,
+        pieChartRendererCreator,
+        Bookmarks
+      ) {
+        (async () => {
+          let clusterConfig;
+
+          const map = new WebMap({
+            portalItem: {
+              id: "433b5f7f524a4d1ebf3a9f8e1bd49ee0"
+            }
+          });
+
+          const view = new MapView({
+            container: "viewDiv",
+            map,
+            constraints: {
+              snapToZoom: false
+            },
+            viewpoint: {
+              rotation: 328,
+              scale: 65104,
+              targetGeometry:{
+                type: "point",
+                spatialReference:{ latestWkid:3857, wkid:102100 },
+                x: -8230469,
+                y: 4981411
+              }
+            }
+          });
+
+          await view.when();
+          const layer = view.map.layers.getItemAt(0);
+          layer.effect = "drop-shadow(2px, 2px, 2px, lightgray)";
+
+          layer
+            .when()
+            .then(generateClusterConfig)
+            .then((clusterProperties) => {
+
+              const {
+                popupTemplate,
+                labelingInfo,
+                clusterMinSize,
+
+                fields,
+                renderer
+              } = clusterProperties;
+
+              layer.featureReduction = {
+                type: "cluster",
+                popupTemplate,
+                labelingInfo,
+                clusterMinSize,
+
+                fields,
+                renderer
+              };
+
+              clusterConfig = layer.featureReduction;
+            })
+            .catch((error) => {
+              console.error(error);
+            });
+
+          async function generateClusterConfig(layer) {
+            // generates default labelingInfo
+            const { labelingInfo, clusterMinSize } = await clusterLabelCreator
+              .getLabelSchemes({ layer, view })
+              .then((labelSchemes) => labelSchemes.primaryScheme);
+
+            const labelSymbol = labelingInfo[0].symbol;
+            labelSymbol.color = labelSymbol.haloColor.clone();
+            labelSymbol.haloColor = [255, 255, 255, 0.3];
+            labelSymbol.font.size = 10;
+
+            const { renderer, fields } =
+              await pieChartRendererCreator.createRendererForClustering({
+                layer,
+                shape: "donut"
+              });
+
+            renderer.holePercentage = 0.66;
+
+            const fieldInfos = fields.map((field) => {
+              return {
+                fieldName: field.name,
+                label: field.alias,
+                format: {
+                  places: 0,
+                  digitSeparator: true
+                }
+              };
+            });
+
+            const popupTemplate = {
+              content: [
+                {
+                  type: "text",
+                  text: "This cluster represents <b>{cluster_count}</b> features."
+                },
+                {
+                  type: "fields"
+                }
+              ],
+              fieldInfos
+            };
+
+            return {
+              type: "cluster",
+              popupTemplate,
+              labelingInfo,
+              labelsVisible: true,
+              clusterMinSize,
+
+              fields,
+              renderer
+            };
+          }
+
+          view.ui.add(
+            new Home({
+              view
+            }),
+            "top-left"
+          );
+
+          const legend = new Legend({
+            view: view,
+            container: "legendDiv"
+          });
+
+          const infoDiv = document.getElementById("infoDiv");
+          view.ui.add(
+            new Expand({
+              view: view,
+              content: infoDiv,
+              expandIconClass: "esri-icon-layer-list",
+              expanded: true,
+              group: "top-left"
+            }),
+            "top-left"
+          );
+          view.ui.add(new Expand({
+            view,
+            expanded: false,
+            group: "top-left",
+            content: new Bookmarks({
+              view,
+              bookmarks: [{
+                name: "Upper Manhattan",
+                viewpoint: {
+                  rotation: 328,
+                  scale: 65104,
+                  targetGeometry:{
+                    type: "point",
+                    spatialReference:{ latestWkid:3857, wkid:102100 },
+                    x: -8230469,
+                    y: 4981411
+                  }
+                }
+              }, {
+                name: "Lower Manhattan",
+                viewpoint: {
+                  rotation: 0,
+                  scale: 20418,
+                  targetGeometry:{
+                    type: "point",
+                    spatialReference:{ latestWkid:3857, wkid:102100 },
+                    x: -8237373,
+                    y: 4970626
+                  }
+                }
+              }, {
+                name: "New York City",
+                viewpoint: {
+                  rotation: 0,
+                  scale: 144447,
+                  targetGeometry:{
+                    type: "point",
+                    spatialReference:{ latestWkid:3857, wkid:102100 },
+                    x: -8225764,
+                    y: 4965691
+                  }
+                }
+              }]
+            })
+          }), "top-left");
+
+          const toggleButton = document.getElementById("cluster");
+
+          // To turn off clustering on a layer, set the
+          // featureReduction property to null
+          toggleButton.addEventListener("click", () => {
+            let fr = layer.featureReduction;
+            layer.featureReduction =
+              fr && fr.type === "cluster" ? null : clusterConfig;
+            toggleButton.innerText =
+              toggleButton.innerText === "Enable Clustering"
+                ? "Disable Clustering"
+                : "Enable Clustering";
+          });
+        })();
+      });
+    </script>
+  </head>
+  <body>
+    <div id="viewDiv"></div>
+    <div id="infoDiv" class="esri-widget">
+      <button id="cluster" class="esri-button">Disable Clustering</button>
+      <div id="legendDiv"></div>
+    </div>
+  </body>
+</html>

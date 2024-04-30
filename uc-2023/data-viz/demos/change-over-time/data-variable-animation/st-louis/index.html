@@ -1,0 +1,196 @@
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta
+      name="viewport"
+      content="initial-scale=1,maximum-scale=1,user-scalable=no"
+    />
+    <title>
+      Update a renderer's attribute | Sample | ArcGIS Maps SDK for JavaScript
+      4.26
+    </title>
+
+    <link
+      rel="stylesheet"
+      href="https://js.arcgis.com/4.26/esri/themes/light/main.css"
+    />
+    <script src="https://js.arcgis.com/4.26/"></script>
+
+    <style>
+
+      #containerDiv {
+        padding: 10px;
+        text-align: center;
+        box-shadow: 0;
+      }
+
+      #sliderDiv {
+        height: 100px;
+      }
+
+      #histogram {
+        width: 500px;
+        height: 150px;
+      }
+      .labels {
+        padding: 5px;
+      }
+
+      html,
+      body {
+        padding: 0;
+        margin: 0;
+        height: 100%;
+        width: 100%;
+      }
+
+      #viewDiv {
+        position: absolute;
+        right: 0;
+        left: 0;
+        top: 0;
+        bottom: 100px;
+        background-color: white;
+      }
+
+      #sliderContainer {
+        position: absolute;
+        bottom: 0;
+        height: 100px;
+        width: 100%;
+        text-align: center;
+      }
+    </style>
+
+    <script>
+      require([
+        "esri/WebMap",
+        "esri/views/MapView",
+        "esri/layers/FeatureLayer",
+        "esri/smartMapping/statistics/histogram",
+        "esri/smartMapping/statistics/summaryStatistics",
+        "esri/widgets/Histogram",
+        "esri/widgets/Slider",
+        "esri/widgets/Legend",
+        "esri/widgets/Expand",
+        "esri/core/reactiveUtils",
+        "esri/Color"
+      ], (
+        WebMap,
+        MapView,
+        FeatureLayer,
+        histogram,
+        summaryStatistics,
+        Histogram,
+        Slider,
+        Legend,
+        Expand,
+        reactiveUtils,
+        Color
+      ) => {
+
+        const map = new WebMap({
+          portalItem: {
+            id: "22c8ce006d234e3a8b73e4c75f421a67"
+          }
+        });
+
+        const view = new MapView({
+          container: "viewDiv",
+          map,
+          popup: {
+            dockOptions: {
+              position: "top-left"
+            }
+          }
+        });
+
+        // This slider will allow the user to update the renderer based on a
+        // provided year between 1880 and 2018
+
+        const slider = new Slider({
+          min: 1950,
+          max: 2020,
+          values: [1950],
+          visibleElements: {
+            labels: true,
+            rangeLabels: true
+          },
+          labelInputsEnabled: true,
+          precision: 0,
+          steps: 10,
+          container: "sliderDiv"
+        });
+
+        slider.on(["thumb-change", "thumb-drag"], (event) => {
+          // updateYearDisplay(event.value);
+          updateRenderer();
+        });
+
+        let lv, layer = null;
+
+        const fieldMap = new Map([
+          [1950, 'chg_4050'],
+          [1960, 'chg_5060'],
+          [1970, 'chg_6070'],
+          [1980, 'chg_7080'],
+          [1990, 'chg_8090'],
+          [2000, 'chg_9000'],
+          [2010, 'chg_0010'],
+          [2020, 'chg_1019']
+        ]);
+
+
+        view
+          .when(async () => {
+            layer = view.map.layers.getItemAt(0);
+            return view.whenLayerView(layer);
+          })
+          .then((layerView) => {
+            lv = layerView;
+            reactiveUtils
+              .whenOnce(() => !layerView.updating)
+              .then(updateRenderer);
+          })
+          .catch((e) => {
+            console.error(e);
+          });
+
+        // Updates the underlying data value driving the expression
+        // based on the given year provided by the slider
+
+        function updateRenderer() {
+          const year = slider.values[0];
+          const newField = fieldMap.get(year);
+
+          const renderer = layer.renderer.clone();
+          renderer.field = newField;
+          const vv = renderer.visualVariables.find((vv) => vv.type === "size");
+          vv.field = newField;
+          layer.renderer = renderer;
+        }
+
+        function updateYearDisplay(year) {
+          const yearElement = document.getElementById("yearDiv");
+          yearElement.innerText = year;
+        }
+
+        view.ui.add(new Legend({ view }), "top-right");
+      });
+    </script>
+  </head>
+
+  <body>
+    <div id="viewDiv"></div>
+    <div id="containerDiv" class="esri-widget">
+      <div class="esri-widget">
+        <div id="title" class="esri-widget">
+          <h3>Temperature Anomaly (<span id="yearDiv">1880</span>)</h3>
+        </div>
+      </div>
+    </div>
+    <div id="sliderContainer" class="esri-widget">
+      <div id="sliderDiv"></div>
+    </div>
+  </body>
+</html>

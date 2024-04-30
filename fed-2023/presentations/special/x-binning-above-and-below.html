@@ -1,0 +1,714 @@
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta
+      name="viewport"
+      content="initial-scale=1,maximum-scale=1,user-scalable=no"
+    />
+
+    <title>
+      Binning - basic configuration | Sample | ArcGIS Maps SDK for JavaScript
+      4.25
+    </title>
+
+    <style>
+      html,
+      body,
+      #viewDiv {
+        padding: 0;
+        margin: 0;
+        height: 100%;
+        width: 100%;
+      }
+      #infoDiv {
+        padding: 10px;
+      }
+    </style>
+
+    <script
+      type="module"
+      src="https://js.arcgis.com/calcite-components/1.0.0-beta.97/calcite.esm.js"
+    ></script>
+    <link
+      rel="stylesheet"
+      type="text/css"
+      href="https://js.arcgis.com/calcite-components/1.0.0-beta.97/calcite.css"
+    />
+
+    <link
+      rel="stylesheet"
+      href="https://jsdev.arcgis.com/4.26/esri/themes/light/main.css"
+    />
+    <script src="https://jsdev.arcgis.com/4.26/"></script>
+
+    <script type="text/javascript">
+      require([
+        "esri/Map",
+        "esri/views/MapView",
+        "esri/layers/FeatureLayer",
+        "esri/layers/support/LabelClass",
+        "esri/layers/support/AggregateField",
+        "esri/widgets/Legend",
+        "esri/widgets/Expand",
+        "esri/widgets/Home",
+        "esri/smartMapping/renderers/univariateColorSize",
+        "esri/smartMapping/renderers/relationship",
+        "esri/smartMapping/renderers/type",
+      ], function (
+        Map,
+        MapView,
+        FeatureLayer,
+        LabelClass,
+        AggregateField,
+        Legend,
+        Expand,
+        Home,
+        univariateColorSizeRendererCreator,
+        relationshipRendererCreator,
+        typeRendererCreator
+      ) {
+        const colors = ["#d7e1ee", "#cbd6e4", "#b3bfd1", "#c86558", "#991f17"];
+
+        const countRenderer = {
+          type: "simple",
+          symbol: {
+            type: "simple-fill",
+            color: [0, 255, 71, 1],
+            outline: null,
+            outline: {
+              color: "rgba(153, 31, 23, 0.3)",
+              width: 0.3
+            }
+          },
+          visualVariables: [
+            {
+              type: "color",
+              field: "aggregateCount",
+              legendOptions: {
+                title: "Number of crashes"
+              },
+              stops: [
+                { value: 0, color: colors[0] },
+                { value: 25, color: colors[1] },
+                { value: 75, color: colors[2] },
+                { value: 200, color: colors[3] },
+                { value: 300, color: colors[4] }
+              ]
+            }
+          ]
+        };
+
+        const featureReduction = {
+          type: "binning",
+          fields: [
+            new AggregateField({
+              name: "aggregateCount",
+              statisticType: "count"
+            }),
+            new AggregateField({
+              name: "SUM_PERSONS_INJURED",
+              alias: "Total number of persons injured",
+              onStatisticField: "NUMBER_OF_PERSONS_INJURED",
+              statisticType: "sum"
+            }),
+            new AggregateField({
+              name: "TOTAL_BEFORE_SHUTDOWN",
+              alias: "Total crashes before shutdown",
+              onStatisticExpression: {
+                title: "Before March 23, 2020",
+                returnType: "number",
+                expression: `
+                  $feature.CRASH_DATE;
+                  var crashDate = $feature.CRASH_DATE;
+
+                  if(IsEmpty(crashDate)){
+                    return null;
+                  }
+
+                  var inflectionDate = Date(2020, 2, 23);
+
+                  return IIF(crashDate < inflectionDate, 1, 0);
+                `
+              },
+              statisticType: "sum"
+            }),
+            new AggregateField({
+              name: "TOTAL_AFTER_SHUTDOWN",
+              alias: "Total crashes after shutdown",
+              onStatisticExpression: {
+                title: "After March 23, 2020",
+                returnType: "number",
+                expression: `
+                  $feature.CRASH_DATE;
+                  var crashDate = $feature.CRASH_DATE;
+
+                  if(IsEmpty(crashDate)){
+                    return null;
+                  }
+
+                  var inflectionDate = Date(2020, 2, 23);
+
+                  return IIF(crashDate < inflectionDate, 0, 1);
+                `
+              },
+              statisticType: "sum"
+            }),
+            new AggregateField({
+              name: "TOTAL_Q1",
+              alias: "Total crashes after shutdown",
+              onStatisticExpression: {
+                title: "After March 23, 2020",
+                returnType: "number",
+                expression: `
+                  $feature.CRASH_DATE;
+                  var crashDate = $feature.CRASH_DATE;
+
+                  if(IsEmpty(crashDate)){
+                    return null;
+                  }
+
+                  var m = ISOMonth(crashDate);
+
+                  var q = When(
+                    m <= 3, 1,
+                    m <= 6, 2,
+                    m <= 9, 3,
+                    m <= 12, 4,
+                    null
+                  );
+
+                  return Number(q == 1);
+                `
+              },
+              statisticType: "sum"
+            }),
+            new AggregateField({
+              name: "TOTAL_Q2",
+              alias: "Total crashes after shutdown",
+              onStatisticExpression: {
+                title: "After March 23, 2020",
+                returnType: "number",
+                expression: `
+                  $feature.CRASH_DATE;
+                  var crashDate = $feature.CRASH_DATE;
+
+                  if(IsEmpty(crashDate)){
+                    return null;
+                  }
+
+                  var m = ISOMonth(crashDate);
+
+                  var q = When(
+                    m <= 3, 1,
+                    m <= 6, 2,
+                    m <= 9, 3,
+                    m <= 12, 4,
+                    null
+                  );
+
+                  return Number(q == 2);
+                `
+              },
+              statisticType: "sum"
+            }),
+            new AggregateField({
+              name: "TOTAL_Q3",
+              alias: "Total crashes after shutdown",
+              onStatisticExpression: {
+                title: "After March 23, 2020",
+                returnType: "number",
+                expression: `
+                  $feature.CRASH_DATE;
+                  var crashDate = $feature.CRASH_DATE;
+
+                  if(IsEmpty(crashDate)){
+                    return null;
+                  }
+
+                  var m = ISOMonth(crashDate);
+
+                  var q = When(
+                    m <= 3, 1,
+                    m <= 6, 2,
+                    m <= 9, 3,
+                    m <= 12, 4,
+                    null
+                  );
+
+                  return Number(q == 3);
+                `
+              },
+              statisticType: "sum"
+            }),
+            new AggregateField({
+              name: "TOTAL_Q4",
+              alias: "Total crashes after shutdown",
+              onStatisticExpression: {
+                title: "After March 23, 2020",
+                returnType: "number",
+                expression: `
+                  $feature.CRASH_DATE;
+                  var crashDate = $feature.CRASH_DATE;
+
+                  if(IsEmpty(crashDate)){
+                    return null;
+                  }
+
+                  var m = ISOMonth(crashDate);
+
+                  var q = When(
+                    m <= 3, 1,
+                    m <= 6, 2,
+                    m <= 9, 3,
+                    m <= 12, 4,
+                    null
+                  );
+
+                  return Number(q == 4);
+                `
+              },
+              statisticType: "sum"
+            }),
+            new AggregateField({
+              name: "MODE_TIME",
+              alias: "Predominant time of day",
+              onStatisticExpression: {
+                title: "Time of day",
+                returnType: "string",
+                expression: `
+                  $feature.CRASH_TIME;
+                  var timeText = $feature.CRASH_TIME;
+
+                  if(IsEmpty(timeText)){
+                    return "None";
+                  }
+
+                  var parts = Split(timeText, ":");
+                  var h = Number(parts[0]);
+
+                  When(
+                    h < 12 && h >= 6, "Morning",
+                    h < 18, "Afternoon",
+                    h < 22, "Evening",
+                    h >= 22 || h < 6, "Night",
+                    "None"
+                  );
+                `
+              },
+              statisticType: "mode"
+            }),
+            new AggregateField({
+              name: "TOTAL_MORNING",
+              alias: "Crashes in the morning",
+              onStatisticExpression: {
+                title: "Morning",
+                returnType: "number",
+                expression: `
+                  $feature.CRASH_TIME;
+                  var timeText = $feature.CRASH_TIME;
+
+                  if(IsEmpty(timeText)){
+                    return null;
+                  }
+
+                  var parts = Split(timeText, ":");
+                  var h = Number(parts[0]);
+
+                  return IIF(h < 12 && h >= 6, 1, 0);
+                `
+              },
+              statisticType: "sum"
+            }),
+            new AggregateField({
+              name: "TOTAL_AFTERNOON",
+              alias: "Crashes in the afternoon",
+              onStatisticExpression: {
+                title: "Afternoon",
+                returnType: "number",
+                expression: `
+                  $feature.CRASH_TIME;
+                  var timeText = $feature.CRASH_TIME;
+
+                  if(IsEmpty(timeText)){
+                    return null;
+                  }
+
+                  var parts = Split(timeText, ":");
+                  var h = Number(parts[0]);
+
+                  return IIF(h >= 12 && h < 18, 1, 0);
+                `
+              },
+              statisticType: "sum"
+            }),
+            new AggregateField({
+              name: "TOTAL_EVENING",
+              alias: "Crashes in the evening",
+              onStatisticExpression: {
+                title: "Evening",
+                returnType: "number",
+                expression: `
+                  $feature.CRASH_TIME;
+                  var timeText = $feature.CRASH_TIME;
+
+                  if(IsEmpty(timeText)){
+                    return null;
+                  }
+
+                  var parts = Split(timeText, ":");
+                  var h = Number(parts[0]);
+
+                  return IIF(h >= 18 && h < 22, 1, 0);
+                `
+              },
+              statisticType: "sum"
+            }),
+            new AggregateField({
+              name: "TOTAL_NIGHT",
+              alias: "Crashes in the night",
+              onStatisticExpression: {
+                title: "Night",
+                returnType: "number",
+                expression: `
+                  $feature.CRASH_TIME;
+                  var timeText = $feature.CRASH_TIME;
+
+                  if(IsEmpty(timeText)){
+                    return null;
+                  }
+
+                  var parts = Split(timeText, ":");
+                  var h = Number(parts[0]);
+
+                  return IIF(h >= 22 || h < 6, 1, 0);
+                `
+              },
+              statisticType: "sum"
+            })
+          ],
+          fixedBinLevel: 6,
+          labelsVisible: true,
+          labelingInfo: [
+            new LabelClass({
+              minScale: 144448,
+              maxScale: 0,
+              deconflictionStrategy: "none",
+              symbol: {
+                type: "text", // autocasts as new TextSymbol()
+                color: "white",
+                font: {
+                  family: "Noto Sans",
+                  size: 10,
+                  weight: "bold"
+                },
+                haloColor: colors[4],
+                haloSize: 0.5
+              },
+              labelExpressionInfo: {
+                expression: "Text($feature.aggregateCount, '#,###')"
+              }
+            })
+          ],
+          popupEnabled: true,
+          popupTemplate: {
+            title: "Car crashes",
+            content: "{aggregateCount} car crashes occurred in this area."
+          },
+          renderer: countRenderer
+        };
+
+        const year = 2020;
+        const layer = new FeatureLayer({
+          title: "Motor vehicle crashes (2020)",
+          url: "https://services.arcgis.com/V6ZHFr6zdgNZuVG0/ArcGIS/rest/services/NYC_motor_crashes/FeatureServer/0",
+          outFields: ["*"],
+          definitionExpression: `CRASH_DATE > Date '12-31-${
+            year - 1
+          }' AND CRASH_DATE < Date '01-01-${year + 1}'`
+        });
+
+        const map = new Map({
+          basemap: "gray-vector",
+          layers: [layer]
+        });
+
+        const view = new MapView({
+          container: "viewDiv",
+          map: map,
+          center: [-73.9304, 40.6971],
+          scale: 144447,
+          constraints: {
+            snapToZoom: false
+          }
+        });
+
+        view.when().then(() => {
+          // dims the basemap labels so they don't conflict with the bin counts
+          const referenceLayer = view.map.basemap.referenceLayers.getItemAt(0);
+          referenceLayer.opacity = 0.2;
+        });
+
+        view.ui.add(
+          new Home({
+            view: view
+          }),
+          "top-left"
+        );
+
+        const legend = new Legend({
+          view: view,
+          container: "legendDiv"
+        });
+
+        const infoDiv = document.getElementById("infoDiv");
+        view.ui.add(
+          new Expand({
+            view: view,
+            content: infoDiv,
+            expandIconClass: "esri-icon-layer-list",
+            expanded: true
+          }),
+          "top-left"
+        );
+
+        const toggleButton = document.getElementById("showBins");
+        toggleButton.onclick = () => {
+          layer.featureReduction = layer.featureReduction
+            ? null
+            : featureReduction;
+        };
+
+        const rendererSelect = document.getElementById("rendererSelect");
+        rendererSelect.addEventListener("change", (event) => {
+          const rendererType = event.target.value;
+          createRenderer(rendererType);
+        });
+
+        async function createRenderer(rendererType){
+
+          const featureReduction = layer.featureReduction.clone();
+          let renderer;
+          switch(rendererType){
+            case "count":
+              renderer = countRenderer;
+              break;
+            case "above-and-below":
+              renderer = await createAboveAndBelowRenderer();
+              break;
+            case "relationship":
+              renderer = await createRelationshipRenderer();
+              break;
+            case "types":
+              renderer = await createTypeRenderer();
+              break;
+            case "chart":
+              renderer = await createChartRendererShutdown();
+              break;
+            case "predominance":
+              renderer = countRenderer;
+              break;
+            default:
+              renderer = countRenderer;
+              break;
+          }
+
+          featureReduction.renderer = renderer;
+          layer.featureReduction = featureReduction;
+        }
+
+        async function createAboveAndBelowRenderer(){
+          const { renderer } = await univariateColorSizeRendererCreator.createRenderer({
+            layer,
+            view,
+            valueExpression: "$feature.TOTAL_AFTER_SHUTDOWN - $feature.TOTAL_BEFORE_SHUTDOWN",
+            theme: "above-and-below",
+            colorOptions: {
+              isContinuous: false
+            },
+            symbolOptions: {
+              symbolStyle: "circle-arrow"
+            },
+            forBinning: true
+          });
+
+          return renderer;
+        }
+
+        async function createRelationshipRenderer(){
+          const { renderer } = await relationshipRendererCreator.createRenderer({
+            layer,
+            view,
+            field1: {
+              field: "TOTAL_NIGHT",
+              normalizationField: "aggregateCount"
+            },
+            field2: {
+              field: "SUM_PERSONS_INJURED",
+              normalizationField: "aggregateCount"
+            },
+            numClasses: 3,
+            forBinning: true
+          });
+
+          return renderer;
+
+          const featureReduction = layer.featureReduction.clone();
+          featureReduction.renderer = renderer;
+          layer.featureReduction = featureReduction;
+        }
+
+        async function createTypeRenderer(){
+          // Esri color ramps - Retro Flow
+          const colors = ["#007fd9", "#d43f70", "#b6a135", "#c4dc66"];
+
+          const renderer = {
+            type: "unique-value",
+            field: "MODE_TIME",
+            uniqueValueInfos: [
+              {
+                value: "Morning",
+                symbol: {
+                  type: "simple-marker",
+                  color: colors[0]
+                }
+              }, {
+                value: "Afternoon",
+                symbol: {
+                  type: "simple-marker",
+                  color: colors[1]
+                }
+              }, {
+                value: "Evening",
+                symbol: {
+                  type: "simple-marker",
+                  color: colors[2]
+                }
+              }, {
+                value: "Night",
+                symbol: {
+                  type: "simple-marker",
+                  color: colors[3]
+                }
+              }
+            ],
+            visualVariables: [{
+              type: "size",
+              field: "aggregateCount",
+              minDataValue: 1,
+              maxDataValue: 300,
+              minSize: 6,
+              maxSize: 40
+            }]
+          };
+
+          return renderer;
+
+          const featureReduction = layer.featureReduction.clone();
+          featureReduction.renderer = renderer;
+          layer.featureReduction = featureReduction;
+        }
+
+        async function createChartRenderer(){
+          // Esri color ramps - Retro Flow
+          const colors = ["#007fd9", "#d43f70", "#b6a135", "#c4dc66"];
+
+          const renderer = {
+            type: "pie-chart",
+            field: "MODE_TIME",
+            attributes: [{
+              field: "TOTAL_MORNING",
+              color: colors[3]
+            }, {
+              field: "TOTAL_AFTERNOON",
+              color: colors[2]
+            }, {
+              field: "TOTAL_EVENING",
+              color: colors[1]
+            }, {
+              field: "TOTAL_NIGHT",
+              color: colors[0]
+            }],
+            visualVariables: [{
+              type: "size",
+              field: "aggregateCount",
+              minDataValue: 1,
+              maxDataValue: 300,
+              minSize: 6,
+              maxSize: 40
+            }],
+            holePercentage: 0.6
+          };
+
+          return renderer;
+        }
+
+        async function createAboveAndBelowRenderer(){
+          const { renderer } = await univariateColorSizeRendererCreator.createRenderer({
+            layer,
+            view,
+            valueExpression: "$feature.TOTAL_AFTER_SHUTDOWN - $feature.TOTAL_BEFORE_SHUTDOWN",
+            theme: "above-and-below",
+            colorOptions: {
+              isContinuous: false
+            },
+            symbolStyle: "circle-arrow",
+            forBinning: true
+          });
+
+          return renderer;
+        }
+
+
+        async function createChartRendererShutdown(){
+          // Esri color ramps - Retro Flow
+          const colors = ["#007fd9", "#d43f70", "#b6a135", "#c4dc66"];
+
+          const renderer = {
+            type: "pie-chart",
+            attributes: [{
+              field: "TOTAL_Q1",
+              color: colors[0]
+            }, {
+              field: "TOTAL_Q2",
+              color: colors[1]
+            }, {
+              field: "TOTAL_Q3",
+              color: colors[2]
+            }, {
+              field: "TOTAL_Q4",
+              color: colors[3]
+            }],
+            visualVariables: [{
+              type: "size",
+              field: "aggregateCount",
+              minDataValue: 1,
+              maxDataValue: 300,
+              minSize: 18,
+              maxSize: 40
+            }],
+            holePercentage: 0.6
+          };
+
+          return renderer;
+        }
+
+      });
+    </script>
+  </head>
+  <body>
+    <div id="viewDiv"></div>
+    <div id="infoDiv" class="esri-widget">
+      <calcite-button id="showBins" secondary width="full">Toggle Binning</calcite-button>
+      Select renderer
+      <select class="esri-select" id="rendererSelect">
+        <option value="count" selected>Count</option>
+        <option value="above-and-below">Above and below</option>
+        <option value="relationship">Relationship</option>
+        <option value="types">Types</option>
+        <option value="chart">Chart</option>
+        <option value="predominance">Predominance</option>
+      </select>
+      <div id="legendDiv"></div>
+    </div>
+  </body>
+</html>

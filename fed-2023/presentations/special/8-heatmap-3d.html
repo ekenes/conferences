@@ -1,0 +1,255 @@
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta
+      name="viewport"
+      content="initial-scale=1,maximum-scale=1,user-scalable=no"
+    />
+    <title>
+      Load a basic web scene | Sample | ArcGIS Maps SDK for JavaScript 4.25
+    </title>
+
+    <link
+      rel="stylesheet"
+      href="https://js.arcgis.com/4.25/esri/themes/light/main.css"
+    />
+    <script src="https://js.arcgis.com/4.25/"></script>
+
+    <script>
+      require([
+        "esri/views/SceneView",
+        "esri/WebScene",
+        "esri/layers/FeatureLayer",
+        "esri/renderers/HeatmapRenderer",
+        "esri/core/lang", "esri/Color",
+        "esri/widgets/Expand",
+        "esri/widgets/Bookmarks"
+      ], (
+        SceneView,
+        WebScene,
+        FeatureLayer,
+        HeatmapRenderer,
+        esriLang,
+        Color,
+        Expand,
+        Bookmarks
+      ) => {
+
+        const colors = ["#ccbba3", "#d3b68a", "#d9b270", "#e0ad57", "#e6a852", "#eca32f", "#f39f1f", "#f99a10", "#ff9500", "#ffae00", "#ffc600", "#ffde00", "#fff700"];
+
+        /************************************************************
+         * Creates a new WebScene instance. A WebScene must reference
+         * a PortalItem ID that represents a WebScene saved to
+         * arcgis.com or an on-premise portal.
+         *
+         * To load a WebScene from an on-premise portal, set the portal
+         * url with esriConfig.portalUrl.
+         ************************************************************/
+        const scene = new WebScene({
+          portalItem: {
+            // autocasts as new PortalItem()
+            id: "629c218f321147c9a1ab55a063461df2"
+          }
+        });
+
+        const view = new SceneView({
+          map: scene,
+          container: "viewDiv",
+          viewpoint: {
+            camera: {
+              position: {
+                type: "point",
+                spatialReference:{ latestWkid:3857, wkid:102100 },
+                x: -8232864,
+                y: 4969490,
+                z: 17438
+              },
+              heading: 27,
+              tilt: 0
+            }
+          }
+        });
+
+        view.when(function () {
+          const year = 2020;
+          console.log(view.spatialReference.wkid)
+          const renderer = {
+            type: "heatmap",
+            colorStops: createColorStops(colors),
+            maxDensity: 0.5,
+            minDensity: 0,
+            radius: 12,
+            referenceScale: 125196
+          };
+
+          const layer = new FeatureLayer({
+            title: "Motor vehicle crashes (2020)",
+            url: "https://services.arcgis.com/V6ZHFr6zdgNZuVG0/ArcGIS/rest/services/NYC_motor_crashes/FeatureServer/0",
+            definitionExpression: `CRASH_DATE > Date '12-31-${
+              year - 1
+            }' AND CRASH_DATE < Date '01-01-${year + 1}'`,
+            renderer
+          });
+          view.map.add(layer);
+        });
+
+         function createColorStops (ramp){
+          const colors = esriLang.clone(ramp);
+          const firstColora = new Color(colors.shift());
+          firstColora.a = 0;
+          const firstColorb = firstColora.clone();
+          firstColorb.a = 0.01;
+
+          const b = colors.length;
+          const stops = [
+            { color: firstColora, ratio: 0 },
+            { color: firstColorb, ratio: 0.01 },
+            { color: firstColorb, ratio: 0.01 },
+            { color: firstColorb, ratio: 0.01 },
+            ...colors.map((c, i) => {
+              const ratio = (b-(b-(i+1)))/b;
+              const color = new Color(c);
+              color.a = ratio;
+              return {
+                color,
+                ratio
+              };
+            })
+          ];
+          return stops;
+        }
+
+        view.ui.add(new Expand({
+          view,
+          expanded: true,
+          group: "top-left",
+          content: new Bookmarks({
+            view,
+            bookmarks: [{
+              name: "Lower Manhattan",
+              viewpoint: {
+                camera: {
+                  position: {
+                    type: "point",
+                    spatialReference:{ latestWkid:3857, wkid:102100 },
+                    x: -8235354,
+                    y: 4970797,
+                    z: 240
+                  },
+                  heading: 270,
+                  tilt: 78
+                }
+              }
+            }, {
+              name: "Brooklyn",
+              viewpoint: {
+                camera: {
+                  position:{
+                    type: "point",
+                    spatialReference:{ latestWkid:3857, wkid:102100 },
+                    x: -8234745,
+                    y: 4965071,
+                    z: 112
+                  },
+                  heading: 326,
+                  tilt: 81
+                }
+              }
+            }, {
+              name: "New York City",
+              viewpoint: {
+                camera: {
+                  position: {
+                    type: "point",
+                    spatialReference:{ latestWkid:3857, wkid:102100 },
+                    x: -8232864,
+                    y: 4969490,
+                    z: 17438
+                  },
+                  heading: 27,
+                  tilt: 0
+                }
+              }
+            }]
+          })
+        }), "top-left");
+
+        view.watch("camera", (camera) => {
+          console.log(JSON.stringify(camera));
+        });
+
+        // When animating from one slide to the other, text will be displayed.
+        // Descriptive text is stored in the title property of each slide.
+        // If you create the slides with the JavaScript API then you can alternatively
+        // add long text to the description property of the slide.
+        // The SceneViewer currently doesn't support editing slide descriptions, only titles.
+
+        // Check that the view is ready
+        // view.when(() => {
+        //   // Get the slides from the WebScene
+        //   const slides = scene.presentation.slides;
+
+        //   // The information text will always be displayed in the infoDiv
+        //   const infoDiv = document.getElementById("content");
+        //   infoDiv.innerHTML = slides.getItemAt(0).title.text;
+
+        //   const button = document.getElementById("start-btn");
+        //   button.addEventListener("click", () => {
+        //     // Start the tour on button click, by calling  the goToSlide function.
+        //     goToSlide(1);
+        //   });
+
+        //   // This recursive function will call the applyTo method on the view and then wait
+        //   // for 8 seconds before the next slide animation begins.
+
+        //   function goToSlide(i) {
+        //     const slide = slides.getItemAt(i);
+
+        //     // When animating from one slide to the other, text will be displayed.
+        //     // Descriptive text is stored in the title property of each slide.
+        //     // If you create the slides with the JavaScript API then you can alternatively
+        //     // add long text to the description property of the slide.
+        //     // The SceneViewer currently doesn't support editing slide descriptions,
+        //     // so we use the title in this app.
+
+        //     if (i < slides.length) {
+        //       // disable button when tour starts
+        //       enableButton(false);
+        //       infoDiv.innerHTML = slide.title.text;
+
+        //       slide
+        //         .applyTo(view, {
+        //           duration: 3000
+        //         })
+        //         .then(() => {
+        //           window.setTimeout(() => {
+        //             goToSlide(i + 1);
+        //           }, 8000);
+        //         });
+        //     } else {
+        //       // enable button when tour ends
+        //       enableButton(true);
+        //     }
+        //   }
+
+          // Enables/disables button that starts the tour
+
+      });
+    </script>
+
+    <style>
+      html,
+      body,
+      #viewDiv {
+        padding: 0;
+        margin: 0;
+        height: 100%;
+        width: 100%;
+      }
+    </style>
+  </head>
+
+  <body>
+    <div id="viewDiv" class="esri-widget"></div>
+  </body>
+</html>

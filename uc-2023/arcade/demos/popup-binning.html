@@ -1,0 +1,334 @@
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta
+      name="viewport"
+      content="initial-scale=1,maximum-scale=1,user-scalable=no"
+    />
+
+    <title>
+      Summarize binned data using Arcade | Sample | ArcGIS Maps SDK for
+      JavaScript 4.27
+    </title>
+
+    <style>
+      html,
+      body,
+      #viewDiv {
+        padding: 0;
+        margin: 0;
+        height: 100%;
+        width: 100%;
+      }
+    </style>
+
+    <link
+      rel="stylesheet"
+      href="https://js.arcgis.com/4.27/esri/themes/light/main.css"
+    />
+    <script src="https://js.arcgis.com/4.27/"></script>
+
+    <!-- -------------- -->
+    <!-- ARCADE SCRIPTS -->
+    <!-- -------------- -->
+
+    <!-- Returns table summarizing top crimes -->
+    <!-- and the % that were committed at night. -->
+
+    <script type="text/arcgis-arcade" id="crimes-list">
+      Expects($aggregatedFeatures, "is_night", "type");
+
+      var crimes = $aggregatedFeatures;
+
+      // Queries the count of crimes grouped by the "type" field
+      var stats = GroupBy(crimes, ["type"],
+        [
+          { name: "total", expression: "1", statistic: "count" },
+          { name: "nightPercent", expression: "is_night", statistic: "avg" }
+        ]
+      );
+
+      // Orders the results in descending order by the total count
+      var topCrimes = Top(OrderBy(stats, "total desc"), 5);
+
+      if(Count(topCrimes) == 0){
+        return {
+          type: "text",
+          text: "No crimes committed in this area"
+        };
+      }
+
+      // Build an HTML table to display the summary of
+      // crimes by count and how many occurred at night
+      var cssGray = "style='background-color:lightgray;'";
+      var cssRight = "style='text-align: right;'";
+      var cssCenter = "style='text-align: center;'";
+
+      var table = "<table style='width: 100%'>";
+      table += `<tr>
+        <td ${cssCenter}><b>Category</b></td>
+        <td ${cssCenter}><b>Count</b></td>
+        <td ${cssCenter}><b>% at night</b></td>
+      </tr>`;
+
+      var i = 0;
+      for(var item in topCrimes){
+        var num_crimes = Text(item.total, "#,###");
+        var night_percent = Text(item.nightPercent, "#%");
+        var crimeType = item["type"];
+
+        table += `<tr ${IIF( i % 2 != 0, cssGray, null )}>
+          <td>${crimeType}</td>
+          <td ${cssRight}>${num_crimes}</td>
+          <td ${cssRight}>${night_percent}</td>
+        </tr>`;
+        i++;
+      }
+      table += "</table>";
+
+      // Return the table as a text element
+      return {
+        type: "text",
+        text: table
+      };
+    </script>
+
+    <!-- Creates two charts: -->
+    <!-- Pie chart: summarizing crimes by type. -->
+    <!-- Line chart: summarizing crimes by month. -->
+
+    <script id="crimes-charts">
+      Expects($aggregatedFeatures, "type", "month");
+      var attributes = {};
+      var pieFieldNames = [];
+      var monthFieldNames = ["January", "February", "March", "April", "May", "June", "July", "August", "September", "October", "November", "December"];
+
+      var crimes = $aggregatedFeatures;
+
+      // Queries the count of crimes grouped by the "type" field
+      var typeStats = GroupBy(crimes, ["type"],
+        [{ name: "total", expression: "1", statistic: "count" }]
+      );
+      // Orders the results in descending order by the total count
+      var topCrimes = Top(OrderBy(typeStats, "total desc"), 10);
+
+      // Queries the count of crimes grouped by the "month" field
+      var monthStats = GroupBy(crimes, ["month"],
+        [{ name: "total", expression: "1", statistic: "count" }]
+      );
+
+      if(Count(topCrimes) == 0){
+        return {
+          type: "text",
+          text: "No crimes committed in this area"
+        };
+      }
+      for(var item in topCrimes){
+        var num_crimes = item.total;
+        var crimeType = item["type"];
+        attributes[crimeType] = num_crimes;
+        Push(pieFieldNames, crimeType);
+      }
+      for(var item in monthStats){
+        var num_crimes = item.total;
+        var crimeMonth = Text(Date(2010,item.month-1,1), "MMMM");
+        attributes[crimeMonth] = num_crimes;
+      }
+
+      return {
+        type: "media",
+        attributes: attributes,
+        title: "Crime summary",
+        mediaInfos: [{
+          type: "piechart",
+          title: "Crimes by type",
+          value: {
+            fields: pieFieldNames
+          }
+        }, {
+          type: "linechart",
+          title: "Crimes by month",
+          value: {
+            fields: monthFieldNames
+          }
+        }]
+      };
+    </script>
+
+    <!-- --------------- -->
+    <!-- JS APPLICATION  -->
+    <!-- --------------- -->
+
+    <script type="text/javascript">
+      require([
+        "esri/Map",
+        "esri/views/MapView",
+        "esri/layers/FeatureLayer",
+        "esri/layers/support/LabelClass",
+        "esri/layers/support/AggregateField",
+        "esri/widgets/Legend",
+        "esri/core/reactiveUtils"
+      ], function (
+        Map,
+        MapView,
+        FeatureLayer,
+        LabelClass,
+        AggregateField,
+        Legend,
+        reactiveUtils
+      ) {
+        // const colors = ["#48385f", "#995375", "#db4a5b", "#fc9a59", "#fee086"];
+        // Esri color ramps - Andromeda
+        // #3900b3,#714dbf,#9e6b90,#cf9270,#ebb698
+        const colors = ["#3900b3", "#714dbf", "#9e6b90", "#cf9270", "#ebb698"].reverse();
+
+        const featureReduction = {
+          type: "binning",
+          fields: [
+            new AggregateField({
+              name: "aggregateCount",
+              statisticType: "count"
+            })
+          ],
+          fixedBinLevel: 6,
+          labelsVisible: true,
+          labelingInfo: [
+            new LabelClass({
+              minScale: 72223,
+              maxScale: 0,
+              deconflictionStrategy: "none",
+              symbol: {
+                type: "text", // autocasts as new TextSymbol()
+                color: "white",
+                haloColor: colors[4],
+                haloSize: 1.2,
+                font: {
+                  family: "Noto Sans",
+                  size: 10
+                }
+              },
+              labelExpressionInfo: {
+                expression: "Text($feature.aggregateCount, '#,###')"
+              }
+            })
+          ],
+          popupEnabled: true,
+          popupTemplate: {
+            title: "Crime summary",
+            content: [
+              {
+                type: "text",
+                text: "{aggregateCount} crimes occurred in this area."
+              },
+              {
+                type: "expression",
+                expressionInfo: {
+                  expression: document.getElementById("crimes-charts").text
+                }
+              },
+              {
+                type: "expression",
+                expressionInfo: {
+                  expression: document.getElementById("crimes-list").text
+                }
+              }
+            ],
+            fieldInfos: [
+              {
+                fieldName: "aggregateCount",
+                format: {
+                  digitSeparator: true,
+                  places: 0
+                }
+              }
+            ]
+          },
+          renderer: {
+            type: "simple",
+            symbol: {
+              type: "simple-fill",
+              color: [0, 255, 71, 1],
+              outline: null,
+              outline: {
+                color: [0, 0, 0, 0.2],
+                width: 0.5
+              }
+            },
+            visualVariables: [
+              {
+                type: "color",
+                field: "aggregateCount",
+                legendOptions: {
+                  title: "Number of crimes"
+                },
+                stops: [
+                  { value: 0, color: colors[0] },
+                  { value: 50, color: colors[1] },
+                  { value: 250, color: colors[2] },
+                  { value: 500, color: colors[3] },
+                  { value: 1000, color: colors[4] }
+                ]
+              }
+            ]
+          }
+        };
+
+        const layer = new FeatureLayer({
+          title: "San Diego crimes",
+          portalItem: {
+            id: "bc1959d9b378482091445ab89865bc42"
+          },
+          featureReduction,
+          blendMode: "multiply"
+        });
+
+        const map = new Map({
+          basemap: {
+            portalItem: {
+              id: "e714739c00bf4aae9bd06f07f5c7cd6a"
+            }
+          },
+          layers: [layer]
+        });
+
+        const view = new MapView({
+          container: "viewDiv",
+          map: map,
+          center: {
+            spatialReference: {
+              latestWkid: 3857,
+              wkid: 102100
+            },
+            x: -13040395,
+            y: 3863033
+          },
+          scale: 144447,
+          popup: {
+            dockEnabled: true,
+            dockOptions: {
+              position: "top-right",
+              breakpoint: false
+            }
+          }
+        });
+        view.ui.add(new Legend({ view }), "bottom-left");
+
+        // Open popup on load
+        view.whenLayerView(layer).then(async (layerView) => {
+          await reactiveUtils.whenOnce(() => !layerView.updating);
+          const { results } = await view.hitTest(view.toScreen(view.center), {
+            include: layer
+          });
+          const selectedFeature = results[0]?.graphic;
+
+          view.openPopup({
+            features: [selectedFeature]
+          });
+        });
+      });
+    </script>
+  </head>
+  <body>
+    <div id="viewDiv" class="esri-widget"></div>
+  </body>
+</html>

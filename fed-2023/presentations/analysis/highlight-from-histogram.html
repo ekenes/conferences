@@ -1,0 +1,572 @@
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta
+      name="viewport"
+      content="initial-scale=1,maximum-scale=1,user-scalable=no"
+    />
+    <title>
+      Update a renderer's attribute | Sample | ArcGIS Maps SDK for JavaScript
+      4.26
+    </title>
+
+    <link
+      rel="stylesheet"
+      href="https://jsdev.arcgis.com/4.26/esri/themes/light/main.css"
+    />
+    <script src="https://jsdev.arcgis.com/4.26/"></script>
+
+    <style>
+
+      #containerDiv {
+        padding: 10px;
+        text-align: center;
+        box-shadow: 0;
+      }
+
+      #sliderDiv {
+        height: 100px;
+      }
+
+      #histogram {
+        width: 500px;
+        height: 150px;
+      }
+      .labels {
+        padding: 5px;
+      }
+
+      html,
+      body {
+        padding: 0;
+        margin: 0;
+        height: 100%;
+        width: 100%;
+      }
+
+      #viewDiv {
+        position: absolute;
+        right: 0;
+        left: 0;
+        top: 0;
+        bottom: 100px;
+        background-color: white;
+      }
+
+      #sliderContainer {
+        position: absolute;
+        bottom: 0;
+        height: 100px;
+        width: 100%;
+        text-align: center;
+      }
+    </style>
+
+    <script id="highest-temp-arcade" type="arcgis/arcade">
+      var highest = -Infinity;
+      var ignoreFields = [ "OBJECTID", "x", "y", "Range" ];
+      for (var att in $feature){
+        var value = $feature[att];
+        if( typeof(value) == 'Number' && IndexOf(ignoreFields, att) == -1){
+          highest = IIF(value > highest, value, highest);
+        }
+      }
+      return highest;
+    </script>
+
+    <script id="lowest-temp-arcade" type="arcgis/arcade">
+      var lowest = Infinity;
+      var ignoreFields = [ "OBJECTID", "x", "y", "Range" ];
+      for (var att in $feature){
+        var value = $feature[att];
+        if( typeof(value) == 'Number' && IndexOf(ignoreFields, att) == -1){
+          lowest = IIF(value < lowest, value, lowest);
+        }
+      }
+      return lowest;
+    </script>
+
+    <script id="size-arcade" type="arcgis/arcade">
+      var AbsTEMP = Abs($feature.F1880)
+        var vs = $view.scale
+        var TempSize = when(
+          AbsTEMP > 5, 35,
+          AbsTEMP > 4, 30,
+          AbsTEMP > 2.5, 25,
+          AbsTEMP > 1, 20,
+          AbsTEMP > 0.5, 15,
+          AbsTEMP > 0.01, 12,
+          AbsTEMP < 0.01, 10,
+          8
+        )
+        when(
+          vs >=37000000, TempSize,
+          vs >=18500000, 2 + TempSize,
+          vs >=9300000, 4 + TempSize,
+          vs >=4700000, 6 + TempSize,
+          vs >=2000000, 8 + TempSize,
+          10 + TempSize
+        );
+    </script>
+
+    <script>
+      require([
+        "esri/Map",
+        "esri/views/MapView",
+        "esri/layers/FeatureLayer",
+        "esri/smartMapping/statistics/histogram",
+        "esri/smartMapping/statistics/summaryStatistics",
+        "esri/widgets/Histogram",
+        "esri/widgets/Slider",
+        "esri/widgets/Legend",
+        "esri/widgets/Expand",
+        "esri/core/reactiveUtils",
+        "esri/core/promiseUtils",
+        "esri/Color"
+      ], (
+        Map,
+        MapView,
+        FeatureLayer,
+        histogram,
+        summaryStatistics,
+        Histogram,
+        Slider,
+        Legend,
+        Expand,
+        reactiveUtils,
+        promiseUtils,
+        Color
+      ) => {
+        // Project base layer (world countries) to Equal Earth projection
+        const baseLayer = new FeatureLayer({
+          portalItem: {
+            id: "2b93b06dc0dc4e809d3c8db5cb96ba69"
+          },
+          legendEnabled: false,
+          popupEnabled: false,
+          renderer: {
+            type: "simple",
+            symbol: {
+              type: "simple-fill",
+              color: [200, 200, 200, 0.75],
+              outline: null
+            }
+          }
+        });
+
+        //  Set initial temperature anomaly renderer on layer based
+        // on data recorded for the year 1880
+
+        const layer = new FeatureLayer({
+          url: "https://services.arcgis.com/jIL9msH9OI208GCb/arcgis/rest/services/Global_Temperatures_1880_to_2018/FeatureServer/0",
+          outFields: ["*"],
+          title: "Temperatures by location (1880 - 2018)",
+          renderer: {
+            type: "simple",
+            label: "Observation point",
+            symbol: {
+              type: "simple-marker",
+              style: "diamond",
+              size: "6px",
+              color: [226, 226, 226, 0.75],
+              outline: {
+                color: [255, 255, 255, 0.25],
+                width: "0.75px"
+              }
+            },
+            visualVariables: [
+              {
+                type: "size",
+                valueExpression:
+                  document.getElementById("size-arcade").innerText,
+                valueExpressionTitle: "Absolute Value",
+                legendOptions: {
+                  showLegend: false
+                },
+                maxDataValue: 35,
+                maxSize: "24px",
+                minDataValue: 10,
+                minSize: "4px"
+              },
+              {
+                type: "color",
+                valueExpression: "$feature.F1880",
+                valueExpressionTitle: "Temperature Anomaly",
+                stops: [
+                  {
+                    value: -2.5,
+                    color: [5, 112, 176, 0.75],
+                    label: "Less than -2.5 deg C"
+                  },
+                  { value: -1, color: [208, 209, 230, 0.75] },
+                  { value: -0.5, color: [236, 231, 242, 0.75] },
+                  {
+                    value: 0,
+                    color: [226, 226, 226, 0.75],
+                    label: "No difference/No Data"
+                  },
+                  { value: 0.5, color: [254, 232, 200, 0.75] },
+                  { value: 1, color: [253, 212, 158, 0.75] },
+                  {
+                    value: 2.5,
+                    color: [215, 48, 31, 0.75],
+                    label: "More than 2.5 deg C"
+                  }
+                ]
+              }
+            ]
+          },
+          popupTemplate: {
+            expressionInfos: [
+              {
+                name: "max",
+                title: "Warmest anomaly",
+                expression: document.getElementById("highest-temp-arcade")
+                  .innerText
+              },
+              {
+                name: "min",
+                title: "Coldest anomaly",
+                expression:
+                  document.getElementById("lowest-temp-arcade").innerText
+              }
+            ],
+            content: [
+              {
+                type: "fields",
+                fieldInfos: [
+                  {
+                    fieldName: "expression/max",
+                    format: {
+                      places: 2
+                    }
+                  },
+                  {
+                    fieldName: "expression/min",
+                    format: {
+                      places: 2
+                    }
+                  }
+                ]
+              }
+            ]
+          }
+        });
+
+        const map = new Map({
+          layers: [baseLayer, layer]
+        });
+
+        const spatialReference = {
+          wkid: 54035
+        };
+
+        const view = new MapView({
+          container: "viewDiv",
+          map: map,
+          scale: 150000000,
+          center: { x: 0, y: 0, spatialReference: spatialReference },
+          spatialReference: spatialReference,
+          popup: {
+            dockOptions: {
+              position: "top-left"
+            }
+          }
+        });
+
+        view.ui.add(
+          new Expand({
+            view: view,
+            content: document.getElementById("containerDiv"),
+            expanded: true,
+            expandIconClass: "esri-icon-chart"
+          }),
+          "bottom-left"
+        );
+
+        // This slider will allow the user to update the renderer based on a
+        // provided year between 1880 and 2018
+
+        const slider = new Slider({
+          min: 1880,
+          max: 2018,
+          values: [1880],
+          visibleElements: {
+            labels: true,
+            rangeLabels: true
+          },
+          labelInputsEnabled: true,
+          precision: 0,
+          steps: 1,
+          container: "sliderDiv"
+        });
+
+        // When the user changes the slider's value,
+        // change the renderer and histogram to reflect
+        // data corresponding to the year indicated on the slider
+
+        const debounced = promiseUtils.debounce((event) => {
+          updateYearDisplay(event.value);
+          updateRenderer(event.value);
+          return updateHistogram(event.value);
+        });
+
+        slider.on(["thumb-change", "thumb-drag"], (event) =>
+          debounced(event).catch(() => {})
+        );
+
+        let lv = null;
+
+        // Query all the features in the layer. These will by used
+        // for client-side queries as the user slides the thumb of the slider
+
+        view
+          .whenLayerView(layer)
+          .then((layerView) => {
+            lv = layerView;
+            reactiveUtils
+              .whenOnce(() => !layerView.updating)
+              .then(() => {
+                const year = slider.values[0];
+                updateRenderer(year);
+                updateHistogram(year);
+              });
+          })
+          .catch((e) => {
+            console.error(e);
+          });
+
+        // Updates the underlying data value driving the expression
+        // based on the given year provided by the slider
+
+        function updateRenderer(value) {
+          renderer = layer.renderer.clone();
+          const sizeVariable = renderer.visualVariables[0];
+          const colorVariable = renderer.visualVariables[1];
+          sizeVariable.valueExpression = getSizeValueExpression(value);
+          colorVariable.valueExpression = getColorValueExpression(value);
+          renderer.visualVariables = [sizeVariable, colorVariable];
+          layer.renderer = renderer;
+        }
+
+        // Generate color visual variable based on the given year
+
+        function getColorValueExpression(value) {
+          return "$feature.F" + value;
+        }
+
+        // Generate size visual variable based on the given year
+        // This is the same expression as "size-arcade" above, but
+        // modifiable for any given year
+
+        function getSizeValueExpression(value) {
+          return `
+            var AbsTEMP = Abs($feature.F${value});
+            var vs = $view.scale;
+            var TempSize = when(
+              AbsTEMP > 5, 35,
+              AbsTEMP > 4, 30,
+              AbsTEMP > 2.5, 25,
+              AbsTEMP > 1, 20,
+              AbsTEMP > 0.5, 15,
+              AbsTEMP > 0.01, 12,
+              AbsTEMP < 0.01, 10,
+              8
+            );
+            when(
+              vs >=37000000, TempSize,
+              vs >=18500000, 2 + TempSize,
+              vs >=9300000, 4 + TempSize,
+              vs >=4700000, 6 + TempSize,
+              vs >=2000000, 8 + TempSize,
+              10 + TempSize
+            );
+          `;
+        }
+
+        let histograms = {};
+        let histogramChart = null;
+        const histMin = -5;
+        const histMax = 5;
+
+        let highlight;
+
+        async function getAverage(params) {
+          const { avg } = await summaryStatistics(params);
+          return avg;
+        }
+
+        async function updateHistogram(year) {
+          if (histograms[year]) {
+            histogramChart.bins = histograms[year].bins;
+            histogramChart.average = histograms[year].average;
+            return;
+          }
+
+          const params = {
+            layer: layer,
+            field: "F" + year,
+            view: view,
+            useFeaturesInView: true,
+            numBins: 100,
+            minValue: histMin,
+            maxValue: histMax
+          };
+
+          let average = null;
+
+          return getAverage(params)
+            .then((avg) => {
+              average = avg;
+              return histogram(params);
+            })
+            .then((histogramResult) => {
+              // cache previously used histograms to improve performance
+              histograms[year] = {
+                bins: histogramResult.bins,
+                average: average
+              };
+
+              if (!histogramChart) {
+                histogramChart = new Histogram({
+                  container: "histogram",
+                  min: histMin,
+                  max: histMax,
+                  bins: histogramResult.bins,
+                  average: average,
+                  dataLines: [
+                    {
+                      value: 0,
+                      label: ""
+                    }
+                  ],
+                  dataLineCreatedFunction: (element, label, index) => {
+                    if (index === 0) {
+                      element.setAttribute("y2", "75%");
+                    }
+                  },
+                  labelFormatFunction: (value, type) => {
+                    return type === "average" ? value.toFixed(2) + "°" : value;
+                  },
+                  barCreatedFunction: (index, element) => {
+                    const bin = histogramChart.bins[index];
+                    const midValue =
+                      (bin.maxValue - bin.minValue) / 2 + bin.minValue;
+                    const color = getColorFromValue(midValue);
+                    element.setAttribute("fill", color.toHex());
+                    element.addEventListener("focus", () => {
+                      const { minValue, maxValue, count } = bin;
+                      const query = lv.layer.createQuery();
+                      const field = "F" + slider.values[0];
+                      query.where =
+                        field +
+                        " >= " +
+                        minValue +
+                        " AND " +
+                        field +
+                        " <= " +
+                        maxValue;
+                      lv.queryObjectIds(query).then((ids) => {
+                        if (highlight) {
+                          highlight.remove();
+                          highlight = null;
+                        }
+                        highlight = lv.highlight(ids);
+                      });
+                    });
+
+                    element.addEventListener("blur", () => {
+                      if (highlight) {
+                        highlight.remove();
+                        highlight = null;
+                      }
+                    });
+                  }
+                });
+              } else {
+                histogramChart.bins = histogramResult.bins;
+                histogramChart.average = average;
+              }
+            })
+            .catch((e) => {
+              console.error(e);
+            });
+        }
+
+        // Infers the color of the visual variable based on a given value
+        // This is used to render and update histogram bars with colors
+        // matching the features in the map
+        function getColorFromValue(value) {
+          const visualVariable = layer.renderer.visualVariables.filter((vv) => {
+            return vv.type === "color";
+          })[0];
+          const stops = visualVariable.stops;
+          let minStop = stops[0];
+          let maxStop = stops[stops.length - 1];
+
+          let minStopValue = minStop.value;
+          let maxStopValue = maxStop.value;
+
+          if (value < minStopValue) {
+            return minStop.color;
+          }
+
+          if (value > maxStopValue) {
+            return maxStop.color;
+          }
+
+          const exactMatches = stops.filter((stop) => {
+            return stop.value === value;
+          });
+
+          if (exactMatches.length > 0) {
+            return exactMatches[0].color;
+          }
+
+          minStop = null;
+          maxStop = null;
+          stops.forEach((stop, i) => {
+            if (!minStop && !maxStop && stop.value >= value) {
+              minStop = stops[i - 1];
+              maxStop = stop;
+            }
+          });
+
+          const weightedPosition =
+            (value - minStop.value) / (maxStop.value - minStop.value);
+
+          return Color.blendColors(
+            minStop.color,
+            maxStop.color,
+            weightedPosition
+          );
+        }
+
+        function updateYearDisplay(year) {
+          const yearElement = document.getElementById("yearDiv");
+          yearElement.innerText = year;
+        }
+      });
+    </script>
+  </head>
+
+  <body>
+    <div id="viewDiv"></div>
+    <div id="containerDiv" class="esri-widget">
+      <div class="esri-widget">
+        <div id="title" class="esri-widget">
+          <h3>Temperature Anomaly (<span id="yearDiv">1880</span>)</h3>
+        </div>
+        <div id="histogram" class="esri-widget"></div>
+        <div class="labels esri-widget">
+          <span style="float: left">-5° C</span>
+          <span style="float: center">0° C</span>
+          <span style="float: right">+5° C</span>
+        </div>
+      </div>
+    </div>
+    <div id="sliderContainer" class="esri-widget">
+      <div id="sliderDiv"></div>
+    </div>
+  </body>
+</html>

@@ -1,0 +1,56 @@
+<html>
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="initial-scale=1,maximum-scale=1,user-scalable=no" />
+    <title>Polygon aggregation</title>
+
+    <style>
+      html,
+      body,
+      #viewDiv {
+        padding: 0;
+        margin: 0;
+        height: 100%;
+        width: 100%;
+      }
+    </style>
+
+    <link rel="stylesheet" href="https://js.arcgis.com/4.29/esri/themes/light/main.css" />
+    <script src="https://js.arcgis.com/4.29/"></script>
+
+    <script>
+      require([
+        "esri/views/MapView",
+        "esri/WebMap",
+        "esri/widgets/Expand",
+        "esri/widgets/Legend"
+      ], (
+        MapView, WebMap, Expand, Legend
+      ) => {
+
+        const view = new MapView({
+          map: new WebMap({
+            portalItem: {
+              // autocasts as new PortalItem()
+              id: "607b7a389e2940b790b5d0c810f4732c"
+            }
+          }),
+          constraints: {
+            snapToZoom: false,
+            minScale: 1000000
+          },
+          container: "viewDiv"
+        });
+
+        view.ui.add(new Expand({
+          view,
+          content: new Legend({ view })
+        }), "top-right");
+      });
+    </script>
+  </head>
+
+  <body>
+    <div id="viewDiv"></div>
+  </body>
+</html>

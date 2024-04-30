@@ -1,0 +1,206 @@
+<html>
+  <head>
+    <meta charset="utf-8" />
+    <title>
+      Point styles for cities
+    </title>
+    <link rel="stylesheet" href="https://js.arcgis.com/4.29/esri/themes/light/main.css" />
+    <script src="https://js.arcgis.com/4.29/"></script>
+
+    <style>
+      html,
+      body,
+      #viewDiv {
+        width: 100%;
+        height: 100%;
+        margin: 0;
+        padding: 0;
+      }
+
+      #cityStyle {
+        background-color: white;
+        text-align: center;
+        padding: 10px;
+        font-size: 0.9em;
+      }
+
+      #cityStyle label {
+        padding-right: 10px;
+        cursor: pointer;
+      }
+    </style>
+
+    <script>
+      require([
+        "esri/WebScene",
+        "esri/layers/FeatureLayer",
+        "esri/views/SceneView",
+        "esri/widgets/Legend"
+      ], (WebScene, FeatureLayer, SceneView, Legend) => {
+        // Load the webscene with buildings
+
+        const webscene = new WebScene({
+          portalItem: {
+            // autocasts as new PortalItem()
+            id: "711ddecedece4fd88b728bfe4322c22b"
+          }
+        });
+
+        const view = new SceneView({
+          container: "viewDiv",
+          map: webscene,
+          environment: {
+            lighting: {
+              directShadowsEnabled: true,
+              ambientOcclusionEnabled: true
+            }
+          }
+        });
+
+        // verticalOffset shifts the symbol vertically
+        const verticalOffset = {
+          screenLength: 40,
+          maxWorldLength: 200,
+          minWorldLength: 35
+        };
+
+        // Function that automatically creates the symbol for the points of interest
+        function getUniqueValueSymbol(name, color) {
+          return {
+            type: "point-3d",
+            symbolLayers: [
+              {
+                type: "icon",
+                resource: {
+                  href: name
+                },
+                size: 20,
+                outline: {
+                  color: "white",
+                  size: 2
+                }
+              }
+            ],
+
+            verticalOffset: verticalOffset,
+
+            callout: {
+              type: "line",
+              color: "white",
+              size: 2,
+              border: {
+                color: color
+              }
+            }
+          };
+        }
+
+        const pointsRenderer = {
+          type: "unique-value",
+          field: "Type",
+          uniqueValueInfos: [
+            {
+              value: "Museum",
+              symbol: getUniqueValueSymbol(
+                "https://developers.arcgis.com/javascript/latest/sample-code/visualization-point-styles/live/Museum.png",
+                "#D13470"
+              )
+            },
+            {
+              value: "Restaurant",
+              symbol: getUniqueValueSymbol(
+                "https://developers.arcgis.com/javascript/latest/sample-code/visualization-point-styles/live/Restaurant.png",
+                "#F97C5A"
+              )
+            },
+            {
+              value: "Church",
+              symbol: getUniqueValueSymbol(
+                "https://developers.arcgis.com/javascript/latest/sample-code/visualization-point-styles/live/Church.png",
+                "#884614"
+              )
+            },
+            {
+              value: "Hotel",
+              symbol: getUniqueValueSymbol(
+                "https://developers.arcgis.com/javascript/latest/sample-code/visualization-point-styles/live/Hotel.png",
+                "#56B2D6"
+              )
+            },
+            {
+              value: "Park",
+              symbol: getUniqueValueSymbol(
+                "https://developers.arcgis.com/javascript/latest/sample-code/visualization-point-styles/live/Park.png",
+                "#40C2B4"
+              )
+            }
+          ]
+        };
+
+        const pointsLayer = new FeatureLayer({
+          url: "http://services.arcgis.com/V6ZHFr6zdgNZuVG0/arcgis/rest/services/LyonPointsOfInterest/FeatureServer",
+          title: "Touristic attractions",
+          elevationInfo: {
+            mode: "relative-to-scene"
+          },
+          renderer: pointsRenderer,
+          outFields: ["*"],
+          screenSizePerspectiveEnabled: true,
+          labelingInfo: [
+            {
+              labelExpressionInfo: {
+                value: "{Name}"
+              },
+              symbol: {
+                type: "label-3d",
+                symbolLayers: [
+                  {
+                    type: "text",
+                    material: {
+                      color: "white"
+                    },
+                    halo: {
+                      size: 1,
+                      color: [50, 50, 50]
+                    },
+                    size: 10
+                  }
+                ]
+              }
+            }
+          ]
+        });
+
+
+        pointsLayer.featureReduction = {
+          type: "selection"
+        };
+
+
+        webscene.add(pointsLayer);
+
+        // add functionality on the controls for selection, perspective, callout lines and relative-to-scene elevation mode
+        document
+          .getElementById("cityStyle")
+          .addEventListener("change", (event) => {
+            if (event.target.id === "declutter") {
+              const type = {
+                type: "selection"
+              };
+              pointsLayer.featureReduction = event.target.checked ? type : null;
+            }
+          });
+
+        view.ui.add(document.getElementById("cityStyle"), "top-right");
+      });
+    </script>
+  </head>
+
+  <body>
+    <div id="viewDiv" class="esri-widget"></div>
+    <div id="cityStyle">
+      <input type="checkbox" id="declutter" name="mode" checked />
+      <label for="declutter">Declutter view</label>
+    </div>
+  </body>
+</html>

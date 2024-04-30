@@ -1,0 +1,208 @@
+<html>
+  <head>
+    <meta charset="utf-8" />
+    <meta
+      name="viewport"
+      content="initial-scale=1,maximum-scale=1,user-scalable=no"
+    />
+
+    <title>
+      Crashes with constrained navigation
+    </title>
+
+    <style>
+      html,
+      body,
+      #viewDiv {
+        padding: 0;
+        margin: 0;
+        height: 100%;
+        width: 100%;
+      }
+      #infoDiv {
+        padding: 10px;
+      }
+    </style>
+
+    <script
+      type="module"
+      src="https://js.arcgis.com/calcite-components/1.0.0-beta.83/calcite.esm.js"
+    ></script>
+    <script
+      nomodule=""
+      src="https://js.arcgis.com/calcite-components/1.0.0-beta.83/calcite.js"
+    ></script>
+    <link
+      rel="stylesheet"
+      type="text/css"
+      href="https://js.arcgis.com/calcite-components/1.0.0-beta.83/calcite.css"
+    />
+
+    <link
+      rel="stylesheet"
+      href="https://jsdev.arcgis.com/4.26/esri/themes/dark/main.css"
+    />
+    <script src="https://jsdev.arcgis.com/4.26/"></script>
+
+    <script type="text/javascript">
+      require([
+        "esri/Map",
+        "esri/views/MapView",
+        "esri/layers/FeatureLayer",
+        "esri/widgets/Legend",
+        "esri/widgets/Expand",
+        "esri/widgets/Home",
+        "esri/widgets/TimeSlider",
+        "esri/Color",
+        "esri/core/lang"
+      ], function (
+        Map,
+        MapView,
+        FeatureLayer,
+        Legend,
+        Expand,
+        Home,
+        TimeSlider,
+        Color,
+        esriLang
+      ) {
+
+        const colors = ["#ccbba3", "#d3b68a", "#d9b270", "#e0ad57", "#e6a852", "#eca32f", "#f39f1f", "#f99a10", "#ff9500", "#ffae00", "#ffc600", "#ffde00", "#fff700"];
+
+        const year = 2020;
+
+        const layer = new FeatureLayer({
+          title: "Motor vehicle crashes (2020)",
+          url: "https://services.arcgis.com/V6ZHFr6zdgNZuVG0/ArcGIS/rest/services/NYC_motor_crashes/FeatureServer/0",
+          popupEnabled: false,
+          definitionExpression: `CRASH_DATE > Date '12-31-${
+            year - 1
+          }' AND CRASH_DATE < Date '01-01-${year + 1}'`,
+          renderer: {
+            type: "heatmap",
+            colorStops: createColorStops(colors),
+            maxDensity: 0.5,
+            minDensity: 0,
+            radius: 12
+          }
+        });
+
+        const neighborhoodBoundaries = new FeatureLayer({
+          title: "Neighborhood tabulation areas",
+          showLegend: false,
+          popupTemplate: {
+            title: "{NTAName}",
+            returnGeometry: true
+          },
+          portalItem: {
+            id: "f262ae2935a04f1e83d5e58e0a834785"
+          },
+          renderer: {
+            type: "simple",
+            symbol: {
+              type: "simple-fill",
+              style: "none",
+              outline: {
+                width: 0.5,
+                color: "rgba(255,255,255,0.2)"
+              }
+            }
+          }
+        });
+
+        function createColorStops (ramp){
+          const colors = esriLang.clone(ramp);
+          const firstColora = new Color(colors.shift());
+          firstColora.a = 0;
+          const firstColorb = firstColora.clone();
+          firstColorb.a = 0.01;
+
+          const b = colors.length;
+          const stops = [
+            { color: firstColora, ratio: 0 },
+            { color: firstColorb, ratio: 0.01 },
+            { color: firstColorb, ratio: 0.01 },
+            { color: firstColorb, ratio: 0.01 },
+            ...colors.map((c, i) => {
+              const ratio = (b-(b-(i+1)))/b;
+              const color = new Color(c);
+              color.a = ratio;
+              return {
+                color,
+                ratio
+              };
+            })
+          ];
+          return stops;
+        }
+
+        const map = new Map({
+          basemap: "dark-gray-vector",
+          layers: [layer, neighborhoodBoundaries]
+        });
+
+        const view = new MapView({
+          container: "viewDiv",
+          map: map,
+          center: [-73.9304, 40.6971],
+          scale: 144447,
+          constraints: {
+            snapToZoom: false
+          },
+          highlightOptions: {
+            haloOpacity: 0,
+            fillOpacity: 0
+          },
+          popup: {
+            dockEnabled: true,
+            dockOptions: {
+              breakpoint: false,
+              position: "top-right"
+            }
+          }
+        });
+
+        view.ui.add(
+          new Home({
+            view: view
+          }),
+          "top-left"
+        );
+
+        view.popup.watch("selectedFeature", (selectedFeature) => {
+          if(selectedFeature){
+            layer.featureEffect = {
+              filter: {
+                geometry: selectedFeature?.geometry
+              },
+              excludedEffect: "grayscale(100%)"
+            };
+          }
+        });
+
+        const legend = new Legend({
+          view: view,
+          container: "legendDiv"
+        });
+
+        const infoDiv = document.getElementById("infoDiv");
+        view.ui.add(
+          new Expand({
+            view: view,
+            content: infoDiv,
+            expandIconClass: "esri-icon-layer-list",
+            expanded: true
+          }),
+          "bottom-left"
+        );
+
+      });
+    </script>
+  </head>
+  <body>
+    <div id="viewDiv"></div>
+    <div id="infoDiv" class="esri-widget">
+      <div id="legendDiv"></div>
+    </div>
+  </body>
+</html>
