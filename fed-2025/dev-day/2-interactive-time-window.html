@@ -1,0 +1,393 @@
+<html lang="en">
+
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="initial-scale=1, maximum-scale=1,user-scalable=no" />
+  <title>Wheat data exploration</title>
+
+  <!-- Load Calcite -->
+  <link rel="stylesheet" type="text/css" href="https://js.arcgis.com/calcite-components/3.0.2/calcite.css" />
+  <script type="module" src="https://js.arcgis.com/calcite-components/3.0.2/calcite.esm.js"></script>
+
+  <!-- Load the ArcGIS Maps SDK for JavaScript core API -->
+  <link rel="stylesheet" type="text/css" href="https://jsdev.arcgis.com/4.32/esri/themes/light/main.css"/>
+  <script src="https://jsdev.arcgis.com/4.32/"></script>
+
+  <!-- Load map components -->
+  <script type="module" src="https://js.arcgis.com/map-components/4.32/arcgis-map-components.esm.js"></script>
+
+  <style>
+    html,
+    body {
+      display: flex;
+      background-color: var(--calcite-ui-foreground-2);
+      padding: 0;
+      margin: 0;
+      width: 100vw;
+      height: 100vh;
+    }
+
+    arcgis-map {
+      height: 100%;
+    }
+
+    .map-panel,
+    .table-panel {
+      flex: 1;
+    }
+
+    arcgis-feature-table {
+      height: 0;
+    }
+
+    #slider-container {
+      width: 98%;
+      margin: 0.5rem;
+    }
+
+    calcite-shell-panel {
+      --calcite-shell-panel-min-height: 10px;
+      --calcite-shell-panel-max-height: 1000px;
+    }
+  </style>
+</head>
+
+<body>
+  <calcite-shell>
+    <arcgis-map item-id="f6a5bbddb13a4adca22defdec2d4f60c" id="map">
+      <arcgis-zoom position="top-left"></arcgis-zoom>
+      <arcgis-expand expanded position="top-left" group="top-left">
+        <arcgis-legend></arcgis-legend>
+      </arcgis-expand>
+      <arcgis-expand position="top-left" group="top-left">
+        <arcgis-layer-list></arcgis-layer-list>
+      </arcgis-expand>
+      <arcgis-placement position="top-left">
+        <calcite-action icon="table" scale="s" id="feature-table-action"></calcite-action>
+      </arcgis-placement>
+    </arcgis-map>
+    <calcite-shell-panel id="slider-panel" slot="panel-bottom" layout="horizontal">
+      <arcgis-feature-table reference-element="arcgis-map" ></arcgis-feature-table>
+      <div id="slider-container">
+        <arcgis-time-slider
+          id="yearSlider" layout="auto" mode="time-window" reference-element="#map"
+        ></arcgis-time-slider>
+      </div>
+    </calcite-shell-panel>
+  </calcite-shell>
+
+  <script>
+    require([
+      "esri/intl"
+    ], (esriIntl) => {
+      const yearSlider = document.querySelector("arcgis-time-slider");
+      const arcgisMap = document.querySelector("arcgis-map");
+      const arcgisTable = document.querySelector("arcgis-feature-table");
+      const arcgisTableAction = document.getElementById("feature-table-action");
+
+      arcgisMap.highlightOptions = {
+        color: [106, 13, 173, 1],
+        haloOpacity: 0.9,
+        fillOpacity: 0.2
+      };
+
+      let i = 1;
+      arcgisTableAction.addEventListener("click", (event) => {
+        i++;
+        arcgisTable.style.height = i % 2 === 0 ? "300px" : "0";
+      });
+
+      yearSlider.fullTimeExtent = {
+        start: new Date(1997, 0, 1),
+        end: new Date(2022, 0, 1)
+      };
+      yearSlider.timeExtent = {
+        start: new Date(1997, 0, 1),
+        end: new Date(2022, 0, 1)
+      };
+      yearSlider.stops = {
+        interval: {
+          value: 5,
+          unit: "years"
+        }
+      };
+
+      arcgisMap.addEventListener("arcgisViewReadyChange", async () => {
+        const view = arcgisMap.view;
+
+        //
+        // Change in harvested wheat 1997 - 2022
+        //
+
+        const wheatChangeLayer = arcgisMap.map.layers.getItemAt(0).layers.find((layer) => {
+          return layer.title === "Change in harvested wheat from 1997 to 2022";
+        });
+        const wheatChangeRenderer = wheatChangeLayer.renderer.clone();
+
+        // Jeremy's original expression for calculating change
+        //
+        // $feature.Wheat_prod_2022 - $feature.Wheat_prod_1997
+        const dynamicExpression = `
+          Expects($feature, "Wheat_prod_*");
+          var hasEndTime = HasValue($view, ["timeProperties", "currentEnd"]);
+          var hasStartTime = HasValue($view, ["timeProperties", "currentStart"]);
+          if(hasEndTime && hasStartTime){
+            var endYear = Year($view.timeProperties.currentEnd);
+            var startYear = Year($view.timeProperties.currentStart);
+            console("endYear", startYear, endYear);
+
+            var endValue = $feature["Wheat_prod_" + endYear];
+            var startValue = $feature["Wheat_prod_" + startYear];
+            return endValue - startValue;
+          }
+          return null;
+        `;
+
+        wheatChangeRenderer.valueExpression = dynamicExpression;
+        wheatChangeRenderer.field = null;
+        const wheatChangeOutlineVariable = wheatChangeRenderer.visualVariables.find((visualVariable) => {
+          return visualVariable.target === "outline" && visualVariable.type === "size";
+        });
+
+        const wheatChangeSizeVariable = wheatChangeRenderer.visualVariables.find((visualVariable) => {
+          return visualVariable.type === "size" && visualVariable.target !== "outline";
+        });
+        wheatChangeSizeVariable.valueExpression = dynamicExpression;
+        wheatChangeSizeVariable.field = null;
+        wheatChangeRenderer.visualVariables = [wheatChangeSizeVariable, wheatChangeOutlineVariable];
+
+        wheatChangeLayer.renderer = wheatChangeRenderer;
+
+        //
+        // Harvested wheat (size)
+        //
+
+        const wheatSizeLayer = arcgisMap.map.layers.getItemAt(0).layers.find((layer) => {
+          return layer.title === "Harvested wheat (size)";
+        });
+
+        const wheatSizeRenderer = wheatSizeLayer.renderer.clone();
+        wheatSizeRenderer.valueExpression = `
+          Expects($feature, "Wheat_prod_*");
+          var hasEndTime = HasValue($view, ["timeProperties", "currentEnd"]);
+          var hasStartTime = HasValue($view, ["timeProperties", "currentStart"]);
+          if(hasEndTime){
+            var endYear = Year($view.timeProperties.currentEnd);
+            var endValue = $feature["Wheat_prod_" + endYear];
+            return endValue;
+          }
+          return 0;
+        `;
+        wheatSizeRenderer.field = null;
+        const wheatOutlineVariable = wheatSizeRenderer.visualVariables.find((visualVariable) => {
+          return visualVariable.target === "outline" && visualVariable.type === "size";
+        });
+
+        const wheatSizeVariable = wheatSizeRenderer.visualVariables.find((visualVariable) => {
+          return visualVariable.type === "size" && visualVariable.target !== "outline";
+        });
+        wheatSizeVariable.valueExpression = `
+          Expects($feature, "Wheat_prod_*");
+          var hasEndTime = HasValue($view, ["timeProperties", "currentEnd"]);
+          var hasStartTime = HasValue($view, ["timeProperties", "currentStart"]);
+          if(hasEndTime){
+            var endYear = Year($view.timeProperties.currentEnd);
+            var endValue = $feature["Wheat_prod_" + endYear];
+            return endValue;
+          }
+          return 0;
+        `;
+        wheatSizeVariable.field = null;
+        wheatSizeRenderer.visualVariables = [wheatSizeVariable, wheatOutlineVariable];
+        wheatSizeLayer.renderer = wheatSizeRenderer;
+
+        //
+        // Harvested wheat (dot density)
+        //
+
+        const wheatDotLayer = arcgisMap.map.layers.getItemAt(0).layers.find((layer) => {
+          return layer.title === "Harvested wheat (dot density)";
+        });
+
+        const wheatDotRenderer = wheatDotLayer.renderer.clone();
+        wheatDotRenderer.attributes[0].valueExpression = `
+          Expects($feature, "Winter_wheat_prod_*");
+          var hasEndTime = HasValue($view, ["timeProperties", "currentEnd"]);
+          var hasStartTime = HasValue($view, ["timeProperties", "currentStart"]);
+          if(hasEndTime){
+            var endYear = Year($view.timeProperties.currentEnd);
+            var endValue = $feature["Winter_wheat_prod_" + endYear];
+            return endValue;
+          }
+          return 0;
+        `;
+        wheatDotRenderer.attributes[0].field = null;
+
+        wheatDotRenderer.attributes[1].valueExpression = `
+          Expects($feature, "Spring_wheat_prod_*");
+          var hasEndTime = HasValue($view, ["timeProperties", "currentEnd"]);
+          var hasStartTime = HasValue($view, ["timeProperties", "currentStart"]);
+          if(hasEndTime){
+            var endYear = Year($view.timeProperties.currentEnd);
+            var endValue = $feature["Spring_wheat_prod_" + endYear];
+            return endValue;
+          }
+          return 0;
+        `;
+        wheatDotRenderer.attributes[1].field = null;
+
+        wheatDotRenderer.attributes[2].valueExpression = `
+          Expects($feature, "Spring_wheat_prod_nodurum_*");
+          var hasEndTime = HasValue($view, ["timeProperties", "currentEnd"]);
+          var hasStartTime = HasValue($view, ["timeProperties", "currentStart"]);
+          if(hasEndTime){
+            var endYear = Year($view.timeProperties.currentEnd);
+            var endValue = $feature["Spring_wheat_prod_nodurum_" + endYear];
+            return endValue;
+          }
+          return 0;
+        `;
+        wheatDotRenderer.attributes[2].field = null;
+        wheatDotLayer.renderer = wheatDotRenderer;
+
+        //
+        // Harvested wheat (charts)
+        //
+
+        const wheatChartLayer = arcgisMap.map.layers.getItemAt(0).layers.find((layer) => {
+          return layer.title === "Harvested wheat (charts)";
+        });
+
+        const wheatChartRenderer = wheatChartLayer.renderer.clone();
+        wheatChartRenderer.attributes[0].valueExpression = `
+          Expects($feature, "Winter_wheat_prod_*");
+          var hasEndTime = HasValue($view, ["timeProperties", "currentEnd"]);
+          var hasStartTime = HasValue($view, ["timeProperties", "currentStart"]);
+          if(hasEndTime){
+            var endYear = Year($view.timeProperties.currentEnd);
+            var endValue = $feature["Winter_wheat_prod_" + endYear];
+            return endValue;
+          }
+          return 0;
+        `;
+        wheatChartRenderer.attributes[0].field = null;
+
+        wheatChartRenderer.attributes[1].valueExpression = `
+          Expects($feature, "Spring_wheat_prod_*");
+          var hasEndTime = HasValue($view, ["timeProperties", "currentEnd"]);
+          var hasStartTime = HasValue($view, ["timeProperties", "currentStart"]);
+          if(hasEndTime){
+            var endYear = Year($view.timeProperties.currentEnd);
+            var endValue = $feature["Spring_wheat_prod_" + endYear];
+            return endValue;
+          }
+          return 0;
+        `;
+        wheatChartRenderer.attributes[1].field = null;
+
+        wheatChartRenderer.attributes[2].valueExpression = `
+          Expects($feature, "Spring_wheat_prod_nodurum_*");
+          var hasEndTime = HasValue($view, ["timeProperties", "currentEnd"]);
+          var hasStartTime = HasValue($view, ["timeProperties", "currentStart"]);
+          if(hasEndTime){
+            var endYear = Year($view.timeProperties.currentEnd);
+            var endValue = $feature["Spring_wheat_prod_nodurum_" + endYear];
+            return endValue;
+          }
+          return 0;
+        `;
+        wheatChartRenderer.attributes[2].field = null;
+
+        const wheatChartOutlineVariable = wheatChartRenderer.visualVariables.find((visualVariable) => {
+          return visualVariable.target === "outline" && visualVariable.type === "size";
+        });
+
+        const wheatChartSizeVariable = wheatChartRenderer.visualVariables.find((visualVariable) => {
+          return visualVariable.type === "size" && visualVariable.target !== "outline";
+        });
+        wheatChartSizeVariable.valueExpression = `
+          Expects($feature, "Winter_wheat_prod_*", "Spring_wheat_prod_*", "Spring_wheat_prod_nodurum_*");
+          var hasEndTime = HasValue($view, ["timeProperties", "currentEnd"]);
+          if(hasEndTime){
+            var endYear = Year($view.timeProperties.currentEnd);
+
+            var field0 = Number(iif(HasValue($feature, "Winter_wheat_prod_" + endYear), $feature["Winter_wheat_prod_" + endYear], 0));
+            var field1 = Number($feature["Spring_wheat_prod_" + endYear]);
+            var field2 = Number($feature["Spring_wheat_prod_nodurum_" + endYear]);
+
+            field0 = IIf(field0 < 0, 0, field0);
+            field1 = IIf(field1 < 0, 0, field1);
+            field2 = IIf(field2 < 0, 0, field2);
+
+            var total = field0 + field1 + field2;
+
+            return total;
+          }
+          return 0;
+        `;
+        wheatChartSizeVariable.field = null;
+        wheatChartRenderer.visualVariables = [wheatChartSizeVariable, wheatChartOutlineVariable];
+        wheatChartLayer.renderer = wheatChartRenderer;
+
+        // Feature table
+
+        arcgisTable.layer = wheatChangeLayer;
+        arcgisTable.menuConfig = {
+          items: [{
+            label: "Select top 10",
+            icon: "smile",
+            clickFunction: async function(event) {
+              const layer = arcgisTable.layer;
+              const startYear = new Date(view.timeExtent.start).getFullYear();
+              const endYear = new Date(view.timeExtent.end).getFullYear();
+              const orderByField = [`Wheat_prod_${endYear}-Wheat_prod_${endYear-5} DESC`];
+
+              const query = {
+                topFilter: {
+                  topCount: 10,
+                  groupByFields: ["1"],
+                  orderByFields: orderByField
+                },
+                num: 10,
+                orderByFields: orderByField,
+                outFields: [`Wheat_prod_${endYear}`, `Wheat_prod_${endYear-5}`, "FID", "NAMELSAD"],
+                returnGeometry: false,
+                cacheHint: false
+              };
+              const { features } = await layer.queryTopFeatures(query);
+              const ids = features.map(({ attributes }) => attributes.FID);
+              arcgisTable.highlightIds = ids;
+            }
+          }, {
+            label: "Select bottom 10",
+            icon: "frown",
+            clickFunction: async function(event) {
+              const layer = arcgisTable.layer;
+              const startYear = new Date(view.timeExtent.start).getFullYear();
+              const endYear = new Date(view.timeExtent.end).getFullYear();
+              const orderByField = [`Wheat_prod_${endYear-5}-Wheat_prod_${endYear} DESC`];
+
+              const query = {
+                topFilter: {
+                  topCount: 10,
+                  groupByFields: ["1"],
+                  orderByFields: orderByField
+                },
+                num: 10,
+                orderByFields: orderByField,
+                outFields: [`Wheat_prod_${endYear}`, `Wheat_prod_${endYear-5}`, "FID", "NAMELSAD"],
+                returnGeometry: false,
+                cacheHint: false
+              };
+              const { features } = await layer.queryTopFeatures(query);
+              const ids = features.map(({ attributes }) => attributes.FID);
+              arcgisTable.highlightIds = ids;
+            }
+          }]
+        };
+      });
+    });
+  </script>
+</body>
+
+</html>

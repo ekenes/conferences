@@ -1,0 +1,124 @@
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="initial-scale=1,maximum-scale=1,user-scalable=no" />
+  <link rel="stylesheet" type="text/css"
+    href="https://cdn.jsdelivr.net/npm/@esri/calcite-components@3.0.0-next.51/dist/calcite/calcite.css" />
+  <script type="module"
+    src="https://cdn.jsdelivr.net/npm/@esri/calcite-components@3.0.0-next.51/dist/calcite/calcite.esm.js"></script>
+
+  <link rel="stylesheet" href="https://jsdev.arcgis.com/4.32/esri/themes/light/main.css" />
+  <script src="https://jsdev.arcgis.com/4.32/"></script>
+  <script type="module" src="https://jsdev.arcgis.com/map-components/4.32/arcgis-map-components.esm.js"></script>
+
+  <style>
+    arcgis-link-chart {
+      background-color: white;
+      display: block;
+      width: 100%;
+      height: 100%;
+    }
+  </style>
+</head>
+
+<body>
+
+  <calcite-shell>
+    <calcite-shell-panel slot="panel-start" position="start" id="shell-panel-start">
+      <calcite-panel heading="Supply chain management risks" id="panel-start">
+        <calcite-tile
+          description="This supply chain knowledge graph contains plants, parts and suppliers as well as people of interest flagged on watch lists who were seen near
+        critical facilities. The link chart contains a small network of the relationships between people of interest seen near two primary facilities.">
+        </calcite-tile>
+        <calcite-block heading="People of interest"
+          description="Identify key people in the network to better understand the chain of events" open>
+          <calcite-list id="poi-list" selection-mode="single-persist">
+            <calcite-list-item label="Ty Fitzpatrick" value="Ty Fitzpatrick"></calcite-list-item>
+            <calcite-list-item label="Austin Marshall" value="Austin Marshall"></calcite-list-item>
+          </calcite-list>
+        </calcite-block>
+        <calcite-block id="legend-block" heading="Legend" open>
+          <arcgis-legend reference-element="arcgis-link-chart"></arcgis-legend>
+        </calcite-block>
+      </calcite-panel>
+    </calcite-shell-panel>
+    <calcite-panel>
+      <arcgis-link-chart item-id="ad2c21a820ee4ea1bee16f618cd100e7" id="link-chart">
+        <arcgis-link-chart-layout-switcher position="top-right"></arcgis-link-chart-layout-switcher>
+        <arcgis-expand position="top-left">
+          <arcgis-bookmarks></arcgis-bookmarks>
+        </arcgis-expand>
+      </arcgis-link-chart>
+    </calcite-panel>
+  </calcite-shell>
+
+  <script>
+    require([
+      "esri/config",
+      "esri/symbols/support/cimSymbolUtils"
+    ], (esriConfig, cimSymbolUtils) => {
+      esriConfig.portalUrl = "https://knowledgegraph5.dev.geocloud.com/portal";
+
+      const arcgisLinkChart = document.getElementById("link-chart");
+
+      arcgisLinkChart.addEventListener("arcgisViewReadyChange", async () => {
+        console.log("arcgisViewReadyChange", arcgisLinkChart.map.layers.map((layer) => layer.title));
+
+        const supplyChainDemoLayer = arcgisLinkChart.map.layers.find((layer) => {
+          return layer.title === "Analysis Output: 2/9/2025 1:42:19 PM";
+        });
+        const poiLayer = supplyChainDemoLayer.layers.find((layer) => {
+          return layer.title === "POI";
+        });
+
+        const legendLayerTitles = ["Plant", "near_facility", "near_poi", "POI"];
+        const legend = document.querySelector("arcgis-legend");
+        legend.layerInfos = supplyChainDemoLayer.layers
+          .filter(({ title }) => legendLayerTitles.indexOf(title) > -1)
+          .map((layer) => {
+            return {
+              layer
+            };
+          });
+
+        const poiRenderer = poiLayer.renderer.clone();
+        const poiSymbol = poiRenderer.symbol;
+
+        const poiList = document.getElementById("poi-list");
+        poiList.addEventListener("calciteListItemSelect", (event) => {
+          const poi = event.target.value;
+          const poiAnimatedSymbol = poiSymbol.clone();
+
+          cimSymbolUtils.applyCIMSymbolColor(poiAnimatedSymbol, "#3900b3ff");
+
+          poiAnimatedSymbol.data.symbol.animations = [{
+            type: "CIMSymbolAnimationScale",
+            scaleFactor: 2,
+            animatedSymbolProperties: {
+              type: "CIMAnimatedSymbolProperties",
+              duration: 2,
+              repeatDelay: 0,
+              repeatType: "Oscillate",
+              playAnimation: true,
+              randomizeStartTime: false,
+            }
+          }];
+
+          const poiUniqueValueRenderer = {
+            type: "unique-value",
+            field: "name",
+            defaultSymbol: poiSymbol,
+            uniqueValueInfos: [
+              {
+                value: poi,
+                symbol: poiAnimatedSymbol
+              }
+            ]
+          };
+          poiLayer.renderer = poiUniqueValueRenderer;
+        });
+      });
+    });
+  </script>
+</body>
+</html>

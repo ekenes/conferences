@@ -1,0 +1,41 @@
+<html lang="en">
+
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="initial-scale=1,maximum-scale=1,user-scalable=no" />
+  <link rel="stylesheet" type="text/css"
+    href="https://cdn.jsdelivr.net/npm/@esri/calcite-components@3.0.0-next.51/dist/calcite/calcite.css" />
+  <script type="module"
+    src="https://cdn.jsdelivr.net/npm/@esri/calcite-components@3.0.0-next.51/dist/calcite/calcite.esm.js"></script>
+
+  <link rel="stylesheet" href="https://jsdev.arcgis.com/4.32/esri/themes/light/main.css" />
+  <script src="https://jsdev.arcgis.com/4.32/"></script>
+  <script type="module" src="https://jsdev.arcgis.com/map-components/4.32/arcgis-map-components.esm.js"></script>
+
+  <style>
+    arcgis-link-chart {
+      display: block;
+      width: 100%;
+      height: 100%;
+    }
+  </style>
+</head>
+
+<body>
+  <arcgis-link-chart item-id="ad2c21a820ee4ea1bee16f618cd100e7">
+    <arcgis-link-chart-layout-switcher position="top-right"></arcgis-link-chart-layout-switcher>
+    <arcgis-expand position="top-left">
+      <arcgis-bookmarks></arcgis-bookmarks>
+    </arcgis-expand>
+  </arcgis-link-chart>
+
+  <script>
+    require([
+      "esri/config"
+    ], (esriConfig) => {
+      esriConfig.portalUrl = "https://knowledgegraph5.dev.geocloud.com/portal";
+    });
+  </script>
+</body>
+
+</html>
