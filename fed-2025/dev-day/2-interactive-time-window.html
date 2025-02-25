@@ -6,12 +6,11 @@
   <title>Wheat data exploration</title>
 
   <!-- Load Calcite -->
-  <link rel="stylesheet" type="text/css" href="https://js.arcgis.com/calcite-components/3.0.2/calcite.css" />
   <script type="module" src="https://js.arcgis.com/calcite-components/3.0.2/calcite.esm.js"></script>
 
   <!-- Load the ArcGIS Maps SDK for JavaScript core API -->
-  <link rel="stylesheet" type="text/css" href="https://jsdev.arcgis.com/4.32/esri/themes/light/main.css"/>
-  <script src="https://jsdev.arcgis.com/4.32/"></script>
+  <link rel="stylesheet" type="text/css" href="https://js.arcgis.com/4.32/esri/themes/light/main.css"/>
+  <script src="https://js.arcgis.com/4.32/"></script>
 
   <!-- Load map components -->
   <script type="module" src="https://js.arcgis.com/map-components/4.32/arcgis-map-components.esm.js"></script>
@@ -111,6 +110,7 @@
           unit: "years"
         }
       };
+      arcgisMap.timeExtent = yearSlider.timeExtent;
 
       arcgisMap.addEventListener("arcgisViewReadyChange", async () => {
         const view = arcgisMap.view;
@@ -134,7 +134,6 @@
           if(hasEndTime && hasStartTime){
             var endYear = Year($view.timeProperties.currentEnd);
             var startYear = Year($view.timeProperties.currentStart);
-            console("endYear", startYear, endYear);
 
             var endValue = $feature["Wheat_prod_" + endYear];
             var startValue = $feature["Wheat_prod_" + startYear];
