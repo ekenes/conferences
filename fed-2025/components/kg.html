@@ -24,8 +24,14 @@
 </head>
 
 <body>
+
+  <div>
+    <my-component></my-component>
+  </div>
+
+
   <calcite-shell>
-    <calcite-shell-panel slot="panel-end" position="end" id="shell-panel-start">
+    <calcite-shell-panel slot="panel-start" position="start" id="shell-panel-start">
       <calcite-panel heading="Supply chain management risks" id="panel-start">
         <calcite-tile
           description="This supply chain knowledge graph contains plants, parts and suppliers as well as people of interest flagged on watch lists who were seen near
@@ -39,7 +45,7 @@
           </calcite-list>
         </calcite-block>
         <calcite-block id="legend-block" heading="Legend" open>
-          <arcgis-legend reference-element="#link-chart"></arcgis-legend>
+          <arcgis-legend reference-element="arcgis-link-chart"></arcgis-legend>
         </calcite-block>
       </calcite-panel>
     </calcite-shell-panel>

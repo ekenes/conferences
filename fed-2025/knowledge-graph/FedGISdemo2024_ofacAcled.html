@@ -1,0 +1,1312 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="initial-scale=1,maximum-scale=1,user-scalable=no" />
+  <title>Search Knowledge Graph | Sample | ArcGIS API for JavaScript 4.25</title>
+  <link rel="stylesheet" type="text/css" href="https://js.arcgis.com/calcite-components/2.2.0/calcite.css" />
+  <script type="module" src="https://js.arcgis.com/calcite-components/2.2.0/calcite.esm.js"></script>
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/styles/default.min.css">
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/highlight.min.js"></script>
+
+  <!-- and it's easy to individually load additional languages -->
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/languages/go.min.js"></script>
+  <script>hljs.highlightAll();</script>
+
+  <link rel="stylesheet" href="https://js.arcgis.com/4.31/esri/themes/light/main.css" />
+  <!-- <script src="https://jsdev.arcgis.com/4.32/"></script> -->
+  <script src="https://jsdev.arcgis.com/4.32/"></script>
+  <!-- <script src="https://next.sites.afd.arcgis.com/javascript/latest/"></script> -->
+  <style>
+    #mapDiv,
+    #linkChartDiv {
+      height: 79vh;
+      width: 100%
+    }
+
+    /* scrollbar overrides */
+    ::-webkit-scrollbar {
+      inline-size: 10px;
+    }
+
+    ::-webkit-scrollbar-track {
+      border-radius: 10px;
+
+      /* background: var(--calcite-color-foreground-3) */
+    }
+
+    ::-webkit-scrollbar-corner {
+      background-color: transparent;
+    }
+
+    ::-webkit-scrollbar-thumb {
+      background: var(--calcite-color-border-3);
+      border-radius: 10px;
+      inline-size: 8px;
+    }
+
+    ::-webkit-scrollbar-thumb:hover {
+      background: var(--calcite-color-border-1);
+    }
+
+
+    #results,
+    #adds,
+    #updates,
+    #deletes {
+      padding: 10px
+    }
+
+    #updates,
+    #deletes {
+      display: none;
+    }
+
+    select {
+      height: 32px;
+      width: 150px;
+      margin-right: 10px;
+    }
+
+    calcite-button {
+      height: 32px;
+    }
+
+    calcite-input,
+    #update-content {
+      margin-right: 10px;
+    }
+
+    calcite-segmented-control {
+      margin: 10px;
+    }
+
+    calcite-button {
+      display: inline-block;
+    }
+
+    .esri-view-root {
+      background-color: white;
+    }
+  </style>
+  <script>
+    require([
+      "esri/Map", "esri/WebLinkChart",
+      "esri/rest/knowledgeGraphService",
+      "esri/geometry/Point",
+      "esri/geometry/Polyline",
+      "esri/geometry/Polygon",
+      "esri/views/MapView",
+      "esri/views/LinkChartView",
+      "esri/layers/FeatureLayer",
+      "esri/widgets/Legend",
+      "esri/identity/IdentityManager",
+      "esri/rest/knowledgeGraph/Entity",
+      "esri/rest/knowledgeGraph/Relationship",
+      "esri/rest/knowledgeGraph/GraphApplyEdits",
+      "esri/rest/knowledgeGraph/GraphQueryStreaming",
+      "esri/rest/knowledgeGraph/GraphSearchStreaming",
+      "esri/widgets/Sketch/SketchViewModel",
+      "esri/layers/GraphicsLayer",
+      "esri/Graphic",
+      "esri/geometry/support/webMercatorUtils",
+      "esri/layers/KnowledgeGraphLayer",
+      "esri/layers/LinkChartLayer",
+      "esri/layers/support/LabelClass",
+      "esri/geometry/geometryEngine",
+      "esri/geometry/Polygon"
+    ], (EsriMap, WebLinkChart, KGModule, Point, Polyline, Polygon, MapView, LinkChartView, FeatureLayer, Legend, IdentityManager, Entity, Relationship, GraphApplyEdits, StreamingSearch, StreamingQuery, SketchViewModel, GraphicsLayer, Graphic, webMercatorUtils, KnowledgeGraphLayer, LinkChartLayer, LabelClass, geometryEngine) => {
+
+      //etait portal
+      IdentityManager.registerToken({
+        server: "https://etait.esri.com/server/rest/services",
+        token: "NOLSzeSjZ4xzV97afrtuDjH3oahZBeWdXb1g1q9heWs8w1_O3ISSSfXRJF579Mdz3xrjj6Kei95F7wBk-7FgSA-Mbk4gB1w9K7o1aN_cK7FPALND4FfOJCTRLVc8B-bSIrte7MAADlJMMpKZpJQboLt2EvrHzhGE0K9Enzick3O_DCFm9RVPvvxnozrpADKYQPB5sKKuPFsN7_De4hIe3ZWVs9QeyWF7De8Gz142sjicZHa0pXejufspclXf5kim"
+      });
+      const url = "https://etait.esri.com/server/rest/services/Hosted/ofac/KnowledgeGraphServer"
+      const acledURL = "https://etait.esri.com/server/rest/services/Hosted/UkraineRussiaPOI/FeatureServer"
+
+
+
+      let knowledgeGraph;
+      // set knowledge graph with url to service
+
+
+      let propertyList = {};
+      const dataDiv = document.getElementById('dataDiv');
+      let streaming = false;
+
+      const acled = new FeatureLayer({
+        title: "ACLED events",
+        url: acledURL,
+        renderer: {
+          type: "simple", // autocasts as new SimpleFillSymbol()
+          symbol: {
+            type: "simple-marker",
+            color: "#fc5b5b",
+            size: 3
+          }
+        }
+      });
+      const map = new EsriMap({
+        basemap: 'dark-gray-vector',
+        layers: [acled]
+      });
+
+      const view = new MapView({
+        map: map,
+        center: [35, 50],
+        zoom: 3,
+        container: "mapDiv"
+      });
+
+
+      view.ui.add(new Legend({ view: view }), "bottom-right");
+
+
+      let lcLayer;
+      let kgLayer;
+      // console.log(lc)
+
+
+      const relGraphic = (colorHex) => {
+        return symbol = {
+          type: "cim",
+          data: {
+            type: "CIMSymbolReference",
+            symbol: {
+              type: "CIMLineSymbol",
+              symbolLayers: [
+                {
+                  type: "CIMSolidStroke",
+                  enable: true,
+                  style: "solid",
+                  width: 1,
+                  color: colorHex
+                },
+                {
+                  // arrow symbol
+                  type: "CIMVectorMarker",
+                  enable: true,
+                  size: 10,
+                  markerPlacement: {
+                    type: "CIMMarkerPlacementOnLine",
+                    angleToLine: true,
+                    relativeTo: "LineMiddle"
+                  },
+                  frame: {
+                    xmin: -5,
+                    ymin: -5,
+                    xmax: 5,
+                    ymax: 5
+                  },
+                  markerGraphics: [
+                    {
+                      type: "CIMMarkerGraphic",
+                      geometry: {
+                        rings: [
+                          [
+                            [-8, -4],
+                            [-8, 4.2],
+                            [0.8, 0],
+                            [-8, -4]
+                          ]
+                        ]
+                      },
+                      symbol: {
+                        type: "CIMPolygonSymbol",
+                        symbolLayers: [
+                          {
+                            type: "CIMSolidFill",
+                            enable: true,
+                            color: colorHex
+                          }
+                        ]
+                      }
+                    }
+                  ]
+                }
+              ]
+            }
+          }
+        }
+      }
+
+
+      const renderers = {
+        "Person": {
+          type: "simple", // autocasts as new SimpleFillSymbol()
+          symbol: {
+            type: "simple-marker",
+            size: 6,
+            color: "orange",
+            outline: {  // autocasts as new SimpleLineSymbol()
+              width: 0.5,
+              color: "black"
+            }
+          }
+        },
+        "Address": {
+          type: "simple", // autocasts as new SimpleFillSymbol()
+          symbol: {
+            type: "simple-marker",
+            size: 6,
+            color: "#64c2f5",
+            outline: {  // autocasts as new SimpleLineSymbol()
+              width: 0.5,
+              color: "black"
+            }
+          }
+        }, "SanctionsProgram": {
+          type: "simple", // autocasts as new SimpleFillSymbol()
+          symbol: {
+            type: "simple-marker",
+            size: 6,
+            color: "purple",
+            outline: {  // autocasts as new SimpleLineSymbol()
+              width: 0.5,
+              color: "black"
+            }
+          }
+        },
+        "Vessel": {
+          type: "simple", // autocasts as new SimpleFillSymbol()
+          symbol: {
+            type: "simple-marker",
+            size: 6,
+            color: "orange",
+            outline: {  // autocasts as new SimpleLineSymbol()
+              width: 0.5,
+              color: "black"
+            }
+          }
+        },
+        "Acled": {
+          type: "simple", // autocasts as new SimpleFillSymbol()
+          symbol: {
+            type: "simple-marker",
+            size: 6,
+            color: "red",
+            outline: {  // autocasts as new SimpleLineSymbol()
+              width: 0.5,
+              color: "black"
+            }
+          }
+        },
+        "Alias": {
+          type: "simple", // autocasts as new SimpleFillSymbol()
+          symbol: {
+            type: "simple-marker",
+            size: 6,
+            color: "green",
+            outline: {  // autocasts as new SimpleLineSymbol()
+              width: 0.5,
+              color: "black"
+            }
+          }
+        },
+        "Organization": {
+          type: "simple", // autocasts as new SimpleFillSymbol()
+          symbol: {
+            type: "simple-marker",
+            size: 6,
+            color: "grey",
+            outline: {  // autocasts as new SimpleLineSymbol()
+              width: 0.5,
+              color: "black"
+            }
+          }
+        },
+        "has_address": //relGraphic("#64c2f5"),
+        {
+          type: "simple", // autocasts as new SimpleFillSymbol()
+          symbol: relGraphic([207, 120, 245, 255])
+
+        },
+        "aka": {
+          type: "simple", // autocasts as new SimpleFillSymbol()
+          symbol: relGraphic([163, 255, 130, 255])
+
+        },
+        "sanctioned_under":
+        {
+          type: "simple", // autocasts as new SimpleFillSymbol()
+          symbol: relGraphic([100, 194, 245, 255])
+
+        },
+        "in_proximity_to": {
+          type: "simple", // autocasts as new SimpleFillSymbol()
+          symbol: relGraphic([255, 123, 123, 255])
+        }
+      };
+
+      const mapRenderers = {
+        "Person": {
+          type: "simple", // autocasts as new SimpleFillSymbol()
+          symbol: {
+            type: "simple-marker",
+            size: 6,
+            color: "orange",
+            outline: {  // autocasts as new SimpleLineSymbol()
+              width: 0.5,
+              color: "black"
+            }
+          }
+        },
+        "Address": {
+          type: "simple", // autocasts as new SimpleFillSymbol()
+          symbol: {
+            type: "simple-marker",
+            size: 8,
+            color: "#64c2f5",
+            outline: {  // autocasts as new SimpleLineSymbol()
+              width: 0.5,
+              color: "black"
+            }
+          }
+        }, "SanctionsProgram": {
+          type: "simple", // autocasts as new SimpleFillSymbol()
+          symbol: {
+            type: "simple-marker",
+            size: 6,
+            color: "purple",
+            outline: {  // autocasts as new SimpleLineSymbol()
+              width: 0.5,
+              color: "black"
+            }
+          }
+        },
+        "Vessel": {
+          type: "simple", // autocasts as new SimpleFillSymbol()
+          symbol: {
+            type: "simple-marker",
+            size: 6,
+            color: "orange",
+            outline: {  // autocasts as new SimpleLineSymbol()
+              width: 0.5,
+              color: "black"
+            }
+          }
+        },
+        "Acled": {
+          type: "simple", // autocasts as new SimpleFillSymbol()
+          symbol: {
+            type: "simple-marker",
+            size: 6,
+            color: "red",
+            outline: {  // autocasts as new SimpleLineSymbol()
+              width: 0.5,
+              color: "black"
+            }
+          }
+        },
+        "Alias": {
+          type: "simple", // autocasts as new SimpleFillSymbol()
+          symbol: {
+            type: "simple-marker",
+            size: 6,
+            color: "green",
+            outline: {  // autocasts as new SimpleLineSymbol()
+              width: 0.5,
+              color: "black"
+            }
+          }
+        },
+        "Organization": {
+          type: "simple", // autocasts as new SimpleFillSymbol()
+          symbol: {
+            type: "simple-marker",
+            size: 6,
+            color: "grey",
+            outline: {  // autocasts as new SimpleLineSymbol()
+              width: 0.5,
+              color: "black"
+            }
+          }
+        },
+        "has_address": //relGraphic("#64c2f5"),
+        {
+          type: "simple", // autocasts as new SimpleFillSymbol()
+          symbol: relGraphic([207, 120, 245, 255])
+
+        },
+        "aka": {
+          type: "simple", // autocasts as new SimpleFillSymbol()
+          symbol: relGraphic([163, 255, 130, 255])
+
+        },
+        "sanctioned_under":
+        {
+          type: "simple", // autocasts as new SimpleFillSymbol()
+          symbol: relGraphic([100, 194, 245, 255])
+
+        },
+        "in_proximity_to": {
+          type: "simple", // autocasts as new SimpleFillSymbol()
+          symbol: relGraphic([255, 123, 123, 255])
+        }
+      };
+
+
+
+      const init = async () => {
+        knowledgeGraph = await KGModule.fetchKnowledgeGraph(url)
+        console.log('graph', knowledgeGraph)
+        let preview = await KGModule.executeQuery(knowledgeGraph, {
+          openCypherQuery: `MATCH (v:Person) RETURN v LIMIT 100`
+        })
+        console.log("kg", knowledgeGraph)
+
+
+        createList(preview.resultRows)
+
+        //populate the id selection
+        const ids = await KGModule.executeQuery(knowledgeGraph, {
+          openCypherQuery: `MATCH (n:Person) RETURN n.globalid`
+        })
+        let idList = '';
+        ids.resultRows.forEach((id) => {
+          idList += `<calcite-combobox-item value="${id}" text-label="${id}"></calcite-combobox-item>`
+        })
+        document.getElementById('streaming-search-ids').innerHTML += idList
+      }
+
+      const getProps = async (id) => {
+        let properties = await KGModule.executeQuery(knowledgeGraph, {
+          openCypherQuery: `MATCH (n) WHERE ID(n) = "${id}" RETURN n`
+        })
+
+        let props = properties.resultRows[0][0].properties
+        let table = `<calcite-table-row slot="table-header">
+                                <calcite-table-header heading="Property" description="Description"></calcite-table-header>
+                                <calcite-table-header heading="Value" description="Description"></calcite-table-header>
+                            </calcite-table-row>`
+        for (prop in props) {
+          table += `<calcite-table-row>
+                    <calcite-table-cell>${prop}</calcite-table-cell>
+                    <calcite-table-cell>${props[prop]}</calcite-table-cell>
+                    </calcite-table-row>`
+        }
+        console.log('props', properties)
+        document.getElementById("recordType").innerText = properties.resultRows[0][0].typeName
+        document.getElementById("propsTable").innerHTML = table;
+      }
+
+      const createList = (resultRows) => {
+        console.log(resultRows)
+        itemsList = ''
+        for (index in resultRows) {
+          const result = resultRows[index][0]
+          const props = result.properties
+          itemsList += `<calcite-list-item class="recordListItem" label="${props.address != null ? props.address : props.Name != null ? props.Name : props.Program}"
+                            value="${result.id}" description="Type: ${result.typeName}">
+                        </calcite-list-item>`
+        }
+        document.getElementById('recordList').innerHTML = itemsList
+        console.log('html', itemsList)
+
+        Array.from(document.getElementsByClassName("recordListItem")).forEach((item) => {
+          item.addEventListener('click', async (e) => {
+            getProps(e.target.value)
+
+          })
+        })
+        getProps(resultRows[0][0].id)
+      }
+
+
+
+      /**
+ * Streaming search
+ */
+      document.getElementById('streaming-search-button').addEventListener('click', async (e) => {
+        searchCodeDiv.style = "display:block"
+        queryCodeDiv.style = "display:none"
+        editCodeDiv.style = "display:none"
+        modal.open = true;
+        modalTitle.innerText = "Code Sample: Streaming Search"
+        const searchString = document.getElementById("streaming-search-keyword").value
+        const typeFilter = document.getElementById("streaming-search-type-filter").value
+        const namedTypes = document.getElementById("streaming-search-named-types").value
+        const index = document.getElementById("streaming-search-start-index").value
+        const limit = document.getElementById("streaming-search-limit").value
+        const ids = document.getElementById("streaming-search-ids").value
+        const context = document.getElementById('streaming-search-context').checked
+        console.log('types', namedTypes)
+        //construct the search object
+        const searchParams = {
+          searchQuery: searchString,
+          typeCategoryFilter: typeFilter,
+          returnSearchContext: context,
+        }
+        if (index) { searchParams["start"] = index };
+        if (limit) { searchParams["num"] = limit };
+        if (namedTypes) { searchParams["namedTypesFilter"] = typeof namedTypes == "string" ? [namedTypes] : namedTypes };
+        if (ids) { searchParams["idsFilter"] = ids };
+        console.log(searchParams)
+        //execute the search and read the result
+        const searchResults = await KGModule.executeSearchStreaming(knowledgeGraph, searchParams)
+        readStream(searchResults);
+      })
+
+      const createLinkChart = async (query) => {
+        // lc.layers.remove(lcLayer)
+        results = await KGModule.executeQuery(knowledgeGraph, {
+          openCypherQuery: query
+        })
+        console.log("query results", results)
+        //create a map of the ids of those research grade observations to include in the layer.
+        //Since we only returned one variable we know that the first item in the array will be the observation entity
+        let members = new Map();
+        let memberslist = new Map
+        // console.log(results)
+        for (result of results.resultRows) {
+          // console.log(result[0].path)
+          for (index in result[0].path) {
+            record = result[0].path[index]
+
+            if (!(memberslist.has(record.typeName))) {
+              memberslist.set(record.typeName, { useAllData: false, members: new Map() })
+            }
+            memberslist.get(record.typeName).members.set(record.id, { id: record.id })
+          }
+
+
+        }
+        //only create a sublayer for the specified named types.
+        const inclusionDef = {
+          generateAllSublayers: false,
+          namedTypeDefinitions: memberslist
+        }
+
+
+        lcLayer = new LinkChartLayer({
+          url: url,
+          initializationInclusionModeDefinition: inclusionDef,
+        });
+        await lcLayer.load()
+        lcLayer.layers.forEach((sublayer) => {
+
+          // sublayer.popupTemplate = sublayer.createPopupTemplate();
+          sublayer.renderer = renderers[sublayer.title];
+          if (sublayer.graphType === "entity") {
+            sublayer.labelingInfo = [
+              new LabelClass({
+                labelExpressionInfo: {
+                  expression: getLabel(sublayer.objectType.name)
+                },
+                labelPlacement: "above-center",
+                symbol: {
+                  type: "text", // autocasts as new TextSymbol()
+                  color: [255, 255, 255],
+                  haloColor: [0, 0, 0],
+                  haloSize: 0.7,
+                  font: {
+                    size: 10,
+                    weight: "bold"
+                  }
+                }
+              })
+            ];
+            //todo: remove this when the SDK fixes polyline, see issue 56041
+            sublayer.labelsVisible = true;
+          }
+
+        }
+        );
+        const lc = new WebLinkChart({
+          basemap: 'dark-gray-vector',
+          layers: [lcLayer]
+        });
+        const lcView = new LinkChartView({
+          map: lc,
+          // center: [0, 0],
+          // zoom: 17,
+          container: "linkChartDiv"
+        });
+        lcView.ui.add(new Legend({ view: lcView }), "bottom-right");
+        lcView.when(async () => {
+          await lcView.goTo(lcView.map.diagramNodesExtent);
+        });
+      }
+
+
+      const getLabel = (graphType) => {
+        let displayProperty = "ESRI__ID";
+        switch (graphType) {
+          case "Address":
+            displayProperty = "address"
+            break;
+          case "Organization":
+            displayProperty = "Name"
+            break;
+          case "SanctionsProgram":
+            displayProperty = "Program"
+            break;
+          case "Vessel":
+            displayProperty = "CallSign"
+            break;
+          case "Alias":
+            displayProperty = "Name"
+            break;
+          case "Acled":
+            displayProperty = "disorder_t"
+            break;
+          case "Aircraft":
+            displayProperty = "Name"
+            break;
+          case "Person":
+            displayProperty = "Name"
+            break;
+          default:
+            displayProperty = "ESRI__ID";
+            break;
+        }
+        return `$feature.${displayProperty}`;
+      }
+
+
+      document.getElementById('execute-query').addEventListener('click', async (e) => {
+
+        //show code modal
+        map.layers.remove(kgLayer)
+        searchCodeDiv.style = "display:none"
+        queryCodeDiv.style = "display:block"
+        editCodeDiv.style = "display:none"
+        modal.open = true;
+        modalTitle.innerText = "Code Sample: Query and Knowledge Graph Layer"
+
+        let query = `MATCH (s:SanctionsProgram{globalid:"{40E442F6-0E11-4904-ABF2-27CDB29C1665}"})-[r*1..3]-(n:Address)
+                        RETURN n` //document.getElementById("query-string").value
+        console.log(query)
+        results = await KGModule.executeQuery(knowledgeGraph, {
+          openCypherQuery: query //`MATCH (v:Vessel) RETURN v`
+        })
+        //create a map of the ids of those research grade observations to include in the layer.
+        //Since we only returned one variable we know that the first item in the array will be the observation entity
+        let members = new Map();
+        let memberslist = new Map
+        // console.log(results)
+        for (result of results.resultRows) {
+          console.log(result[0])
+          // for (index in result[0].path) {
+          record = result[0]
+
+          if (!(memberslist.has(record.typeName))) {
+            memberslist.set(record.typeName, { useAllData: false, members: new Map() })
+          }
+          memberslist.get(record.typeName).members.set(record.id, { id: record.id })
+          // }
+        }
+
+        /******************** to get path results*************************** */
+        // for (result of results.resultRows) {
+        //     console.log(result[0])
+        //     for (index in result[0].path) {
+        //         record = result[0].path[index]
+
+        //         if (!(memberslist.has(record.typeName))) {
+        //             memberslist.set(record.typeName, { useAllData: false, members: new Map() })
+        //         }
+        //         memberslist.get(record.typeName).members.set(record.id, { id: record.id })
+        //     }
+        // }
+        //only create a sublayer for the specified named types.
+        const inclusionDef = {
+          generateAllSublayers: false,
+          namedTypeDefinitions: memberslist
+        }
+
+        kgLayer = new KnowledgeGraphLayer({
+          url: url,
+          inclusionModeDefinition: inclusionDef
+        });
+
+        //once the layer has loaded, enable popups and apply the renderer to each sublayer
+        //since an inclusion list is set to only return Observations, there will only be one sublayer
+        await kgLayer.load()
+        let addressPoints = [];
+        kgLayer.layers.items.forEach((sublayer) => {
+          console.log('sublayer', sublayer)
+          //sublayer.popupTemplate = sublayer.createPopupTemplate();
+          console.log(sublayer.title)
+
+          if (sublayer.title == "Address")
+            sublayer.queryFeatures({ where: '1=1', returnGeometry: true }).then((results) => {
+              // console.log('features',results)
+              addressPoints = results.features
+
+              // console.log('buff', bufferPoints)
+            })
+          sublayer.renderer = mapRenderers[sublayer.title];
+          sublayer.labelingInfo = [
+            new LabelClass({
+              labelExpressionInfo: {
+                expression: `$feature.address`
+              },
+              labelPlacement: "above-center",
+              symbol: {
+                type: "text",  // autocasts as new TextSymbol()
+                color: "#FFFF00"
+              }
+            })
+          ];
+          sublayer.labelsVisible = true;
+        });
+        map.add(kgLayer)
+        for (const sublayer of kgLayer.layers) {
+          sublayer.emit("refresh", { dataChanged: true });
+        }
+
+        document.getElementById("buffer-button").addEventListener('click', async (e) => {
+          console.log('clicked')
+          //MATCH path=(s:SanctionsProgram{globalid:"{40E442F6-0E11-4904-ABF2-27CDB29C1665}"})<-[r]-(p:Person)-[rel*2]->(n:Acled{disorder_t:"Political violence"}) RETURN path
+          searchCodeDiv.style = "display:none"
+          queryCodeDiv.style = "display:none"
+          editCodeDiv.style = "display:block"
+
+          modal.open = true;
+          modalTitle.innerText = "Code Sample: Streaming Search"
+          let highlightIDs = []
+          for (pt of addressPoints) {
+            const id = pt.attributes.ESRI__ID
+            let bufferQuery = acled.createQuery();
+            bufferQuery.geometry = pt.geometry;  // the point location of the pointer
+            bufferQuery.distance = 1;
+            bufferQuery.units = "miles";
+            bufferQuery.spatialRelationship = "intersects";  // this is the default
+            bufferQuery.returnGeometry = true;
+            let highlightHandle = null;
+            let newEdits = {}
+
+            bufferResults = await acled.queryFeatures(bufferQuery)
+            let newEntities = []
+            for (record of bufferResults.features) {
+              let props = record.attributes
+              props["shape"] = record.geometry
+              highlightIDs.push(record.attributes.objectID)
+              const newEntity = new Entity({
+                typeName: "Acled",
+                properties: props
+              });
+              newEntities.push(newEntity)
+            }
+            newEdits[pt.attributes.ESRI__ID] = { "entitiesToAdd": newEntities }
+            console.log('new edits', newEdits)
+
+            for (addID in newEdits) {
+              // add new etities
+              if (newEdits[addID].entitiesToAdd.length > 0) {
+                const addEntities = await KGModule.executeApplyEdits(
+                  knowledgeGraph,
+                  //edits to the graph. Autocasts as new GraphApplyEdits
+                  {
+                    entityAdds: newEdits[addID].entitiesToAdd
+
+                  }
+                )
+                let newRels = []
+                //add new relationships
+                console.log("entites added")
+                for (entity of addEntities.editResults[0].adds) {
+                  // console.log(entity)
+                  const newRelationship = new Relationship({
+                    typeName: "in_proximity_to",
+                    properties: {
+                      distance: 0.5,
+                      distance_unit: "miles",
+                      date_evaluated: new Date()
+                    },
+                    //origin and destination entities must already exist in the graph
+                    originId: addID,
+                    destinationId: entity.id
+                  });
+                  newRels.push(newRelationship)
+                }
+                console.log("adding relationships")
+                const addRelationships = await KGModule.executeApplyEdits(
+                  //knowledge graph resources
+                  knowledgeGraph,
+                  //edits to the graph. Autocasts as new GraphApplyEdits
+                  {
+                    relationshipAdds: newRels
+
+                  }
+                )
+                console.log('rels', addRelationships)
+              }
+              view.whenLayerView(acled).then((layerView) => {
+                layerView.queryObjectIds(bufferQuery).then((ids) => {
+                  layerView.highlight(ids);
+
+                });
+              })
+            }
+
+          }
+
+          const lcQuery = `MATCH p=(s:SanctionsProgram)-[r*1..3]-(n) where ID(s)="{40E442F6-0E11-4904-ABF2-27CDB29C1665}" Return p`
+          createLinkChart(lcQuery)
+
+          // })
+        })
+      })
+
+      // a function to read the stream returned from the streaming search
+      const readStream = async (streamingQueryResult, method) => {
+        //create the reader
+        let reader = streamingQueryResult.resultRowsStream.getReader();
+        //try to read the stream
+        try {
+          while (true) {
+            //read the stream
+            const { done, value } = await reader.read();
+            if (value !== undefined) {
+              //build the list
+              createList(value)
+            }
+            if (done) {
+              break;
+            }
+          }
+          // if there is an error in returning the stream or the stream is aborted
+        } catch (err) {
+          if (err.name === "AbortError") {
+            console.log("Request aborted as expected");
+          } else {
+            throw err;
+          }
+        }
+      };
+
+      document.getElementById('lc-tab').addEventListener('click', (e) => {
+        console.log('tab active')
+        document.getElementById('execute-query').style = "display:none";
+        lcQueryButton.style = "display:block";
+        document.getElementById('query-string').value = `MATCH path=(s:SanctionsProgram{Program:"UKRAINE-EO13685"})<-[r]-(p:Person)-[rel*2]->(n:Acled{disorder_t:"Political violence"}) RETURN path`
+      })
+      document.getElementById('map-tab').addEventListener('click', (e) => {
+        console.log('tab active')
+        document.getElementById('execute-lc-query').style = "display:none";
+        queryButton.style = "display:block";
+        document.getElementById('query-string').value = `MATCH path=(s:SanctionsProgram{Program:'UKRAINE-EO13685'})-[r*1..3]-(n) RETURN path`
+      })
+
+      lcQueryButton.addEventListener('click', (e) => {
+        query = document.getElementById('query-string').value
+        createLinkChart(query)
+
+      })
+      init()
+    });
+  </script>
+</head>
+
+<body>
+  <calcite-shell>
+    <calcite-navigation slot="header">
+      <calcite-navigation-logo slot="logo" heading="Office of Foreign Assets Control (OFAC)"></calcite-navigation-logo>
+    </calcite-navigation>
+    <calcite-shell-panel slot="panel-start" position="start" id="shell-panel-start">
+      <calcite-action-bar slot="action-bar">
+        <calcite-action-group>
+          <calcite-action id="search-menu" text="Streaming Search" icon="search"></calcite-action>
+          <calcite-action id="query-menu" text="Query" icon="find-path"></calcite-action>
+        </calcite-action-group>
+        <calcite-action-group>
+          <calcite-action id="edit-menu" text="Edit" icon="pencil"></calcite-action>
+        </calcite-action-group>
+        </calcite-action-group>
+      </calcite-action-bar>
+      <calcite-panel heading="Streaming Search" id="panel-start">
+        <div id="searchDiv" style="padding:10px">
+          <div id="search-ui">
+            <calcite-label>
+              Search Term:
+              <calcite-input id="streaming-search-keyword" placeholder="ukraine" value="ukraine"></calcite-input>
+            </calcite-label>
+            <calcite-label>Search Type
+              <calcite-select id="streaming-search-type-filter">
+                <calcite-option value="entity">Entities only</calcite-option>
+                <calcite-option value="both">Both</calcite-option>
+                <calcite-option value="relationship">Relationships only</calcite-option>
+              </calcite-select>
+            </calcite-label>
+            <calcite-label>Start search at this index
+              <calcite-input-number id="streaming-search-start-index" placeholder="starting at 0" step="1"
+                value="1"></calcite-input-number>
+            </calcite-label>
+            <calcite-label>Maximum Number of Results
+              <calcite-input-number id="streaming-search-limit" placeholder="returning all matching records" step="1"
+                value="50"></calcite-input-number>
+            </calcite-label>
+            <calcite-label>Search in these types
+              <calcite-combobox id="streaming-search-named-types" placeholder="search all types">
+                <calcite-combobox-item value="Organization" text-label="Organization"></calcite-combobox-item>
+                <calcite-combobox-item value="Address" text-label="Address"></calcite-combobox-item>
+                <calcite-combobox-item value="Person" text-label="Person"></calcite-combobox-item>
+                <calcite-combobox-item value="Vessel" text-label="Vessel"></calcite-combobox-item>
+                <calcite-combobox-item value="Aircraft" text-label="Aircraft"></calcite-combobox-item>
+                <calcite-combobox-item value="Alias" text-label="Alias"></calcite-combobox-item>
+                <calcite-combobox-item value="SanctionsProgram" text-label="SanctionsProgram"></calcite-combobox-item>
+                <calcite-combobox-item value="aka" text-label="aka"></calcite-combobox-item>
+                <calcite-combobox-item value="sanctioned_under" text-label="sanctioned_under"></calcite-combobox-item>
+              </calcite-combobox>
+            </calcite-label>
+            <calcite-label>Search in these IDs
+              <calcite-combobox id="streaming-search-ids" placeholder="search all ids">
+              </calcite-combobox>
+            </calcite-label>
+            <calcite-label layout="inline">
+              <calcite-checkbox id="streaming-search-context"></calcite-checkbox>
+              Return Search Context
+            </calcite-label>
+            <calcite-button id="streaming-search-button">Streaming Search</calcite-button>
+
+          </div>
+
+        </div>
+
+
+        <div id="queryDiv" style="padding:10px; height:50%">
+          <calcite-text-area id="query-string" placeholder="Enter an openCypher query"
+            value="MATCH path=(s:SanctionsProgram{Program:'UKRAINE-EO13685'})-[r*1..3]-(n) RETURN path">
+
+          </calcite-text-area>
+          <div>
+            <calcite-button alignment="center" width="full" id="execute-query">Run</calcite-button>
+            <calcite-button alignment="center" width="full" id="execute-lc-query">Run</calcite-button>
+
+          </div>
+        </div>
+
+
+        <div id="editDiv">
+          <calcite-notice width="full" open>
+            <div slot="title">Adding Records</div>
+            <div slot="message">For each address entity</div>
+          </calcite-notice>
+          <calcite-stepper scale="s" numbered layout="horizontal" style="padding:10px">
+            <calcite-stepper-item heading="Find Events" selected>
+              <calcite-card>
+                <span slot="title"> <calcite-icon icon="preserve" slot="thumbnail"></calcite-icon>
+                  Events in proximity</span>
+
+                <span slot="subtitle">intersect query on the address <b>28 Kirov St</b> for every ACLED
+                  event within a <b>0.5 mile</b> radius</span>
+              </calcite-card>
+
+            </calcite-stepper-item>
+            <calcite-stepper-item heading="Add Event Entities">
+              <calcite-list>
+                <calcite-list-item label="Protest" value="hiking-trails">
+                </calcite-list-item>
+                <calcite-list-item label="Attack" value="waterfalls">
+                </calcite-list-item>
+                <calcite-list-item label="Riot" value="rivers">
+                </calcite-list-item>
+              </calcite-list>
+            </calcite-stepper-item>
+            <calcite-stepper-item scale="s" heading="Add Relationships" style=" background-color: #fff;">
+              <div style=" background-color:#fff; padding: 20px 5px 10px 5px;">
+                <div style="display: flex; padding-bottom: 10px">
+                  <calcite-chip style="font-size:10px" scale="s">28 Kirov St</calcite-chip>
+                  <calcite-chip scale="s" icon="arrow-right"
+                    style="background-color:#9ad69a; font-size:10px">in_proximity_to</calcite-chip>
+                  <calcite-chip style="font-size:11px" scale="s">Riot</calcite-chip>
+                </div>
+                <div style="display: flex; padding-bottom: 10px">
+                  <calcite-chip style="font-size:10px" scale="s">28 Kirov St</calcite-chip>
+                  <calcite-chip scale="s" icon="arrow-right"
+                    style="background-color:#9ad69a; font-size:10px">in_proximity_to</calcite-chip>
+                  <calcite-chip style="font-size:10px" scale="s">Attack</calcite-chip>
+                </div>
+                <div style="display: flex; padding-bottom: 10px">
+                  <calcite-chip style="font-size:10px" scale="s">28 Kirov St</calcite-chip>
+                  <calcite-chip scale="s" icon="arrow-right"
+                    style="background-color:#9ad69a; font-size:10px">in_proximity_to</calcite-chip>
+                  <calcite-chip style="font-size:10px" scale="s">Riot</calcite-chip>
+                </div>
+
+              </div>
+
+            </calcite-stepper-item>
+
+          </calcite-stepper>
+          <div style="padding:20px 10px 0px 5px">
+            <calcite-button alignment="center" width="full" id="buffer-button">Add Records</calcite-button>
+          </div>
+        </div>
+      </calcite-panel>
+    </calcite-shell-panel>
+    <calcite-panel style="background-color: #fff;">
+
+      <body>
+        <calcite-tabs layout="inline" scale="l">
+          <calcite-tab-nav slot="title-group">
+
+            <calcite-tab-title icon-start="data" selected>
+              Data
+            </calcite-tab-title>
+            <calcite-tab-title id="map-tab" icon-start="map">
+              Map
+            </calcite-tab-title>
+            <calcite-tab-title id="lc-tab" icon-start="link-chart">Link Chart</calcite-tab-title>
+          </calcite-tab-nav>
+          <calcite-tab selected style="padding:10px;background-color: #ffffff; height:79vh">
+            <div style="display:flex" id="properties-view">
+              <div style="width:20%;max-height:75vh;overflow-y:auto">
+                <calcite-list id="recordList">
+                </calcite-list>
+              </div>
+              <div style="padding:10px;width:100%">
+                <h2 style="padding-top:0px" id="recordName">Entity name</h2>
+                <h4 id="recordType">type</h4>
+                <calcite-table page-size="7" id="propsTable" caption="Simple table" striped>
+
+                </calcite-table>
+              </div>
+            </div>
+            <div id="results-view">
+              <calcite-table page-size="12" id="propsTable" caption="Simple table" striped selection-mode="multiple">
+
+              </calcite-table>
+            </div>
+          </calcite-tab>
+          <calcite-tab selected>
+            <div id="mapDiv">
+
+            </div>
+          </calcite-tab>
+          <calcite-tab>
+            <div id="linkChartDiv">
+
+            </div>
+          </calcite-tab>
+        </calcite-tabs>
+      </body>
+    </calcite-panel>
+
+  </calcite-shell>
+  <calcite-modal aria-labelledby="modal-title" id="example-modal">
+    <div slot="header" id="modal-title">
+      Code Sample
+    </div>
+    <div slot="content">
+      <pre><code class="language-js" id="searchCodeDiv">
+document.getElementById('streaming-search-button').addEventListener('click', async (e) => {
+    const searchString = document.getElementById("streaming-search-keyword").value
+    const typeFilter = document.getElementById("streaming-search-type-filter").value
+    const namedTypes = document.getElementById("streaming-search-named-types").value
+    const index = document.getElementById("streaming-search-start-index").value
+    const limit = document.getElementById("streaming-search-limit").value
+    const ids = document.getElementById("streaming-search-ids").value
+    const context = document.getElementById('streaming-search-context').checked
+
+    //construct the search object
+    const searchParams = {
+        searchQuery: searchString,
+        typeCategoryFilter: typeFilter,
+        returnSearchContext: context,
+    }
+    if (index) { searchParams["start"] = index };
+    if (limit) { searchParams["num"] = limit };
+    if (namedTypes) { searchParams["namedTypesFilter"] = namedTypes };
+    if (ids) { searchParams["idsFilter"] = ids };
+
+
+    //execute the search and read the result
+    const searchResults = await KGModule.executeSearchStreaming(knowledgeGraph, searchParams)
+    readStream(searchResults);
+})
+
+const readStream = async (streamingQueryResult, method) => {
+    //create the reader
+    let reader = streamingQueryResult.resultRowsStream.getReader();
+    //try to read the stream
+    try {
+        while (true) {
+            //read the stream
+            const { done, value } = await reader.read();
+            if (value !== undefined){
+                //build the list
+                createList(value)
+            }
+            if (done) {
+                break;
+            }
+        }
+        // if there is an error in returning the stream or the stream is aborted
+    } catch (err) {
+        if (err.name === "AbortError") {
+        } else {
+            throw err;
+        }
+    }
+};
+            </code>
+            <code class="language-js" id="queryCodeDiv">
+document.getElementById('execute-query').addEventListener('click', async (e) => {
+    let query = document.getElementById("query-string").value
+    results = await KGModule.executeQuery(knowledgeGraph, {
+        openCypherQuery: query
+    })
+    //create a map of the ids for each named type to include in the layer
+    entity
+    let members = new Map();
+    let memberslist = new Map
+    for (result of results.resultRows) {
+    for (index in result[0].path) {
+        record = result[0].path[index]
+
+        if (!(memberslist.has(record.typeName))) {
+            memberslist.set(record.typeName, { useAllData: false, members: new Map() })
+        }
+            memberslist.get(record.typeName).members.set(record.id, { id: record.id })
+        }
+    }
+    //only create a sublayer for the specified named types.
+    const inclusionDef = {
+        generateAllSublayers: true,
+        namedTypeDefinitions: memberslist
+    }
+    const kgLayer = new KnowledgeGraphLayer({
+        url: url,
+        inclusionModeDefinition: inclusionDef
+    });
+
+    //once the layer has loaded, enable popups and apply the renderer to each sublayer
+    await kgLayer.load()
+    kgLayer.layers.items.forEach((sublayer) => {
+        sublayer.renderer = renderers[sublayer.title];
+        sublayer.labelingInfo = [
+            new LabelClass({
+            labelExpressionInfo: {
+                expression: `$feature.address1`
+                },
+                labelPlacement: "above-center",
+                symbol: {
+                    type: "text", // autocasts as new TextSymbol()
+                    color: "black"
+                }
+            })
+        ];
+        sublayer.labelsVisible = true;
+    });
+    map.add(kgLayer)
+})
+            </code>
+            <code class="language-js" id="editCodeDiv">
+
+    for (pt of addressPoints) {
+        let bufferQuery = acled.createQuery();
+        bufferQuery.geometry = pt.geometry; // the point location of the pointer
+        bufferQuery.distance = 1;
+        bufferQuery.units = "miles";
+        bufferQuery.spatialRelationship = "intersects"; // this is the default
+        bufferQuery.returnGeometry = true;
+        let newEdits = {}
+
+        bufferResults = await acled.queryFeatures(bufferQuery)
+
+        let newEntities = []
+        for (record of bufferResults.features) {
+            let props = record.attributes
+            props["shape"] = record.geometry
+            highlightIDs.push(record.attributes.objectID)
+            const newEntity = new Entity({
+                typeName: "Acled",
+                properties: props
+            });
+            newEntities.push(newEntity)
+        }
+        newEdits[pt.attributes.ESRI__ID] = { "entitiesToAdd": newEntities }
+
+        for (addID in newEdits) {
+            // add new entities
+            if (newEdits[addID].entitiesToAdd.length > 0) {
+                const addEntities = await KGModule.executeApplyEdits(
+                    knowledgeGraph,
+                    //edits to the graph. Autocasts as new GraphApplyEdits
+                    {
+                        entityAdds: newEdits[addID].entitiesToAdd
+                    }
+                )
+                let newRels = []
+                //add new relationships
+                for (entity of addEntities.editResults[0].adds) {
+                    const newRelationship = new Relationship({
+                        typeName: "in_proximity_to",
+                        properties: {
+                            distance: 0.5,
+                            distance_unit: "miles",
+                            date_evaluated: new Date()
+                        },
+                        //origin and destination entities must already exist in the graph
+                        originId: addID,
+                        destinationId: entity.id
+                    });
+                    newRels.push(newRelationship)
+                }
+                const addRelationships = await KGModule.executeApplyEdits(
+                    //knowledge graph resources
+                    knowledgeGraph,
+                    //edits to the graph. Autocasts as new GraphApplyEdits
+                    {
+                        relationshipAdds: newRels
+                    }
+                )
+            }
+        }
+    }
+            </code>
+        </pre>
+    </div>
+  </calcite-modal>
+</body>
+
+<script>
+  const panel = document.getElementById("panel-start");
+  const shellPanel = document.getElementById("shell-panel-start");
+  const lcQueryButton = document.getElementById("execute-lc-query");
+  const queryButton = document.getElementById("execute-query");
+  const actions = shellPanel?.querySelectorAll("calcite-action");
+  const queryDiv = document.getElementById('queryDiv')
+  const searchDiv = document.getElementById('searchDiv')
+  const searchCodeDiv = document.getElementById('searchCodeDiv')
+  const editCodeDiv = document.getElementById('editCodeDiv')
+  const queryCodeDiv = document.getElementById('queryCodeDiv')
+  const editDiv = document.getElementById('editDiv')
+  const resultsDiv = document.getElementById('results-view')
+  const modal = document.getElementById("example-modal");
+  const modalTitle = document.getElementById('modal-title')
+
+
+  queryDiv.hidden = true
+  editDiv.hidden = true
+  resultsDiv.hidden = true
+  lcQueryButton.style = "display:none";
+  actions?.forEach(el => {
+    el.addEventListener("click", function (event) {
+
+      if (event.target.text == "Streaming Search") {
+        searchDiv.hidden = false
+        queryDiv.hidden = true
+        editDiv.hidden = true
+      } else if (event.target.text == "Edit") {
+        queryDiv.hidden = true
+        searchDiv.hidden = true
+        editDiv.hidden = false
+      } else {
+        queryDiv.hidden = false
+        searchDiv.hidden = true
+        editDiv.hidden = true
+      }
+      panel.heading = event.target.text;
+
+    });
+
+  });
+</script>
+
+</html>

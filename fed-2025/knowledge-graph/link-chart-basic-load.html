@@ -1,0 +1,61 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+	<meta http-equiv="Content-Type" content="text/html; charset=utf-8">
+	<meta name="viewport" content="initial-scale=1, maximum-scale=1, user-scalable=no">
+	<meta name="description" content="">
+	<title>Link Chart</title>
+
+	<style>
+		html {
+			font-family: "Avenir Next";
+		}
+
+		html,
+		body,
+		#viewDiv {
+			width: 100%;
+			height: 100%;
+			margin: 0;
+			padding: 0;
+			background-color: #fff;
+		}
+	</style>
+	<link rel="stylesheet" type="text/css" href="https://js.arcgis.com/4.31/esri/themes/light/main.css"/>
+	<script src="https://js.arcgis.com/4.32"></script>
+</head>
+
+<body>
+	<div id="viewDiv"></div>
+	<script>
+		require([
+			"esri/WebLinkChart",
+			"esri/views/LinkChartView",
+			"esri/widgets/Legend",
+			"esri/config",
+			"esri/widgets/LayerList"
+		], function (WebLinkChart, LinkChartView, Legend, esriConfig, LayerList) {
+
+			esriConfig.portalUrl = "https://etait.esri.com/portal";
+
+			const view = new LinkChartView({
+				container: "viewDiv",
+				map: new WebLinkChart({
+					portalItem: {
+						id: "bdde8850bdc544afb2af5355f3e4568c"
+					}
+				})
+			});
+
+			view.ui.add(new Legend({ view }), "bottom-left");
+			view.ui.add(new LayerList({
+				view
+			}), {
+				position: "top-right"
+			});
+		});
+	</script>
+</body>
+
+</html>

@@ -1,0 +1,45 @@
+<html lang="en">
+
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="initial-scale=1, maximum-scale=1,user-scalable=no" />
+  <title>Harvested wheat 1997-2022</title>
+
+  <!-- Load Calcite components from CDN -->
+  <script type="module" src="https://js.arcgis.com/calcite-components/3.0.2/calcite.esm.js"></script>
+
+  <!-- Load the ArcGIS Maps SDK for JavaScript from CDN -->
+  <link rel="stylesheet" href="https://js.arcgis.com/4.32/esri/themes/light/main.css" />
+  <script src="https://js.arcgis.com/4.32/"></script>
+
+  <!-- Load Map components from CDN-->
+  <script type="module" src="https://js.arcgis.com/map-components/4.32/arcgis-map-components.esm.js"></script>
+
+  <style>
+    arcgis-feature-table {
+      width: 100%;
+      height: 300px;
+    }
+
+    calcite-shell-panel {
+      --calcite-shell-panel-min-height: 10px;
+      --calcite-shell-panel-max-height: 1000px;
+    }
+  </style>
+</head>
+
+<body>
+  <calcite-shell>
+    <arcgis-map item-id="b99cdd1be05f43bbbcac70988dba5729">
+      <arcgis-zoom position="top-left"></arcgis-zoom>
+      <arcgis-expand expanded position="top-left" group="top-left">
+        <arcgis-legend></arcgis-legend>
+      </arcgis-expand>
+      <arcgis-expand position="top-left" group="top-left">
+        <arcgis-layer-list></arcgis-layer-list>
+      </arcgis-expand>
+    </arcgis-map>
+  </calcite-shell>
+</body>
+
+</html>

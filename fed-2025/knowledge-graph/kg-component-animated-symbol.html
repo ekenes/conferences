@@ -1,0 +1,75 @@
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="initial-scale=1,maximum-scale=1,user-scalable=no" />
+  <link rel="stylesheet" type="text/css" href="https://cdn.jsdelivr.net/npm/@esri/calcite-components@3.0.0-next.51/dist/calcite/calcite.css" />
+  <script type="module" src="https://cdn.jsdelivr.net/npm/@esri/calcite-components@3.0.0-next.51/dist/calcite/calcite.esm.js"></script>
+
+  <link rel="stylesheet" href="https://jsdev.arcgis.com/4.32/esri/themes/light/main.css" />
+  <script src="https://jsdev.arcgis.com/4.32/"></script>
+  <script type="module" src="https://jsdev.arcgis.com/map-components/4.32/arcgis-map-components.esm.js"></script>
+
+  <style>
+    arcgis-link-chart {
+      display: block;
+      width: 100%;
+      height: 100%;
+    }
+  </style>
+</head>
+
+<body>
+  <arcgis-link-chart item-id="a902d906fab746ef8c732acb8aaa9594" id="link-chart">
+    <arcgis-link-chart-layout-switcher position="top-right"></arcgis-link-chart-layout-switcher>
+  </arcgis-link-chart>
+
+  <script>
+    require([
+      "esri/config",
+      "esri/symbols/support/cimSymbolUtils"
+    ], (esriConfig, cimSymbolUtils) => {
+      esriConfig.portalUrl = "https://knowledgegraph5.dev.geocloud.com/portal";
+
+      const arcgisLinkChart = document.getElementById("link-chart");
+      arcgisLinkChart.addEventListener("arcgisViewReadyChange", async () => {
+        console.log("arcgisViewReadyChange", arcgisLinkChart.map);
+
+        const supplyChainDemoLayer = arcgisLinkChart.map.layers.find((layer) => {
+          return layer.title === "SupplyChainDemo";
+        });
+        poiLayer = supplyChainDemoLayer.layers.find((layer) => {
+          return layer.title === "POI";
+        });
+
+        const poiRenderer = poiLayer.renderer.clone();
+        const poiSymbol = poiRenderer.symbol;
+        const poiAnimatedSymbol = poiSymbol.clone();
+        cimSymbolUtils.applyCIMSymbolColor(poiAnimatedSymbol, "#3900b3ff");
+        poiAnimatedSymbol.data.symbol.animations = [{
+          type: "CIMSymbolAnimationScale",
+          scaleFactor: 2,
+          animatedSymbolProperties: {
+            type: "CIMAnimatedSymbolProperties",
+            duration: 2,
+            repeatDelay: 0,
+            repeatType: "Oscillate",
+            playAnimation: true,
+            randomizeStartTime: false,
+          }
+        }];
+
+        const poiUniqueValueRenderer = {
+          type: "unique-value",
+          field: "name",
+          defaultSymbol: poiSymbol,
+          uniqueValueInfos: [
+            {
+              value: "Ty Fitzpatrick",
+              symbol: poiAnimatedSymbol
+            }
+          ]
+        };
+        poiLayer.renderer = poiUniqueValueRenderer;
+      });
+    });
+  </script>
+</body>

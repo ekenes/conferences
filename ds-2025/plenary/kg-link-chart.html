@@ -1,0 +1,319 @@
+<html lang="en">
+
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="initial-scale=1,maximum-scale=1,user-scalable=no" />
+
+  <!-- Load Calcite -->
+  <script type="module" src="https://js.arcgis.com/calcite-components/3.0.2/calcite.esm.js"></script>
+
+  <!-- Load the ArcGIS Maps SDK for JavaScript core API -->
+  <link rel="stylesheet" type="text/css" href="https://js.arcgis.com/4.32/esri/themes/light/main.css" />
+  <script src="https://js.arcgis.com/4.32/"></script>
+
+  <!-- Load map components -->
+  <script type="module" src="https://js.arcgis.com/map-components/4.32/arcgis-map-components.esm.js"></script>
+
+  <style>
+    html,
+    body {
+      background-color: var(--calcite-ui-foreground-2);
+      padding: 0;
+      margin: 0;
+      width: 100vw;
+      height: 100vh;
+    }
+
+    #map-container {
+      display: flex;
+      width: 100%;
+      height: 100%;
+    }
+
+    arcgis-link-chart {
+      height: 0;
+    }
+  </style>
+</head>
+
+<body>
+  <calcite-shell>
+    <calcite-shell-panel slot="panel-start" position="start" id="shell-panel-start">
+      <calcite-panel heading="Healthcare providers and patients" id="panel-start">
+        <calcite-tile
+          description="
+          Explore links between providers, patients, and medical conditions. You can filter the data by specialty and view relationships between patients and providers including link charts showing which providers can provide care to patients according to their needs.">
+        </calcite-tile>
+        <calcite-block id="specialty-block" heading="Specialty offered" description="Filter the network by specialty"
+          disabled>
+          <calcite-list id="specialty-list" selection-mode="single-persist"></calcite-list>
+        </calcite-block>
+        <calcite-block id="need-block" heading="Need score" description="Find patients with the highest need" disabled>
+          <calcite-label layout="inline">
+            <calcite-switch id="highest-need-switch"></calcite-switch>
+            Show patients with highest need
+          </calcite-label>
+        </calcite-block>
+        <calcite-block id="legend-block" heading="" open>
+          <arcgis-legend reference-element="arcgis-map"></arcgis-legend>
+          <arcgis-legend reference-element="arcgis-link-chart" id="link-chart-legend"></arcgis-legend>
+        </calcite-block>
+      </calcite-panel>
+    </calcite-shell-panel>
+    <calcite-panel id="map-container">
+      <arcgis-map item-id="c06d6d33d09640ea8951fdf7bde7e5a6"></arcgis-map>
+      <arcgis-link-chart item-id="76fd87bbd35e40da8f24e06a54ab58ef" id="link-chart">
+        <arcgis-link-chart-layout-switcher position="top-left"></arcgis-link-chart-layout-switcher>
+        <arcgis-placement position="top-right">
+          <calcite-action icon="x-circle" scale="s" id="link-chart-close-action"></calcite-action>
+        </arcgis-placement>
+      </arcgis-link-chart>
+    </calcite-panel>
+  </calcite-shell>
+
+  <script>
+    require([
+      "esri/config",
+      "esri/core/reactiveUtils",
+      "esri/symbols/support/cimSymbolUtils"
+    ], (esriConfig, reactiveUtils, cimSymbolUtils) => {
+      (async () => {
+
+        const applySymbolAnimations = (cimSymbol) => {
+          cimSymbolUtils.applyCIMSymbolColor(cimSymbol, "orange");
+
+          cimSymbol.data.symbol.animations = [{
+            type: "CIMSymbolAnimationScale",
+            scaleFactor: 2,
+            animatedSymbolProperties: {
+              type: "CIMAnimatedSymbolProperties",
+              duration: 2,
+              repeatDelay: 0,
+              repeatType: "Oscillate",
+              playAnimation: true,
+              randomizeStartTime: false,
+            }
+          }];
+        }
+
+        esriConfig.portalUrl = "https://knowledgegraph5.dev.geocloud.com/portal";
+
+        const arcgisLinkChart = document.querySelector("arcgis-link-chart");
+        const arcgisLinkChartLayoutSwitcher = document.querySelector("arcgis-link-chart-layout-switcher");
+        const specialtyList = document.getElementById("specialty-list");
+        const highestNeedSwitch = document.getElementById("highest-need-switch");
+        const linkChartCloseAction = document.getElementById("link-chart-close-action");
+        const arcgisMap = document.querySelector("arcgis-map");
+        const specialtyBlock = document.getElementById("specialty-block");
+        const needBlock = document.getElementById("need-block");
+
+        const createSpecialtyList = (displayFilterInfo) => {
+          displayFilterInfo.filters.forEach((filter) => {
+            const listItem = document.createElement("calcite-list-item");
+            listItem.label = filter.title;
+            listItem.value = filter.id;
+            specialtyList.appendChild(listItem);
+            listItem.selected = filter.title === "All";
+          });
+        }
+
+        arcgisMap.addEventListener("arcgisViewReadyChange", async () => {
+          arcgisMap.popup.dockEnabled = true;
+          arcgisMap.popup.dockOptions = {
+            buttonEnabled: true,
+            breakpoint: false,
+            position: "top-left"
+          };
+
+          const healthcareNetworkLayer = arcgisMap.map.layers.find(({ title }) => title === "HealthcareNetwork_v2");
+          await healthcareNetworkLayer.load();
+
+          const patientLayerMap = healthcareNetworkLayer.layers.find(({ title }) => title === "Patient");
+          const patientLayerMapOriginalRenderer = patientLayerMap.renderer.clone();
+
+          let patientLayerLinkChart;
+          let patientLayerLinkChartOriginalRenderer;
+          let conditionLayerLinkChart;
+
+          const resetDisplayFilters = () => {
+            if(!patientLayerLinkChart || !conditionLayerLinkChart) {
+              return;
+            }
+            patientLayerLinkChart.displayFilterInfo.activeFilterId = null;
+            conditionLayerLinkChart.displayFilterInfo.activeFilterId = null;
+          };
+
+          const resetRenderers = () => {
+            if(!patientLayerMap || !patientLayerLinkChart) {
+              return;
+            }
+            patientLayerMap.renderer = patientLayerMapOriginalRenderer;
+            patientLayerLinkChart.renderer = patientLayerLinkChartOriginalRenderer;
+          };
+
+          const setFeatureEffect = (where) => {
+            const selectedFeature = arcgisMap.popup.selectedFeature;
+            patientLayerMap.featureEffect = {
+              filter: {
+                where,
+                geometry: selectedFeature.geometry,
+                distance: 2,
+                units: "kilometers"
+              },
+              excludedEffect: "grayscale(100%) opacity(30%)",
+              includedEffect: "drop-shadow(2px 2px 4px lightgray)"
+            };
+          }
+
+          const organizationLayer = arcgisMap.map.layers.find(({ title }) => title === "Need_Score_Visualization_MIL1");
+          await organizationLayer.load();
+          const medicalCentersLayer = organizationLayer.sublayers.find(({ title }) => title === "Madison Medical Centers");
+
+          const closeLinkChart = () => {
+            arcgisLinkChart.style.height = "0";
+            patientLayerMap.featureEffect = null;
+
+            specialtyList.innerHTML = null;
+            specialtyBlock.disabled = true;
+            specialtyBlock.open = false;
+
+            needBlock.disabled = true;
+            needBlock.open = false;
+            highestNeedSwitch.checked = false;
+
+            resetRenderers();
+            resetDisplayFilters();
+          };
+
+          const openLinkChart = () => {
+            arcgisLinkChart.style.height = "100%";
+
+            specialtyBlock.disabled = false;
+            specialtyBlock.open = true;
+
+            needBlock.disabled = false;
+            needBlock.open = true;
+
+            if (patientLayerLinkChart) {
+              createSpecialtyList(patientLayerLinkChart.displayFilterInfo);
+            }
+
+            setFeatureEffect();
+          };
+
+          // Add link chart action to medical centers popup
+          const medicalCentersPopupTemplate = medicalCentersLayer.popupTemplate.clone();
+          medicalCentersPopupTemplate.actions = [{
+            id: "view-link-chart",
+            title: "View link chart",
+            icon: "link-chart-expand",
+            visible: true
+          }];
+          medicalCentersLayer.popupTemplate = medicalCentersPopupTemplate;
+
+          reactiveUtils.on(
+            () => arcgisMap.popup,
+            "trigger-action", (event) => {
+              if (event.action.id === "view-link-chart") {
+                openLinkChart();
+              }
+            });
+
+          linkChartCloseAction.addEventListener("click", closeLinkChart);
+
+          reactiveUtils.watch(() => arcgisMap.popup.visible, () => {
+            if (!arcgisMap.popup.visible) {
+              closeLinkChart();
+            }
+          });
+
+          arcgisLinkChart.addEventListener("arcgisViewReadyChange", async () => {
+            const activeLinkChartLayer = arcgisLinkChart.map.activeLinkChartLayer;
+            patientLayerLinkChart = activeLinkChartLayer.layers.find(({ title }) => title === "Patient");
+            patientLayerLinkChartOriginalRenderer = patientLayerLinkChart.renderer.clone();
+
+            conditionLayerLinkChart = activeLinkChartLayer.layers.find(({ title }) => title === "HasCondition");
+
+            createSpecialtyList(patientLayerLinkChart.displayFilterInfo);
+
+            specialtyList.addEventListener("calciteListItemSelect", (event) => {
+              const filterId = event.target.value;
+              patientLayerLinkChart.displayFilterInfo.activeFilterId = filterId;
+              conditionLayerLinkChart.displayFilterInfo.activeFilterId = filterId;
+
+              setFeatureEffect(patientLayerLinkChart.displayFilterInfo.filters.find(({ id }) => id === filterId).where);
+            });
+
+            const patientLayerLinkChartView = await arcgisLinkChart.whenLayerView(patientLayerLinkChart);
+
+            arcgisLinkChartLayoutSwitcher.addEventListener("arcgisSwitchLayout", async (event) => {
+              await reactiveUtils.whenOnce(() => !patientLayerLinkChartView.updating);
+
+              if (event.detail.layout === "geographic-organic-standard") {
+                const { extent } = await patientLayerLinkChartView.queryExtent();
+                arcgisLinkChart.goTo(extent.expand(1.5));
+              }
+            });
+
+            const legendLayerTitles = ["Organization", "Patient", "Specialty", "Provider", "Condition"];
+            const legend = document.querySelector("#link-chart-legend");
+            legend.layerInfos = activeLinkChartLayer.layers
+              .filter(({ title }) => legendLayerTitles.indexOf(title) > -1)
+              .map((layer) => {
+                return {
+                  layer
+                };
+              });
+
+            highestNeedSwitch.addEventListener("calciteSwitchChange", (event) => {
+              resetRenderers();
+
+              // Animated Symbol Stuff - Link Chart
+
+              if (highestNeedSwitch.checked) {
+                const patientKGRenderer = patientLayerLinkChart.renderer.clone();
+                const patientKGSymbol = patientKGRenderer.symbol;
+                const animatedKGSymbol = patientKGSymbol.clone();
+                applySymbolAnimations(animatedKGSymbol);
+
+                const needsClassBreaksRenderer = {
+                  type: "class-breaks",
+                  field: "NeedScore",
+                  defaultSymbol: patientKGSymbol,
+                  classBreakInfos: [
+                    {
+                      maxValue: 0.005,
+                      label: "Greatest need",
+                      symbol: animatedKGSymbol
+                    }
+                  ]
+                };
+                patientLayerLinkChart.renderer = needsClassBreaksRenderer;
+
+                const patientRenderer = patientLayerMap.renderer.clone();
+                const patientClassBreaks = patientRenderer.classBreakInfos.map(classBreak => classBreak.clone());
+                const patientSymbol = patientClassBreaks[0].symbol;
+                const animatedSymbol = patientSymbol.clone();
+                applySymbolAnimations(animatedSymbol);
+
+                patientClassBreaks.unshift({
+                  minValue: 0,
+                  maxValue: 0.005,
+                  label: "Highest need",
+                  symbol: animatedSymbol
+                });
+
+                patientClassBreaks[1].minValue = 0.0051;
+
+                patientRenderer.classBreakInfos = patientClassBreaks;
+                patientLayerMap.renderer = patientRenderer;
+              }
+            });
+          });
+        });
+      })();
+    });
+  </script>
+</body>
+
+</html>

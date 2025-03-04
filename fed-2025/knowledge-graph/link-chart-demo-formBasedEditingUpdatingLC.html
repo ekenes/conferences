@@ -1,0 +1,758 @@
+
+<!DOCTYPE html>
+<html>
+<head>
+<meta http-equiv="Content-Type" content="text/html; charset=utf-8">
+<meta name="viewport" content="initial-scale=1, maximum-scale=1, user-scalable=no">
+<meta name="description" content="">
+<title>Link Chart Demo v2 - (ArcGIS Play)</title>
+
+
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@esri/calcite-components@3.0.0-next.92/dist/calcite/calcite.css">
+
+
+<style>
+	html {
+    font-family: "Avenir Next";
+	}
+
+	html,
+body,
+#viewDiv {
+  width: 100%;
+  height: 100%;
+  margin: 0;
+  padding: 0;
+  background-color: #fff;
+}
+
+div {
+  padding: 5px;
+}
+</style>
+
+
+<script src="https://jsdev.arcgis.com/4.32"  ></script>
+
+<script src="https://cdn.jsdelivr.net/npm/@esri/calcite-components@3.0.0-next.92/dist/calcite/calcite.esm.js" type="module" ></script>
+
+
+</head>
+<body>
+	<calcite-shell>
+  <calcite-shell-panel slot="panel-start" position="start" id="shell-panel-start" width-scale="l" resizable>
+    <calcite-action-bar slot="action-bar">
+      <calcite-action id="save-btn" text="Save" icon="save"></calcite-action>
+    </calcite-action-bar>
+    <calcite-panel heading="Edit Data" id="pane">
+      <calcite-block heading="Edit Entities" open collapsible>
+        <calcite-label>Entity Type
+          <calcite-select class="entity-select origin" placeholder="select entity">
+          </calcite-select>
+        </calcite-label>
+        <calcite-label> Search entity
+          <calcite-input class="entity-search-input origin" id="entity-search-input-origin"
+            placeholder="Enter a search term">
+            <calcite-button class="entity-search-button origin" icon-start="search" appearance="outline-fill"
+              slot="action" scale="m"></calcite-button></calcite-input>
+        </calcite-label>
+        <calcite-list id="origin-search-results" selection-mode="single" selection-appearance="border"></calcite-list>
+        <div id="origin-entity-props"></div>
+        <calcite-button appearance="transparent" class="create-new-entity origin" label="Create Entity"
+          icon-start="plus" value="entity" width="full">Create Entity
+        </calcite-button>
+      </calcite-block>
+      <calcite-block id="edit-rel-block" heading="Edit Relationships" open collapsible disabled>
+
+        <calcite-label>Relationship Type
+          <calcite-select id="rel-select" placeholder="select relationship">
+          </calcite-select>
+        </calcite-label>
+
+        <calcite-list id="rel-search-results" selection-mode="single" selection-appearance="border"></calcite-list>
+        <div id="rel-props"></div>
+        <div id="dest-entity">
+          <h3>Destination Entity</h3>
+          <calcite-label>Entity Type
+            <calcite-select class="entity-select dest" placeholder="select entity">
+            </calcite-select>
+          </calcite-label>
+          <calcite-label> Search entity
+            <calcite-input class="entity-search-input dest" id="entity-search-input-dest"
+              placeholder="Enter a search term">
+              <calcite-button class="entity-search-button dest" icon-start="search" appearance="outline-fill"
+                slot="action" scale="m"></calcite-button></calcite-input>
+          </calcite-label>
+          <calcite-list id="dest-search-results" selection-mode="single" selection-appearance="border"></calcite-list>
+          <div id="dest-entity-props"></div>
+          <calcite-button appearance="transparent" class="create-new-entity dest" label="Create Entity"
+            icon-start="plus" value="entity" width="full">Create Entity
+          </calcite-button>
+        </div>
+        </br>
+        <calcite-button appearance="outline-fill" id="create-rel-button" width="full">Create
+          Relationship</calcite-button>
+      </calcite-block>
+
+    </calcite-panel>
+  </calcite-shell-panel>
+  <calcite-panel heading="Link Chart" id="viewDiv"></calcite-panel>
+  <calcite-alert id="alert" icon="rangefinder" auto-close label="A report alert" auto-close-duration="fast" kind="info">
+    <div slot="title">Trail Camera Report </div>
+    <div slot="message">We thought you might want to take a look</div>
+  </calcite-alert>
+  <calcite-dialog open modal heading="Select Link Chart" id="link-chart-dialog">
+    <calcite-label>
+      Link chart portal content item ID
+      <calcite-input id="link-chart-id" value="bdde8850bdc544afb2af5355f3e4568c"
+        placeholder="Paste link chart content item id"></calcite-input>
+    </calcite-label>
+    <calcite-button id="link-chart-select-btn" slot="footer-end">
+      OK
+    </calcite-button>
+  </calcite-dialog>
+</calcite-shell>
+
+	
+
+	<script>
+		{
+			const matchDarkTheme = window.matchMedia?.("(prefers-color-scheme: dark)");
+
+			const elem = document.createElement("link");
+			elem.setAttribute("rel", "stylesheet");
+			document.head.appendChild(elem);
+
+			const updateTheme = () => {
+				const theme = matchDarkTheme?.matches ? "dark" : "light";
+				const src = "https://jsdev.arcgis.com/4.32" + "/esri/themes/" + theme + "/main.css";
+				elem.setAttribute("href", src);
+			};
+
+			matchDarkTheme?.addEventListener("change", updateTheme);
+			updateTheme();
+		}
+
+		require(["esri/identity/OAuthInfo", "esri/identity/IdentityManager", "esri/views/View"], function(OAuthInfo, IdentityManager, View) {
+    	IdentityManager.registerOAuthInfos([
+				new OAuthInfo({
+					appId: "RKNJfdy3Vn6nlmKm",
+					popup: true,
+					popupCallbackUrl: "/arcgis-play/dist/oauth-callback-api.html"
+				})
+			]);
+
+			if ("views" in View) {
+				View.views.on("change", function updateViews() {
+					let i = 0;
+
+					while (true) {
+						const name = i === 0 ? "view" : "view" + i;
+						const newView = View.views.getItemAt(i);
+
+						if (newView) {
+							window[name] = newView;
+						} else if (window[name]) {
+							delete window[name];
+						} else {
+							break;
+						}
+
+						i++;
+					}
+				});
+			}
+
+			window.isCompare = false;
+
+/**
+ * Some notes about this app
+ * 1. It takes a portal ID to an link chart and uses that to derive the KG service
+ * 2. You will need to update the esriConfig.portalUrl to your portal
+ * 3. This is currently using the in-dev branch of the JS SDK for 4.32.
+ *    You will need to update it to the public branch once it's released (mid february). Otherwise you will need to
+ *    be on VPN to use this
+ */
+var __importDefault = (this && this.__importDefault) || function (mod) {
+    return (mod && mod.__esModule) ? mod : { "default": mod };
+};
+require(["require", "esri/rest/knowledgeGraphService", "esri/views/LinkChartView", "esri/WebLinkChart", "esri/config", "esri/widgets/LayerList", "esri/widgets/Legend", "esri/rest/knowledgeGraph/Entity", "esri/rest/knowledgeGraph/Relationship", "esri/widgets/Expand", "esri/portal/Portal"], function (require, knowledgeGraphService, LinkChartView, WebLinkChart, config, LayerList, Legend, Entity, Relationship, Expand, Portal) {
+    "use strict";
+    
+    knowledgeGraphService = __importDefault(knowledgeGraphService);
+    LinkChartView = __importDefault(LinkChartView);
+    WebLinkChart = __importDefault(WebLinkChart);
+    config = __importDefault(config);
+    LayerList = __importDefault(LayerList);
+    Legend = __importDefault(Legend);
+    Entity = __importDefault(Entity);
+    Relationship = __importDefault(Relationship);
+    Expand = __importDefault(Expand);
+    Portal = __importDefault(Portal);
+    /**
+     * PORTAL USED IN DEMO - UPDATE
+     */
+    config.default.portalUrl = "https://etait.esri.com/portal";
+    /**
+     * Variables
+     */
+    let entityTypes;
+    let relTypes;
+    const entityTypeSelect = document.querySelectorAll(".entity-select");
+    let entityProps = {};
+    let entityTypeProps = {};
+    const originEntityPropsDiv = document.getElementById("origin-entity-props");
+    const destEntityPropsDiv = document.getElementById("dest-entity-props");
+    let selectedOriginEntityType;
+    let selectedDestEntityType;
+    let selectedRelType;
+    let relTypeProps = {};
+    const relPropsDiv = document.getElementById("rel-props");
+    const relTypeSelect = document.getElementById("rel-select");
+    const entityOriginSearchInput = document.getElementById("entity-search-input-origin");
+    const entityDestSearchInput = document.getElementById("entity-search-input-dest");
+    const entitySearchButton = document.querySelectorAll(".entity-search-button");
+    const originSearchResultList = document.getElementById("origin-search-results");
+    const destSearchResultList = document.getElementById("dest-search-results");
+    let selectedOriginEntity;
+    let selectedDestEntity;
+    const editRelBlock = document.getElementById("edit-rel-block");
+    const alert = document.getElementById("alert");
+    const modal = document.getElementById("link-chart-dialog");
+    let linkChartID;
+    const lcButton = document.getElementById("link-chart-select-btn");
+    let linkChart;
+    /**
+     * load link chart from portal using given ID
+     */
+    lcButton.addEventListener("click", async (e) => {
+        console.log("click");
+        linkChartID = document.getElementById("link-chart-id").value;
+        console.log(linkChartID);
+        modal.open = false;
+        linkChart = new WebLinkChart.default({
+            portalItem: {
+                id: linkChartID //c7de46b070094f138b155f409798ad48
+            }
+        });
+        await linkChart.load();
+        //add the link chart to a link chart view
+        const view = new LinkChartView.default({
+            container: "viewDiv",
+            map: linkChart
+        });
+        //add a legend and layer list
+        const legend = new Legend.default({ view: view });
+        const legendExp = new Expand.default({
+            view: view,
+            content: legend
+        });
+        // Add the legend expand to the ui
+        view.ui.add(legendExp, "top-right");
+        const layerList = new LayerList.default({
+            view: view
+        });
+        const layerListExp = new Expand.default({
+            view: view,
+            content: layerList
+        });
+        view.ui.add(layerListExp, {
+            position: "top-right"
+        });
+        view.popup.defaultPopupTemplateEnabled = true;
+        /**
+         * Save handling. Saves back to original portal content item
+         *
+         */
+        view.when(async () => {
+            // await linkChart.load();
+            const kg = await knowledgeGraphService.default.fetchKnowledgeGraph(linkChart.activeLinkChartLayer.url);
+            //test that save captures addition/removal of records
+            document.getElementById("save-btn").addEventListener("click", () => {
+                const portal = new Portal.default({
+                    authMode: "immediate"
+                });
+                portal.load().then(() => {
+                    linkChart.updateFrom(view).then(() => {
+                        linkChart
+                            .save()
+                            // Saved successfully
+                            .then(() => {
+                            // link to the newly-created web scene item
+                            alert.innerHTML = ` <div slot="title">Success</div>
+    <div slot="message">Link chart saved to portal</div>`;
+                            alert.open = true;
+                        })
+                            // Save didn't work correctly
+                            .catch((error) => {
+                            if (error.name != "identity-manager:user-aborted") {
+                                console.log("Save WebMap", `<br> Error ${error}`);
+                                alert.innerHTML = ` <div slot="title">Error</div>
+    <div slot="message">${error}</div>`;
+                            }
+                            alert.open = true;
+                        });
+                    });
+                });
+            });
+            entityTypes = kg.dataModel.entityTypes;
+            relTypes = kg.dataModel.relationshipTypes;
+            /**
+             * construct entity type select dropdown and search setup.
+             * updates global constant for the origin and destination entity ids
+             */
+            entityTypes.forEach((e, i) => {
+                if (i == 0) {
+                    selectedOriginEntityType = e.name;
+                    selectedDestEntityType = e.name;
+                }
+                entityTypeProps[e.name] = e.properties;
+                entityTypeSelect.forEach((select, i) => {
+                    select.innerHTML += `<calcite-option class="entity-type" value="${e.name}">${e.name}</calcite-option>`;
+                });
+            });
+            //selectioin handling
+            entityTypeSelect.forEach((select, i) => {
+                select.addEventListener("calciteSelectChange", (e) => {
+                    if (select.classList.contains("origin")) {
+                        selectedOriginEntityType = select.selectedOption.value;
+                    }
+                    else {
+                        selectedDestEntityType = select.selectedOption.value;
+                    }
+                });
+            });
+            //search button handling
+            entitySearchButton.forEach((button, i) => {
+                button.addEventListener("click", (e) => {
+                    if (button.classList.contains("origin")) {
+                        search(entityOriginSearchInput.value, selectedOriginEntityType, "origin");
+                    }
+                    else {
+                        search(entityDestSearchInput.value, selectedDestEntityType, "dest");
+                    }
+                });
+            });
+            //setup relationship type select
+            relTypes.forEach((e, i) => {
+                relTypeProps[e.name] = e.properties;
+                if (i == 0) {
+                    selectedRelType = e.name;
+                }
+                relTypeSelect.innerHTML += `<calcite-option class="rel-type" value="${e.name}">${e.name}</calcite-option>`;
+            });
+            relTypeSelect.addEventListener("calciteSelectChange", (e) => {
+                selectedRelType = relTypeSelect.selectedOption.value;
+                createRelProps();
+            });
+            /**
+             * Create new relationship. Origin and destination entity must be defined
+             */
+            document.getElementById("create-rel-button").addEventListener("click", (e) => {
+                let data = {};
+                data["typeName"] = selectedRelType;
+                data["origin"] = selectedOriginEntity.id;
+                data["destination"] = selectedDestEntity.id;
+                data["properties"] = {};
+                relPropsDiv.querySelectorAll(".rel-prop").forEach((prop, i) => {
+                    if (prop.value != "") {
+                        data["properties"][prop.getAttribute("type")] =
+                            prop.getAttribute("field-type") == "esriFieldTypeSmallInteger"
+                                ? Number(prop.value)
+                                : prop.value;
+                    }
+                });
+                applyEdits("relationship", data, relPropsDiv);
+            });
+            /**
+             *  Entity search, Lists top five hits
+             */
+            const search = async (term, typeFilter, location) => {
+                console.log(term, typeFilter);
+                const searchParams = {
+                    searchQuery: term + "*",
+                    typeCategoryFilter: "entity",
+                    namedTypesFilter: [typeFilter],
+                    num: 5
+                };
+                const result = await knowledgeGraphService.default.executeSearchStreaming(kg, searchParams);
+                return readStream(result, location);
+            };
+            /**
+             * Applys all edits (entity create and add and relationships create)
+             */
+            const applyEdits = (editType, data, parentDiv) => {
+                let edits = {};
+                //creat entity
+                if (editType == "createEntity") {
+                    const entityAdd = new Entity.default({
+                        typeName: data.typeName,
+                        properties: data.properties
+                    });
+                    edits["entityAdds"] = [entityAdd];
+                    //create relationship
+                }
+                else if (editType == "relationship") {
+                    const relationshipAdd = new Relationship.default({
+                        typeName: data.typeName,
+                        originId: data.origin,
+                        destinationId: data.destination,
+                        properties: data.properties ? data.properties : {}
+                    });
+                    edits["relationshipAdds"] = [relationshipAdd];
+                    //update entity
+                }
+                else if ((editType = "updateEntity")) {
+                    const entityUpdate = new Entity.default({
+                        typeName: data.typeName,
+                        id: data.id,
+                        properties: data.properties
+                    });
+                    edits["entityUpdates"] = [entityUpdate];
+                }
+                //execute the apply edits on the graph and then update the link chart with the results
+                knowledgeGraphService.default.executeApplyEdits(kg, edits).then((results) => {
+                    console.log(results);
+                    let html = "";
+                    //if there is an error catch it and give an alert
+                    if (results.hasError && results.errorMessage != "") {
+                        html = `<p>${results.error.errorMessage}</p>`;
+                        alert.innerHTML = ` <div slot="title">Edit Results</div>
+    <div slot="message">${html}</div>`;
+                        alert.open = true;
+                    }
+                    else {
+                        for (edits of results.editResults) {
+                            editRelBlock.disabled = false;
+                            //If an entity was created, add it to the link chart
+                            if (editType == "createEntity") {
+                                createRelProps();
+                                if (parentDiv.id.includes("origin")) {
+                                    selectedOriginEntity = {
+                                        name: Object.values(data.properties)[0],
+                                        id: edits.adds[0].id
+                                    };
+                                    document.getElementById("origin-entity-label").innerHTML =
+                                        "Origin: " + selectedOriginEntity.name;
+                                }
+                                else {
+                                    selectedDestEntity = {
+                                        name: Object.values(data.properties)[0],
+                                        id: edits.adds[0].id
+                                    };
+                                    document.getElementById("dest-entity-label").innerHTML =
+                                        "Destination: " + selectedDestEntity.name;
+                                }
+                                linkChart.addRecords([{ id: edits.adds[0].id, typeName: data.typeName }]);
+                                //add updated record to the link chart
+                            }
+                            else if (editType == "updateEntity") {
+                                linkChart.refreshLinkChartData([edits.updates[0].id]);
+                                linkChart.addRecords([{ id: edits.updates[0].id, typeName: data.typeName }]);
+                                //add relationship and both of it's endpoints to the link chart
+                            }
+                            else {
+                                linkChart.addRecords([{ id: edits.adds[0].id, typeName: data.typeName }], {
+                                    cascadeAddRelationshipEndNodes: true
+                                });
+                            }
+                            console.log(edits);
+                            html += `<h3>${data.typeName}</h3>`;
+                            html += `<calcite-label>Added: ${edits.adds.length > 0 ? edits.adds.id : "none"}</calcite-label>`;
+                        }
+                    }
+                    view.when(async () => {
+                        await view.goTo(view.map.diagramNodesExtent);
+                    });
+                });
+                /**
+                 * Create new entity button handler. Populates a new sectioni to provide properties based on the type
+                 */
+            };
+            document.querySelectorAll(".create-new-entity").forEach((button, i) => {
+                button.addEventListener("click", (e) => {
+                    const location = button.classList.contains("dest") ? "dest" : "origin";
+                    const selectedType = location == "dest" ? selectedDestEntityType : selectedOriginEntityType;
+                    let props = entityTypeProps[selectedType];
+                    let propsDiv = button.classList.contains("origin")
+                        ? originEntityPropsDiv
+                        : destEntityPropsDiv;
+                    propsDiv.innerHTML = `<br><h4>Create ${selectedType} entity</h4>`;
+                    const noEdits = ["globalid", "objectid", "shape"];
+                    props.forEach((p, i) => {
+                        const inputType = inputLookup(p.fieldType);
+                        if (!noEdits.includes(p.name)) {
+                            propsDiv.innerHTML += `<calcite-label>${p.name}<${inputType} class="entity-property" type="${p.name}" field-type="${p.fieldType}"><${inputType}></calcite-label>`;
+                        }
+                    });
+                    //actually create the entity in the graph
+                    propsDiv.innerHTML += `<calcite-button class="create-entity-button ${location}" alignment="center">Create</calcite-button>`;
+                    document.querySelectorAll(".create-entity-button").forEach((button, i) => {
+                        button.addEventListener("click", (e) => {
+                            let data = {};
+                            data["typeName"] = button.classList.contains("origin")
+                                ? selectedOriginEntityType
+                                : selectedDestEntityType;
+                            data["properties"] = {};
+                            propsDiv.querySelectorAll(".entity-property").forEach((prop, i) => {
+                                data["properties"][prop.getAttribute("type")] =
+                                    prop.getAttribute("field-type") == "esriFieldTypeSmallInteger"
+                                        ? Number(prop.value)
+                                        : prop.value;
+                            });
+                            applyEdits("createEntity", data, propsDiv);
+                        });
+                    });
+                });
+            });
+            // };
+            /**
+             * build the results list from the entity search and all dependent methods
+             */
+            const buildResultList = (data, location) => {
+                const resultList = location == "origin" ? originSearchResultList : destSearchResultList;
+                resultList.innerHTML = "";
+                if (data) {
+                    data.forEach((r, i) => {
+                        const result = r[0];
+                        const props = result.properties;
+                        let name = "";
+                        let propsTable = `<calcite-table>
+      <calcite-table-row slot="table-header">
+        <calcite-table-header heading="Property"></calcite-table-header>
+        <calcite-table-header heading="Value"></calcite-table-header>
+      </calcite-table-row>`;
+                        for (let key in props) {
+                            if (props.name != undefined) {
+                                name = props.name;
+                            }
+                            else if (typeof props[key] === "string" && key != "globalid" && name == "") {
+                                name = props[key];
+                            }
+                            if (key == "shape") {
+                                props[key] = props[key] == null ? null : props[key].type;
+                            }
+                            propsTable += `<calcite-table-row>
+        <calcite-table-cell>${key}</calcite-table-cell>
+        <calcite-table-cell>${props[key]}</calcite-table-cell>
+      </calcite-table-row>`;
+                        }
+                        entityProps[name] = props;
+                        propsTable += "</calcite-table>";
+                        //info icon displays property information, edit button allows updating the entity
+                        resultList.innerHTML += `<calcite-list-item label="${name}" data-id="${props["globalid"]}"
+            value="${name}">
+            <calcite-icon id="${location}-${i}-icon" slot="actions-start" icon="information"></calcite-icon> 
+            <calcite-action class="edit-entity ${location}" slot="actions-end" icon="pencil"></calcite-action> 
+        </calcite-list-item>
+        <calcite-popover heading="About this record" label="About this data" reference-element="${location}-${i}-icon" closable>
+        ${propsTable}</calcite-popover>`;
+                    });
+                }
+                /**
+                 * get the props of an existing entity and allow users to edit
+                 */
+                document.querySelectorAll(".edit-entity").forEach((item, i) => {
+                    item.addEventListener("click", (e) => {
+                        console.log("edit clicked");
+                        editRelBlock.disabled = false;
+                        createRelProps();
+                        // updateRelBlock()
+                        let propsDiv = item.classList.contains("origin")
+                            ? originEntityPropsDiv
+                            : destEntityPropsDiv;
+                        const name = item.parentElement.value;
+                        selectedOriginEntity = {
+                            id: item.parentElement.getAttribute("data-id"),
+                            name: item.parentElement.value
+                        };
+                        const props = entityProps[name];
+                        propsDiv.innerHTML = `<br><h4>Properties of ${name}</h4>`;
+                        const noEdits = ["globalid", "objectid", "shape"];
+                        for (let key in props) {
+                            const inputType = inputLookup(typeof props[key]);
+                            if (!noEdits.includes(key)) {
+                                propsDiv.innerHTML += `<calcite-label>${key}
+      <${inputType} class="entity-update-property" prop-name="${key}"  field-type="${props.fieldType}" value="${props[key] != undefined || null ? props[key] : "(null)"}"><${inputType}>
+      </calcite-label>`;
+                            }
+                            else {
+                                propsDiv.innerHTML += `<calcite-label disabled>${key}
+      <${inputType} class="entity-update-property" value="${props[key] != undefined || null ? props[key] : "(null)"}" disabled><${inputType}>
+      </calcite-label>`;
+                            }
+                        }
+                        propsDiv.innerHTML += `<calcite-button class="update-entity-button ${item.classList.contains("origin") ? "origin" : "dest"}">Update</calcite-button>`;
+                        //updte entity button handling
+                        document.querySelectorAll(".update-entity-button").forEach((button, i) => {
+                            button.addEventListener("click", (e) => {
+                                let data = {
+                                    typeName: button.classList.contains("origin")
+                                        ? selectedOriginEntityType
+                                        : selectedDestEntityType,
+                                    id: button.classList.contains("origin")
+                                        ? selectedOriginEntity.id
+                                        : selectedDestEntity.id
+                                };
+                                data["properties"] = {};
+                                propsDiv.querySelectorAll(".entity-update-property").forEach((prop, i) => {
+                                    if (prop.getAttribute("prop-name")) {
+                                        data["properties"][prop.getAttribute("prop-name")] =
+                                            prop.localName == "calcite-input-number" ? Number(prop.value) : prop.value;
+                                    }
+                                });
+                                applyEdits("updateEntity", data, propsDiv);
+                            });
+                        });
+                    });
+                    /**
+                     * Handle creating a new entity (same process for origin and destination entities)
+                     */
+                    document.querySelectorAll(".create-new-entity").forEach((button, i) => {
+                        button.addEventListener("click", (e) => {
+                            const location = button.classList.contains("dest") ? "dest" : "origin";
+                            const selectedType = location == "dest" ? selectedDestEntityType : selectedOriginEntityType;
+                            let props = entityTypeProps[selectedType];
+                            let propsDiv = button.classList.contains("origin")
+                                ? originEntityPropsDiv
+                                : destEntityPropsDiv;
+                            propsDiv.innerHTML = `<br><h4>Create ${selectedType} entity</h4>`;
+                            const noEdits = ["globalid", "objectid", "shape"];
+                            props.forEach((p, i) => {
+                                const inputType = inputLookup(p.fieldType);
+                                if (!noEdits.includes(p.name)) {
+                                    propsDiv.innerHTML += `<calcite-label>${p.name}<${inputType} class="entity-property" type="${p.name}" field-type="${p.fieldType}"><${inputType}></calcite-label>`;
+                                }
+                            });
+                            //actually create the entity in the graph
+                            propsDiv.innerHTML += `<calcite-button class="create-entity-button ${location}" alignment="center">Create</calcite-button>`;
+                            document.querySelectorAll(".create-entity-button").forEach((button, i) => {
+                                button.addEventListener("click", (e) => {
+                                    let data = {};
+                                    data["typeName"] = button.classList.contains("origin")
+                                        ? selectedOriginEntityType
+                                        : selectedDestEntityType;
+                                    data["properties"] = {};
+                                    propsDiv.querySelectorAll(".entity-property").forEach((prop, i) => {
+                                        if (prop.getAttribute("type")) {
+                                        }
+                                        data["properties"][prop.getAttribute("type")] =
+                                            prop.getAttribute("field-type") == "esriFieldTypeSmallInteger"
+                                                ? Number(prop.value)
+                                                : prop.value;
+                                    });
+                                    applyEdits("createEntity", data, propsDiv);
+                                });
+                            });
+                        });
+                    });
+                });
+                /**
+                 * origin entity list handling
+                 */
+                originSearchResultList.addEventListener("calciteListChange", (e) => {
+                    const selected = originSearchResultList.selectedItems;
+                    console.log("selected", selected);
+                    if (selected.length > 0) {
+                        selectedOriginEntity = {
+                            id: selected[0].getAttribute("data-id"),
+                            name: selected[0].value
+                        };
+                        originEntityPropsDiv.innerHTML = "";
+                        editRelBlock.disabled = false;
+                        createRelProps();
+                    }
+                });
+                /**
+                 * destination entity list handling
+                 */
+                destSearchResultList.addEventListener("calciteListChange", (e) => {
+                    const selected = destSearchResultList.selectedItems;
+                    if (selected.length > 0) {
+                        selectedDestEntity = {
+                            id: selected[0].getAttribute("data-id"),
+                            name: selected[0].value
+                        };
+                        editRelBlock.disabled = false;
+                        createRelProps();
+                        destEntityPropsDiv.innerHTML = "";
+                        document.getElementById("dest-entity-label").innerHTML =
+                            "Destination: " + selectedDestEntity.name;
+                    }
+                });
+            };
+            // a function to read the stream returned from the streaming search
+            const readStream = async (streamingQueryResult, location) => {
+                //create the reader
+                let reader = streamingQueryResult.resultRowsStream.getReader();
+                // let results = [];
+                let result = false;
+                //try to read the stream
+                try {
+                    while (true) {
+                        //read the stream
+                        const { done, value } = await reader.read();
+                        //stop reader when the stream is done
+                        if (done) {
+                            if (!result) {
+                                buildResultList(false, location);
+                            }
+                            break;
+                        }
+                        //create the output list from the read stream.
+                        result = true;
+                        buildResultList(value, location);
+                    }
+                    // return results;
+                    // if there is an error in returning the stream or the stream is aborted
+                }
+                catch (err) {
+                    if (err.name === "AbortError") {
+                        console.log("Request aborted as expected");
+                    }
+                    else {
+                        throw err;
+                    }
+                }
+            };
+        });
+        /**
+         * Lookup for the diferent input types to map to esri types
+         */
+        const inputLookup = (inputType) => {
+            // console.log(inputType);
+            switch (inputType) {
+                case "number":
+                case "esriFieldTypeNumber":
+                case "esriFieldTypeSmallInteger":
+                    return "calcite-input-number";
+                default:
+                    return "calcite-input";
+            }
+        };
+        /**
+         * create relationship property list
+         */
+        const createRelProps = () => {
+            console.log("selected rel", selectedRelType);
+            let props = relTypeProps[selectedRelType];
+            relPropsDiv.innerHTML = `<br><h4>Create ${selectedRelType} relationship</h4>
+    <calcite-label id="origin-entity-label"> Origin: ${selectedOriginEntity ? selectedOriginEntity.name : "please select or create an origin entity"}</calcite-label>`;
+            console.log("entity", selectedOriginEntity);
+            const noEdits = ["globalid", "objectid", "shape"];
+            props.forEach((p, i) => {
+                const inputType = inputLookup(p.fieldType);
+                console.log(p);
+                if (!noEdits.includes(p.name)) {
+                    relPropsDiv.innerHTML += `<calcite-label>${p.name}<${inputType} class="rel-prop" type="${p.name}" field-type="${p.fieldType}"><${inputType}></calcite-label>`;
+                }
+            });
+            relPropsDiv.innerHTML += ` <calcite-label id="dest-entity-label">Destination: Please select or create a destination entity </calcite-label>`;
+        };
+    });
+});
+
+		});
+	</script>
+</body>
+</html>
