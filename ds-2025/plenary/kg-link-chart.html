@@ -15,13 +15,27 @@
   <script type="module" src="https://js.arcgis.com/map-components/4.32/arcgis-map-components.esm.js"></script>
 
   <style>
+    :root {
+      --app-them-color: #c45451;
+    }
+
     html,
     body {
       background-color: var(--calcite-ui-foreground-2);
+      --calcite-color-brand: var(--app-them-color);
+      --calcite-color-focus: var(--calcite-color-brand);
       padding: 0;
       margin: 0;
       width: 100vw;
       height: 100vh;
+    }
+
+    :focus {
+      --calcite-color-brand: var(--app-them-color);
+      --calcite-color-focus: var(--calcite-color-brand);
+      --calcite-color-brand-hover: #9a4340;
+      --calcite-color-brand-press: #622b29;
+      --calcite-color-focus: var(--calcite-color-brand);
     }
 
     #map-container {
@@ -31,7 +45,17 @@
     }
 
     arcgis-link-chart {
+      height: 100%;
+    }
+
+    #link-chart-panel {
+      height: 100%;
+    }
+
+    #bottom-shell-panel {
+      width: 100%;
       height: 0;
+      --calcite-shell-panel-min-height: 50vh;
     }
   </style>
 </head>
@@ -44,47 +68,50 @@
           description="
           Explore links between providers, patients, and medical conditions. You can filter the data by specialty and view relationships between patients and providers including link charts showing which providers can provide care to patients according to their needs.">
         </calcite-tile>
-        <calcite-block id="specialty-block" heading="Specialty offered" description="Filter the network by specialty"
+        <calcite-block id="specialty-block" heading="Specialty offered" description="Click a facility and open its link chart to filter by specialty"
           disabled>
           <calcite-list id="specialty-list" selection-mode="single-persist"></calcite-list>
         </calcite-block>
-        <calcite-block id="need-block" heading="Need score" description="Find patients with the highest need" disabled>
+        <calcite-block id="need-block" heading="Need score" description="Click a facility and open its link chart to view patients with the highest need" disabled>
           <calcite-label layout="inline">
             <calcite-switch id="highest-need-switch"></calcite-switch>
-            Show patients with highest need
+            Show patients with greatest need
           </calcite-label>
         </calcite-block>
-        <calcite-block id="legend-block" heading="" open>
+        <calcite-block id="legend-block" heading="Legend" open>
           <arcgis-legend reference-element="arcgis-map"></arcgis-legend>
           <arcgis-legend reference-element="arcgis-link-chart" id="link-chart-legend"></arcgis-legend>
         </calcite-block>
       </calcite-panel>
     </calcite-shell-panel>
     <calcite-panel id="map-container">
-      <arcgis-map item-id="c06d6d33d09640ea8951fdf7bde7e5a6"></arcgis-map>
-      <arcgis-link-chart item-id="76fd87bbd35e40da8f24e06a54ab58ef" id="link-chart">
-        <arcgis-link-chart-layout-switcher position="top-left"></arcgis-link-chart-layout-switcher>
-        <arcgis-placement position="top-right">
-          <calcite-action icon="x-circle" scale="s" id="link-chart-close-action"></calcite-action>
-        </arcgis-placement>
-      </arcgis-link-chart>
+      <arcgis-map item-id="35bc76dd4b99471cb24210bb2d1ef2e5"></arcgis-map>
     </calcite-panel>
+    <calcite-shell-panel id="bottom-shell-panel" slot="panel-bottom" position="end" layout="horizontal">
+      <calcite-panel heading="Link chart" scale="s" closed closable id="link-chart-panel">
+        <arcgis-link-chart item-id="37eda53b71b04ffd8b4f56d06b906a46" id="link-chart">
+          <arcgis-link-chart-layout-switcher position="top-left"></arcgis-link-chart-layout-switcher>
+        </arcgis-link-chart>
+      </calcite-panel>
+    </calcite-shell-panel>
   </calcite-shell>
 
   <script>
     require([
       "esri/config",
       "esri/core/reactiveUtils",
-      "esri/symbols/support/cimSymbolUtils"
-    ], (esriConfig, reactiveUtils, cimSymbolUtils) => {
+      "esri/symbols/support/cimSymbolUtils",
+      "esri/Color"
+    ], (esriConfig, reactiveUtils, cimSymbolUtils, Color) => {
       (async () => {
 
-        const applySymbolAnimations = (cimSymbol) => {
-          cimSymbolUtils.applyCIMSymbolColor(cimSymbol, "orange");
+        const applySymbolAnimations = (cimSymbol, animateColor) => {
+          cimSymbolUtils.applyCIMSymbolColor(cimSymbol, "#672894");
 
+          // Add scale animation
           cimSymbol.data.symbol.animations = [{
             type: "CIMSymbolAnimationScale",
-            scaleFactor: 2,
+            scaleFactor: 1.6,
             animatedSymbolProperties: {
               type: "CIMAnimatedSymbolProperties",
               duration: 2,
@@ -94,6 +121,29 @@
               randomizeStartTime: false,
             }
           }];
+
+          // Add color animation
+          if (animateColor) {
+            const toColor = new Color("orange").toJSON();
+
+            cimSymbol.data.symbol.symbolLayers[0]
+              .markerGraphics[0].symbol
+              .symbolLayers
+              .find(sl => sl.type === "CIMSolidFill").animations = [{
+                type: "CIMSymbolAnimationColor",
+                primitiveName: "colorOverride",
+                animatedSymbolProperties: {
+                  type: "CIMAnimatedSymbolProperties",
+                  primitiveName: "animationOverride",
+                  playAnimation: true,
+                  randomizeStartTime: false,
+                  repeatType: "Oscillate",
+                  repeatDelay: 0,
+                  duration: 2
+                },
+                toColor
+              }];
+          }
         }
 
         esriConfig.portalUrl = "https://knowledgegraph5.dev.geocloud.com/portal";
@@ -102,7 +152,8 @@
         const arcgisLinkChartLayoutSwitcher = document.querySelector("arcgis-link-chart-layout-switcher");
         const specialtyList = document.getElementById("specialty-list");
         const highestNeedSwitch = document.getElementById("highest-need-switch");
-        const linkChartCloseAction = document.getElementById("link-chart-close-action");
+        const linkChartPanel = document.getElementById("link-chart-panel");
+        const bottomShellPanel = document.getElementById("bottom-shell-panel");
         const arcgisMap = document.querySelector("arcgis-map");
         const specialtyBlock = document.getElementById("specialty-block");
         const needBlock = document.getElementById("need-block");
@@ -134,9 +185,19 @@
           let patientLayerLinkChart;
           let patientLayerLinkChartOriginalRenderer;
           let conditionLayerLinkChart;
+          let activeLinkChartLayer;
+
+          const focusedLinkChartLayers = [
+            "Patient",
+            "HasCondition",
+            "Provider",
+            "Specialty",
+            "Condition",
+            "Organization"
+          ];
 
           const resetDisplayFilters = () => {
-            if(!patientLayerLinkChart || !conditionLayerLinkChart) {
+            if (!patientLayerLinkChart || !conditionLayerLinkChart) {
               return;
             }
             patientLayerLinkChart.displayFilterInfo.activeFilterId = null;
@@ -144,12 +205,32 @@
           };
 
           const resetRenderers = () => {
-            if(!patientLayerMap || !patientLayerLinkChart) {
+            if (!patientLayerMap || !patientLayerLinkChart) {
               return;
             }
             patientLayerMap.renderer = patientLayerMapOriginalRenderer;
             patientLayerLinkChart.renderer = patientLayerLinkChartOriginalRenderer;
+
           };
+
+          const resetLinkChart = () => {
+            if (!patientLayerLinkChart || !conditionLayerLinkChart || !activeLinkChartLayer) {
+              return;
+            }
+            patientLayerLinkChart.effect = null;
+            conditionLayerLinkChart.effect = null;
+
+            activeLinkChartLayer.layers.forEach((layer) => {
+              if (focusedLinkChartLayers.indexOf(layer.title) === -1) {
+                layer.effect = null;
+                layer.labelingInfo.forEach((labelingInfo) => {
+                  const textSymbol = labelingInfo.symbol.clone();
+                  textSymbol.color.a = 1;
+                  labelingInfo.symbol = textSymbol;
+                });
+              }
+            });
+          }
 
           const setFeatureEffect = (where) => {
             const selectedFeature = arcgisMap.popup.selectedFeature;
@@ -161,7 +242,7 @@
                 units: "kilometers"
               },
               excludedEffect: "grayscale(100%) opacity(30%)",
-              includedEffect: "drop-shadow(2px 2px 4px lightgray)"
+              includedEffect: "drop-shadow(2px 2px 4px black)"
             };
           }
 
@@ -170,29 +251,36 @@
           const medicalCentersLayer = organizationLayer.sublayers.find(({ title }) => title === "Madison Medical Centers");
 
           const closeLinkChart = () => {
-            arcgisLinkChart.style.height = "0";
+            bottomShellPanel.style.height = 0;
+            linkChartPanel.closed = true;
             patientLayerMap.featureEffect = null;
 
             specialtyList.innerHTML = null;
             specialtyBlock.disabled = true;
             specialtyBlock.open = false;
+            specialtyBlock.description = "Click a facility and open its link chart to filter by specialty";
 
             needBlock.disabled = true;
             needBlock.open = false;
+            needBlock.description = "Click a facility and open its link chart to view patients with the highest need";
             highestNeedSwitch.checked = false;
 
             resetRenderers();
             resetDisplayFilters();
+            resetLinkChart();
           };
 
           const openLinkChart = () => {
-            arcgisLinkChart.style.height = "100%";
+            bottomShellPanel.style.height = "50vh";
+            linkChartPanel.closed = false;
 
             specialtyBlock.disabled = false;
             specialtyBlock.open = true;
+            specialtyBlock.description = "Filter the network by specialty";
 
             needBlock.disabled = false;
             needBlock.open = true;
+            needBlock.description = "View patients with the highest need";
 
             if (patientLayerLinkChart) {
               createSpecialtyList(patientLayerLinkChart.displayFilterInfo);
@@ -200,6 +288,8 @@
 
             setFeatureEffect();
           };
+
+          linkChartPanel.addEventListener("calcitePanelClose", closeLinkChart);
 
           // Add link chart action to medical centers popup
           const medicalCentersPopupTemplate = medicalCentersLayer.popupTemplate.clone();
@@ -219,16 +309,14 @@
               }
             });
 
-          linkChartCloseAction.addEventListener("click", closeLinkChart);
-
-          reactiveUtils.watch(() => arcgisMap.popup.visible, () => {
-            if (!arcgisMap.popup.visible) {
-              closeLinkChart();
-            }
+          reactiveUtils.watch(() => [arcgisMap.popup.visible, arcgisMap.popup.selectedFeature], () => {
+            closeLinkChart();
           });
 
           arcgisLinkChart.addEventListener("arcgisViewReadyChange", async () => {
-            const activeLinkChartLayer = arcgisLinkChart.map.activeLinkChartLayer;
+            arcgisLinkChart.map.basemap = "gray-vector";
+            activeLinkChartLayer = arcgisLinkChart.map.activeLinkChartLayer;
+            activeLinkChartLayer.effect = "drop-shadow(1px 1px 3px gray)";
             patientLayerLinkChart = activeLinkChartLayer.layers.find(({ title }) => title === "Patient");
             patientLayerLinkChartOriginalRenderer = patientLayerLinkChart.renderer.clone();
 
@@ -242,16 +330,34 @@
               conditionLayerLinkChart.displayFilterInfo.activeFilterId = filterId;
 
               setFeatureEffect(patientLayerLinkChart.displayFilterInfo.filters.find(({ id }) => id === filterId).where);
+
+              if (filterId !== "All") {
+                patientLayerLinkChart.effect = "drop-shadow(1px 1px 3px #303030)";
+                conditionLayerLinkChart.effect = "drop-shadow(1px 1px 3px #303030)";
+
+                activeLinkChartLayer.layers.forEach((layer) => {
+                  if (focusedLinkChartLayers.indexOf(layer.title) === -1) {
+                    layer.effect = "grayscale(60%) opacity(35%)";
+                    layer.labelingInfo.forEach((labelingInfo) => {
+                      const textSymbol = labelingInfo.symbol.clone();
+                      textSymbol.color.a = 0.25;
+                      labelingInfo.symbol = textSymbol;
+                    });
+                  }
+                });
+              } else {
+                resetLinkChart();
+              }
+
             });
 
-            const patientLayerLinkChartView = await arcgisLinkChart.whenLayerView(patientLayerLinkChart);
-
             arcgisLinkChartLayoutSwitcher.addEventListener("arcgisSwitchLayout", async (event) => {
+              const patientLayerLinkChartView = await arcgisLinkChart.whenLayerView(patientLayerLinkChart);
               await reactiveUtils.whenOnce(() => !patientLayerLinkChartView.updating);
 
               if (event.detail.layout === "geographic-organic-standard") {
                 const { extent } = await patientLayerLinkChartView.queryExtent();
-                arcgisLinkChart.goTo(extent.expand(1.5));
+                arcgisLinkChart.extent = { "spatialReference": { "latestWkid": 3857, "wkid": 102100 }, "xmin": -9947848.035694744, "ymin": 5319558.131264363, "xmax": -9938436.726587147, "ymax": 5323905.487248077 };
               }
             });
 
@@ -274,7 +380,7 @@
                 const patientKGRenderer = patientLayerLinkChart.renderer.clone();
                 const patientKGSymbol = patientKGRenderer.symbol;
                 const animatedKGSymbol = patientKGSymbol.clone();
-                applySymbolAnimations(animatedKGSymbol);
+                applySymbolAnimations(animatedKGSymbol, true);
 
                 const needsClassBreaksRenderer = {
                   type: "class-breaks",
@@ -294,7 +400,7 @@
                 const patientClassBreaks = patientRenderer.classBreakInfos.map(classBreak => classBreak.clone());
                 const patientSymbol = patientClassBreaks[0].symbol;
                 const animatedSymbol = patientSymbol.clone();
-                applySymbolAnimations(animatedSymbol);
+                applySymbolAnimations(animatedSymbol, true);
 
                 patientClassBreaks.unshift({
                   minValue: 0,
