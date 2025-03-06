@@ -55,7 +55,7 @@
     #bottom-shell-panel {
       width: 100%;
       height: 0;
-      --calcite-shell-panel-min-height: 50vh;
+      --calcite-shell-panel-min-height: 60vh;
     }
   </style>
 </head>
@@ -269,7 +269,11 @@
           };
 
           const openLinkChart = () => {
-            bottomShellPanel.style.height = "50vh";
+            if (patientLayerLinkChart && specialtyBlock.disabled) {
+              createSpecialtyList(patientLayerLinkChart.displayFilterInfo);
+            }
+
+            bottomShellPanel.style.height = "60vh";
             bottomShellPanel.collapsed = false;
             linkChartPanel.closed = false;
 
@@ -280,10 +284,6 @@
             needBlock.disabled = false;
             needBlock.open = true;
             needBlock.description = "View patients with the highest priority";
-
-            if (patientLayerLinkChart) {
-              createSpecialtyList(patientLayerLinkChart.displayFilterInfo);
-            }
 
             setFeatureEffect();
           };
