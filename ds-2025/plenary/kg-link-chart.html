@@ -68,11 +68,12 @@
           description="
           Explore links between providers, patients, and medical conditions. You can filter the data by specialty and view relationships between patients and providers including link charts showing which providers can provide care to patients according to their needs.">
         </calcite-tile>
-        <calcite-block id="specialty-block" heading="Specialty offered" description="Click a facility and open its link chart to filter entities by specialty"
-          disabled>
+        <calcite-block id="specialty-block" heading="Specialty offered"
+          description="Click a facility and open its link chart to filter entities by specialty" disabled>
           <calcite-list id="specialty-list" selection-mode="single-persist"></calcite-list>
         </calcite-block>
-        <calcite-block id="need-block" heading="High priority patients" description="Click a facility and open its link chart to view patients with the highest priority" disabled>
+        <calcite-block id="need-block" heading="High priority patients"
+          description="Click a facility and open its link chart to view patients with the highest priority" disabled>
           <calcite-label layout="inline">
             <calcite-switch id="highest-need-switch"></calcite-switch>
             Show patients with highest priority
@@ -87,9 +88,9 @@
     <calcite-panel id="map-container">
       <arcgis-map item-id="35bc76dd4b99471cb24210bb2d1ef2e5"></arcgis-map>
     </calcite-panel>
-    <calcite-shell-panel id="bottom-shell-panel" slot="panel-bottom" position="end" layout="horizontal">
+    <calcite-shell-panel id="bottom-shell-panel" slot="panel-bottom" position="end" layout="horizontal" collapsed>
       <calcite-panel heading="Link chart" scale="s" closed closable id="link-chart-panel">
-        <arcgis-link-chart item-id="37eda53b71b04ffd8b4f56d06b906a46" id="link-chart">
+        <arcgis-link-chart item-id="00d1bdded9364ff28a895f10537c9d92" id="link-chart">
           <arcgis-link-chart-layout-switcher position="top-left"></arcgis-link-chart-layout-switcher>
         </arcgis-link-chart>
       </calcite-panel>
@@ -107,12 +108,12 @@
       (async () => {
 
         const applySymbolAnimations = (cimSymbol, animateColor) => {
-          cimSymbolUtils.applyCIMSymbolColor(cimSymbol, "#672894");
+          cimSymbolUtils.applyCIMSymbolColor(cimSymbol, "black");
 
           // Add scale animation
           cimSymbol.data.symbol.animations = [{
             type: "CIMSymbolAnimationScale",
-            scaleFactor: 1.6,
+            scaleFactor: 2.5,
             animatedSymbolProperties: {
               type: "CIMAnimatedSymbolProperties",
               duration: 2,
@@ -183,26 +184,29 @@
           const patientLayerMap = healthcareNetworkLayer.layers.find(({ title }) => title === "Patients");
           const patientLayerMapOriginalRenderer = patientLayerMap.renderer.clone();
 
-          let patientLayerLinkChart;
-          let patientLayerLinkChartOriginalRenderer;
-          let conditionLayerLinkChart;
           let activeLinkChartLayer;
+          let patientLayerLinkChart;
+          let conditionLayerLinkChart;
+          let specialtyLayerLinkChart;
+          let organizationLayerLinkChart;
+          let providerLayerLinkChart;
+          let hasConditionLayerLinkChart;
+          let requiresLayerLinkChart;
+          let specializesInLayerLinkChart;
+          let worksAtLayerLinkChart;
+          let displayFilterLayers;
 
-          const focusedLinkChartLayers = [
-            "Patient",
-            "HasCondition",
-            "Provider",
-            "Specialty",
-            "Condition",
-            "Organization"
-          ];
+          let patientLayerLinkChartOriginalRenderer;
 
           const resetDisplayFilters = () => {
-            if (!patientLayerLinkChart || !conditionLayerLinkChart) {
+            if (!displayFilterLayers || displayFilterLayers.some(layer => !layer)) {
               return;
             }
-            patientLayerLinkChart.displayFilterInfo.activeFilterId = null;
-            conditionLayerLinkChart.displayFilterInfo.activeFilterId = null;
+            displayFilterLayers.forEach((layer) => {
+              if (layer.displayFilterInfo) {
+                layer.displayFilterInfo.activeFilterId = null;
+              }
+            });
           };
 
           const resetRenderers = () => {
@@ -215,20 +219,12 @@
           };
 
           const resetLinkChart = () => {
-            if (!patientLayerLinkChart || !conditionLayerLinkChart || !activeLinkChartLayer) {
+            if (!displayFilterLayers || displayFilterLayers.some(layer => !layer)) {
               return;
             }
-            patientLayerLinkChart.effect = null;
-            conditionLayerLinkChart.effect = null;
-
             activeLinkChartLayer.layers.forEach((layer) => {
-              if (focusedLinkChartLayers.indexOf(layer.title) === -1) {
-                layer.effect = null;
-                layer.labelingInfo.forEach((labelingInfo) => {
-                  const textSymbol = labelingInfo.symbol.clone();
-                  textSymbol.color.a = 1;
-                  labelingInfo.symbol = textSymbol;
-                });
+              if (layer) {
+                layer.featureEffect = null;
               }
             });
           }
@@ -253,6 +249,7 @@
 
           const closeLinkChart = () => {
             bottomShellPanel.style.height = 0;
+            bottomShellPanel.collapsed = true;
             linkChartPanel.closed = true;
             patientLayerMap.featureEffect = null;
 
@@ -273,6 +270,7 @@
 
           const openLinkChart = () => {
             bottomShellPanel.style.height = "50vh";
+            bottomShellPanel.collapsed = false;
             linkChartPanel.closed = false;
 
             specialtyBlock.disabled = false;
@@ -318,38 +316,73 @@
             arcgisLinkChart.map.basemap = "gray-vector";
             activeLinkChartLayer = arcgisLinkChart.map.activeLinkChartLayer;
             activeLinkChartLayer.effect = "drop-shadow(1px 1px 3px gray)";
-            patientLayerLinkChart = activeLinkChartLayer.layers.find(({ title }) => title === "Patient");
-            patientLayerLinkChartOriginalRenderer = patientLayerLinkChart.renderer.clone();
 
-            conditionLayerLinkChart = activeLinkChartLayer.layers.find(({ title }) => title === "HasCondition");
+            patientLayerLinkChart = activeLinkChartLayer.layers.find(({ title }) => title === "Patient");
+            hasConditionLayerLinkChart = activeLinkChartLayer.layers.find(({ title }) => title === "HasCondition");
+            providerLayerLinkChart = activeLinkChartLayer.layers.find(({ title }) => title === "Provider");
+            specialtyLayerLinkChart = activeLinkChartLayer.layers.find(({ title }) => title === "Specialty");
+            conditionLayerLinkChart = activeLinkChartLayer.layers.find(({ title }) => title === "Condition");
+            organizationLayerLinkChart = activeLinkChartLayer.layers.find(({ title }) => title === "Organization");
+            requiresLayerLinkChart = activeLinkChartLayer.layers.find(({ title }) => title === "Requires");
+            specializesInLayerLinkChart = activeLinkChartLayer.layers.find(({ title }) => title === "SpecializesIn");
+            worksAtLayerLinkChart = activeLinkChartLayer.layers.find(({ title }) => title === "WorksAt");
+
+            displayFilterLayers = [
+              patientLayerLinkChart,
+              conditionLayerLinkChart,
+              specialtyLayerLinkChart,
+              organizationLayerLinkChart,
+              providerLayerLinkChart,
+              hasConditionLayerLinkChart,
+              requiresLayerLinkChart,
+              specializesInLayerLinkChart,
+              worksAtLayerLinkChart
+            ];
+
+            patientLayerLinkChartOriginalRenderer = patientLayerLinkChart.renderer.clone();
 
             createSpecialtyList(patientLayerLinkChart.displayFilterInfo);
 
-            specialtyList.addEventListener("calciteListItemSelect", (event) => {
-              const filterId = event.target.value;
-              patientLayerLinkChart.displayFilterInfo.activeFilterId = filterId;
-              conditionLayerLinkChart.displayFilterInfo.activeFilterId = filterId;
-
+            const filterLinkChart = ({ filterId, useFeatureEffect }) => {
               setFeatureEffect(patientLayerLinkChart.displayFilterInfo.filters.find(({ id }) => id === filterId).where);
 
-              if (filterId !== "All") {
-                patientLayerLinkChart.effect = "drop-shadow(1px 1px 3px #303030)";
-                conditionLayerLinkChart.effect = "drop-shadow(1px 1px 3px #303030)";
-
-                activeLinkChartLayer.layers.forEach((layer) => {
-                  if (focusedLinkChartLayers.indexOf(layer.title) === -1) {
-                    layer.effect = "grayscale(60%) opacity(35%)";
-                    layer.labelingInfo.forEach((labelingInfo) => {
-                      const textSymbol = labelingInfo.symbol.clone();
-                      textSymbol.color.a = 0.25;
-                      labelingInfo.symbol = textSymbol;
-                    });
-                  }
-                });
-              } else {
-                resetLinkChart();
+              if (useFeatureEffect) {
+                if (patientLayerLinkChart && patientLayerLinkChart.displayFilterInfo) {
+                  patientLayerLinkChart.displayFilterInfo.activeFilterId = filterId;
+                }
+                if (filterId !== "All") {
+                  activeLinkChartLayer.layers.forEach((layer) => {
+                    if (layer && layer.displayFilterInfo) {
+                      const where = layer.displayFilterInfo.filters.find(({ id }) => id === filterId).where;
+                      layer.featureEffect = {
+                        filter: {
+                          where
+                        },
+                        excludedEffect: "grayscale(100%) opacity(30%)",
+                        includedEffect: "drop-shadow(1px 1px 1px #303030)"
+                      }
+                    }
+                  });
+                } else {
+                  resetLinkChart();
+                }
+                return;
               }
 
+              displayFilterLayers.forEach((layer) => {
+                if (layer && layer.displayFilterInfo) {
+                  layer.displayFilterInfo.activeFilterId = filterId;
+                }
+              });
+
+            };
+
+            specialtyList.addEventListener("calciteListItemSelect", (event) => {
+              const filterId = event.target.value;
+              filterLinkChart({
+                filterId,
+                useFeatureEffect: false
+              });
             });
 
             arcgisLinkChartLayoutSwitcher.addEventListener("arcgisSwitchLayout", async (event) => {
