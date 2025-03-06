@@ -16,13 +16,14 @@
 
   <style>
     :root {
-      --app-them-color: #c45451;
+      --app-theme-color: #c45451;
+      --popup-background-color: #f0d1ce;
     }
 
     html,
     body {
       background-color: var(--calcite-ui-foreground-2);
-      --calcite-color-brand: var(--app-them-color);
+      --calcite-color-brand: var(--app-theme-color);
       --calcite-color-focus: var(--calcite-color-brand);
       padding: 0;
       margin: 0;
@@ -31,7 +32,7 @@
     }
 
     :focus {
-      --calcite-color-brand: var(--app-them-color);
+      --calcite-color-brand: var(--app-theme-color);
       --calcite-color-focus: var(--calcite-color-brand);
       --calcite-color-brand-hover: #9a4340;
       --calcite-color-brand-press: #622b29;
@@ -381,7 +382,7 @@
               const filterId = event.target.value;
               filterLinkChart({
                 filterId,
-                useFeatureEffect: false
+                useFeatureEffect: true
               });
             });
 
