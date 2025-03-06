@@ -68,14 +68,14 @@
           description="
           Explore links between providers, patients, and medical conditions. You can filter the data by specialty and view relationships between patients and providers including link charts showing which providers can provide care to patients according to their needs.">
         </calcite-tile>
-        <calcite-block id="specialty-block" heading="Specialty offered" description="Click a facility and open its link chart to filter by specialty"
+        <calcite-block id="specialty-block" heading="Specialty offered" description="Click a facility and open its link chart to filter entities by specialty"
           disabled>
           <calcite-list id="specialty-list" selection-mode="single-persist"></calcite-list>
         </calcite-block>
-        <calcite-block id="need-block" heading="Need score" description="Click a facility and open its link chart to view patients with the highest need" disabled>
+        <calcite-block id="need-block" heading="High priority patients" description="Click a facility and open its link chart to view patients with the highest priority" disabled>
           <calcite-label layout="inline">
             <calcite-switch id="highest-need-switch"></calcite-switch>
-            Show patients with greatest need
+            Show patients with highest priority
           </calcite-label>
         </calcite-block>
         <calcite-block id="legend-block" heading="Legend" open>
@@ -101,8 +101,9 @@
       "esri/config",
       "esri/core/reactiveUtils",
       "esri/symbols/support/cimSymbolUtils",
+      "esri/renderers/support/jsonUtils",
       "esri/Color"
-    ], (esriConfig, reactiveUtils, cimSymbolUtils, Color) => {
+    ], (esriConfig, reactiveUtils, cimSymbolUtils, rendererUtils, Color) => {
       (async () => {
 
         const applySymbolAnimations = (cimSymbol, animateColor) => {
@@ -176,10 +177,10 @@
             position: "top-left"
           };
 
-          const healthcareNetworkLayer = arcgisMap.map.layers.find(({ title }) => title === "HealthcareNetwork_v2");
+          const healthcareNetworkLayer = arcgisMap.map.layers.find(({ title }) => title === "Healthcare Network");
           await healthcareNetworkLayer.load();
 
-          const patientLayerMap = healthcareNetworkLayer.layers.find(({ title }) => title === "Patient");
+          const patientLayerMap = healthcareNetworkLayer.layers.find(({ title }) => title === "Patients");
           const patientLayerMapOriginalRenderer = patientLayerMap.renderer.clone();
 
           let patientLayerLinkChart;
@@ -246,7 +247,7 @@
             };
           }
 
-          const organizationLayer = arcgisMap.map.layers.find(({ title }) => title === "Need_Score_Visualization_MIL1");
+          const organizationLayer = arcgisMap.map.layers.find(({ title }) => title === "Facilities");
           await organizationLayer.load();
           const medicalCentersLayer = organizationLayer.sublayers.find(({ title }) => title === "Madison Medical Centers");
 
@@ -258,11 +259,11 @@
             specialtyList.innerHTML = null;
             specialtyBlock.disabled = true;
             specialtyBlock.open = false;
-            specialtyBlock.description = "Click a facility and open its link chart to filter by specialty";
+            specialtyBlock.description = "Click a facility and open its link chart to filter entities by specialty";
 
             needBlock.disabled = true;
             needBlock.open = false;
-            needBlock.description = "Click a facility and open its link chart to view patients with the highest need";
+            needBlock.description = "Click a facility and open its link chart to view patients with the highest priority";
             highestNeedSwitch.checked = false;
 
             resetRenderers();
@@ -280,7 +281,7 @@
 
             needBlock.disabled = false;
             needBlock.open = true;
-            needBlock.description = "View patients with the highest need";
+            needBlock.description = "View patients with the highest priority";
 
             if (patientLayerLinkChart) {
               createSpecialtyList(patientLayerLinkChart.displayFilterInfo);
@@ -389,7 +390,7 @@
                   classBreakInfos: [
                     {
                       maxValue: 0.005,
-                      label: "Greatest need",
+                      label: "Highest Priority",
                       symbol: animatedKGSymbol
                     }
                   ]
@@ -405,7 +406,7 @@
                 patientClassBreaks.unshift({
                   minValue: 0,
                   maxValue: 0.005,
-                  label: "Highest need",
+                  label: "Highest priority",
                   symbol: animatedSymbol
                 });
 
