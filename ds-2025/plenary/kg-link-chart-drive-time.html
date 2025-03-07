@@ -87,7 +87,7 @@
       </calcite-panel>
     </calcite-shell-panel>
     <calcite-panel id="map-container">
-      <arcgis-map item-id="35bc76dd4b99471cb24210bb2d1ef2e5"></arcgis-map>
+      <arcgis-map item-id="6f551be1c03147d68c540c97c9b8f65b"></arcgis-map>
     </calcite-panel>
     <calcite-shell-panel id="bottom-shell-panel" slot="panel-bottom" position="end" layout="horizontal" collapsed>
       <calcite-panel heading="Link chart" scale="s" closed closable id="link-chart-panel">
@@ -230,18 +230,16 @@
             });
           }
 
-          const setFeatureEffect = (where, filterOnly) => {
+          const setFeatureEffect = (where) => {
             const selectedFeature = arcgisMap.popup.selectedFeature;
-            const filter = {
-              where,
-              geometry: selectedFeature.geometry,
-              distance: 2,
-              units: "kilometers"
-            };
-
             patientLayerMap.featureEffect = {
-              filter,
-              excludedEffect: filterOnly ? "opacity(0)" : "grayscale(100%) opacity(30%)",
+              filter: {
+                where,
+                geometry: selectedFeature.geometry,
+                distance: 2,
+                units: "kilometers"
+              },
+              excludedEffect: "grayscale(100%) opacity(30%)",
               includedEffect: "drop-shadow(2px 2px 4px black)"
             };
           }
@@ -347,7 +345,7 @@
             createSpecialtyList(patientLayerLinkChart.displayFilterInfo);
 
             const filterLinkChart = ({ filterId, useFeatureEffect }) => {
-              setFeatureEffect(patientLayerLinkChart.displayFilterInfo.filters.find(({ id }) => id === filterId).where, highestNeedSwitch.checked);
+              setFeatureEffect(patientLayerLinkChart.displayFilterInfo.filters.find(({ id }) => id === filterId).where);
 
               if (useFeatureEffect) {
                 if (patientLayerLinkChart && patientLayerLinkChart.displayFilterInfo) {
@@ -426,7 +424,7 @@
                   classBreakInfos: [
                     {
                       maxValue: 0.005,
-                      label: "Highest Priority",
+                      label: "> 25",
                       symbol: animatedKGSymbol
                     }
                   ]
@@ -439,25 +437,17 @@
                 const animatedSymbol = patientSymbol.clone();
                 applySymbolAnimations(animatedSymbol, true);
 
-                patientClassBreaks.unshift({
-                  minValue: 0,
-                  maxValue: 0.005,
-                  label: "Highest priority",
+                patientClassBreaks.push({
+                  minValue: 23,
+                  maxValue: 30,
+                  label: "> 25",
                   symbol: animatedSymbol
                 });
 
-                patientClassBreaks[1].minValue = 0.0051;
+                patientClassBreaks[4].maxValue = 0.2499;
 
                 patientRenderer.classBreakInfos = patientClassBreaks;
                 patientLayerMap.renderer = patientRenderer;
-
-                const featureEffect = patientLayerMap.featureEffect.clone();
-                featureEffect.excludedEffect = "opacity(0)";
-                patientLayerMap.featureEffect = featureEffect;
-              } else {
-                const featureEffect = patientLayerMap.featureEffect.clone();
-                featureEffect.excludedEffect = "grayscale(100%) opacity(30%)";
-                patientLayerMap.featureEffect = featureEffect;
               }
             });
           });
