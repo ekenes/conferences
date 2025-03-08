@@ -1,0 +1,80 @@
+<html>
+
+<head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="initial-scale=1, maximum-scale=1, user-scalable=no" />
+    <title>ISS Tracker</title>
+
+    <link rel="stylesheet" href="https://js.arcgis.com/4.30/esri/themes/dark/main.css">
+    <script src="https://js.arcgis.com/4.30/"></script>
+    <script type="module" src="https://js.arcgis.com/calcite-components/2.6.0/calcite.esm.js"></script>
+    <link rel="stylesheet" type="text/css" href="https://js.arcgis.com/calcite-components/2.6.0/calcite.css" />
+    <script type="module" src="https://js.arcgis.com/map-components/4.30/arcgis-map-components.esm.js"></script>
+    <link rel="stylesheet" href="./style.css" />
+</head>
+
+<body>
+
+    <calcite-shell class="calcite-mode-dark">
+        <calcite-navigation slot="header">
+            <calcite-navigation-logo heading="Track the International Space Station" slot="logo" target="_blank" />
+        </calcite-navigation>
+
+        <div id="mapContainer">
+            <arcgis-map id="mapElem">
+                <arcgis-expand position="top-left">
+                    <arcgis-legend></arcgis-legend>
+                </arcgis-expand>
+                <arcgis-placement position="top-right">
+                    <div id="titleDiv" class="esri-widget">
+                        <calcite-panel heading="Space Station Location">
+                            <calcite-block id="statusBlock" open summary="Past observations" slot="footer"
+                                style="margin-block: 0">
+                                <calcite-label disable-spacing layout="inline" class="label-wrapper">
+                                    <calcite-icon icon="clock-forward" scale="s" class="switch-icon"></calcite-icon>
+                                    <calcite-switch id="2d-live-switch"></calcite-switch>
+                                    <calcite-icon icon="activity-monitor" scale="s" class="switch-icon"></calcite-icon>
+                                </calcite-label>
+                            </calcite-block>
+                        </calcite-panel>
+                    </div>
+                </arcgis-placement>
+                <arcgis-placement position="top-left">
+                    <div id="toggle">
+                        <calcite-icon icon="globe" id="2d-3d-toggle-map"></calcite-icon>
+                    </div>
+                </arcgis-placement>
+            </arcgis-map>
+
+            <arcgis-scene id="sceneElem">
+                <arcgis-expand position="top-left">
+                    <arcgis-legend></arcgis-legend>
+                </arcgis-expand>
+                <arcgis-placement position="top-right">
+                    <div id="titleDiv" class="esri-widget">
+                        <calcite-panel heading="Space Station Location">
+                            <calcite-block id="statusBlock" open summary="Past observations" slot="footer"
+                                style="margin-block: 0">
+                                <calcite-label disable-spacing layout="inline" class="label-wrapper">
+                                    <calcite-icon icon="clock-forward" scale="s" class="switch-icon"></calcite-icon>
+                                    <calcite-switch id="3d-live-switch"></calcite-switch>
+                                    <calcite-icon icon="activity-monitor" scale="s" class="switch-icon"></calcite-icon>
+                                </calcite-label>
+                            </calcite-block>
+                        </calcite-panel>
+                    </div>
+                </arcgis-placement>
+                <arcgis-placement position="top-left">
+                    <div id="toggle">
+                        <calcite-icon icon="globe" id="2d-3d-toggle-scene"></calcite-icon>
+                    </div>
+                </arcgis-placement>
+            </arcgis-scene>
+        </div>
+        <arcgis-time-slider loop time-visible reference-element="#mapElem"></arcgis-time-slider>
+    </calcite-shell>
+    <script src="./main.js"></script>
+
+</body>
+
+</html>

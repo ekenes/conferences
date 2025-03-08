@@ -1,0 +1,32 @@
+html,
+body,
+arcgis-map,
+arcgis-scene,
+#mapContainer {
+    padding: 0;
+    margin: 0;
+    height: 100%;
+    width: 100%;
+}
+
+arcgis-time-slider {
+    position: absolute;
+    left: 5%;
+    right: 5%;
+    bottom: 20px;
+}
+
+#titleDiv {
+    font-weight: 36;
+    text-align: center;
+}
+
+.label-wrapper {
+    display: flex;
+    padding: 0.5rem;
+    cursor: pointer;
+}
+
+calcite-switch {
+    margin: 0 0.5rem;
+}
