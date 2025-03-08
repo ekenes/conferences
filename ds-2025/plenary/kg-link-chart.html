@@ -64,20 +64,16 @@
 <body>
   <calcite-shell>
     <calcite-shell-panel slot="panel-start" position="start" id="shell-panel-start">
-      <calcite-panel heading="Healthcare providers and patients" id="panel-start">
-        <calcite-tile
-          description="
-          Explore links between providers, patients, and medical conditions. You can filter the data by specialty and view relationships between patients and providers including link charts showing which providers can provide care to patients according to their needs.">
-        </calcite-tile>
-        <calcite-block id="specialty-block" heading="Specialty offered"
-          description="Click a facility and open its link chart to filter entities by specialty" disabled>
+      <calcite-panel heading="Healthcare Access" id="panel-start">
+        <calcite-block id="specialty-block" heading="Specialties"
+          description="Click a facility and open its link chart to filter all entities connected to a specialty" disabled>
           <calcite-list id="specialty-list" selection-mode="single-persist"></calcite-list>
         </calcite-block>
-        <calcite-block id="need-block" heading="High priority patients"
-          description="Click a facility and open its link chart to view patients with the highest priority" disabled>
+        <calcite-block id="need-block" heading="Patients"
+        description="Click a facility and open its link chart to view patients with highest needs" disabled>
           <calcite-label layout="inline">
             <calcite-switch id="highest-need-switch"></calcite-switch>
-            Show patients with highest priority
+            Highest priority
           </calcite-label>
         </calcite-block>
         <calcite-block id="legend-block" heading="Legend" open>
@@ -183,6 +179,7 @@
           await healthcareNetworkLayer.load();
 
           const patientLayerMap = healthcareNetworkLayer.layers.find(({ title }) => title === "Patients");
+          patientLayerMap.popupEnabled = false;
           const patientLayerMapOriginalRenderer = patientLayerMap.renderer.clone();
 
           let activeLinkChartLayer;
@@ -248,7 +245,7 @@
 
           const organizationLayer = arcgisMap.map.layers.find(({ title }) => title === "Facilities");
           await organizationLayer.load();
-          const medicalCentersLayer = organizationLayer.sublayers.find(({ title }) => title === "Madison Medical Centers");
+          const medicalCentersLayer = arcgisMap.map.layers.find(({ title }) => title === "Medical Facilities");
 
           const closeLinkChart = () => {
             bottomShellPanel.style.height = 0;
@@ -259,12 +256,15 @@
             specialtyList.innerHTML = null;
             specialtyBlock.disabled = true;
             specialtyBlock.open = false;
-            specialtyBlock.description = "Click a facility and open its link chart to filter entities by specialty";
+            specialtyBlock.description = "Click a facility and open its link chart to filter all entities connected to a specialty";
 
             needBlock.disabled = true;
             needBlock.open = false;
-            needBlock.description = "Click a facility and open its link chart to view patients with the highest priority";
+            needBlock.description = "Click a facility and open its link chart to view patients with highest priority";
             highestNeedSwitch.checked = false;
+
+            arcgisMap.popup.collapsed = false;
+            arcgisMap.popup.focus();
 
             resetRenderers();
             resetDisplayFilters();
@@ -275,6 +275,7 @@
             if (patientLayerLinkChart && specialtyBlock.disabled) {
               createSpecialtyList(patientLayerLinkChart.displayFilterInfo);
             }
+            const facilityName = arcgisMap.popup.selectedFeature.attributes.FACILITY_N;
 
             bottomShellPanel.style.height = "60vh";
             bottomShellPanel.collapsed = false;
@@ -282,11 +283,14 @@
 
             specialtyBlock.disabled = false;
             specialtyBlock.open = true;
-            specialtyBlock.description = "Filter the network by specialty";
+            specialtyBlock.description = facilityName;
 
             needBlock.disabled = false;
             needBlock.open = true;
-            needBlock.description = "View patients with the highest priority";
+            needBlock.description = "";
+
+            arcgisMap.popup.collapsed = true;
+            linkChartPanel.setFocus();
 
             setFeatureEffect();
           };
