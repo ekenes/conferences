@@ -1,0 +1,262 @@
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta
+      name="viewport"
+      content="initial-scale=1,maximum-scale=1,user-scalable=no"
+    />
+    <title>
+      Intro to FeatureLayer | Sample | ArcGIS Maps SDK for JavaScript 4.26
+    </title>
+
+    <link
+      rel="stylesheet"
+      href="https://js.arcgis.com/4.29/esri/themes/light/main.css"
+    />
+    <script src="https://js.arcgis.com/4.29/"></script>
+
+    <style>
+      html,
+      body,
+      #viewDiv {
+        padding: 0;
+        margin: 0;
+        height: 100%;
+        width: 100%;
+      }
+    </style>
+
+    <script>
+      require([
+        "esri/Map",
+        "esri/views/MapView",
+        "esri/layers/FeatureLayer",
+        "esri/symbols/CIMSymbol",
+        "esri/widgets/Legend"
+      ], (Map, MapView, FeatureLayer, CIMSymbol, Legend) => {
+        const map = new Map({
+          basemap: "gray-vector"
+        });
+
+        const view = new MapView({
+          container: "viewDiv",
+          map: map,
+          constraints: {
+            snapToZoom: false
+          },
+          zoom: 4,
+          center: [-100, 40]
+        });
+
+        view.ui.add(new Legend({ view }), "bottom-left");
+
+        // // Esri color ramps - Green and Brown 4
+        const colors = ["#00afbf", "#69cccc", "#c3ccbe", "#d9ad70", "#bf7000"].reverse();
+
+        // Esri color ramps - Green and Brown 6
+        // #308fa6,#6ca68b,#d2e096,#c7811e,#8c270e
+        // const colors = ["#308fa6", "#6ca68b", "#d2e096", "#c7811e", "#8c270e"].reverse();
+
+        const featureLayer = new FeatureLayer({
+          portalItem: {
+            id: "0e3fd5de259f46acb169c54eb501cfe5"
+          },
+
+          labelingInfo: [
+           {
+              labelExpressionInfo: {
+                expression: "Replace($feature.Park, 'National Park', '', false)"
+              },
+              labelPlacement: "above-right",
+              symbol: {
+                type: "text",
+                font: {
+                  size: 6,
+                  family: "Noto Sans"
+                },
+                horizontalAlignment: "left",
+                color: "#2b2b2b",
+                yoffset: 0
+              }
+            }
+          ],
+          renderer: {
+            type: "simple",
+            visualVariables: [{
+              type: "size",
+              field: "F2023",
+              legendOptions: {
+                title: "Total visits in 2023"
+              },
+              minDataValue: 50_000,
+              maxDataValue: 10_000_000,
+              minSize: 15,
+              maxSize: 60
+            },
+            {
+              type: "color",
+              valueExpression: "(( $feature.F2023 - $feature.F2021 ) / $feature.F2021 ) * 100",
+              valueExpressionTitle: "% change from previous year",
+              stops: [
+                { value: -50, color: colors[0] },
+                { value: -25, color: colors[1] },
+                { value: 0, color: colors[2] },
+                { value: 25, color: colors[3] },
+                { value: 50, color: colors[4] }
+              ]
+            }
+          ],
+            symbol: new CIMSymbol({
+              "data": {
+                "type": "CIMSymbolReference",
+                "symbol": {
+                  "type": "CIMPointSymbol",
+                  "symbolLayers": [
+                    {
+                      "type": "CIMVectorMarker",
+                      "colorLocked": false,
+                      "enable": true,
+                      "anchorPointUnits": "Relative",
+                      "dominantSizeAxis3D": "Y",
+                      "size": 15.75,
+                      "billboardMode3D": "FaceNearPlane",
+                      "frame": {
+                        "xmin": 4,
+                        "ymin": 2,
+                        "xmax": 15,
+                        "ymax": 19
+                      },
+                      "markerGraphics": [
+                        {
+                          "type": "CIMMarkerGraphic",
+                          "geometry": {
+                            "rings": [
+                              [
+                                [
+                                  15,
+                                  15
+                                ],
+                                [
+                                  12,
+                                  15
+                                ],
+                                [
+                                  16,
+                                  10
+                                ],
+                                [
+                                  13,
+                                  10
+                                ],
+                                [
+                                  17,
+                                  5
+                                ],
+                                [
+                                  11,
+                                  5
+                                ],
+                                [
+                                  11,
+                                  2
+                                ],
+                                [
+                                  10,
+                                  2
+                                ],
+                                [
+                                  10,
+                                  5
+                                ],
+                                [
+                                  4,
+                                  5
+                                ],
+                                [
+                                  8,
+                                  10
+                                ],
+                                [
+                                  5,
+                                  10
+                                ],
+                                [
+                                  9,
+                                  15
+                                ],
+                                [
+                                  6,
+                                  15
+                                ],
+                                [
+                                  10.5,
+                                  19
+                                ],
+                                [
+                                  15,
+                                  15
+                                ]
+                              ]
+                            ]
+                          },
+                          "symbol": {
+                            "type": "CIMPolygonSymbol",
+                            "symbolLayers": [
+                              {
+                                "type": "CIMSolidStroke",
+                                "enable": true,
+                                "capStyle": "Round",
+                                "joinStyle": "Round",
+                                "lineStyle3D": "Strip",
+                                "miterLimit": 10,
+                                "width": 0,
+                                "color": [
+                                  0,
+                                  0,
+                                  0,
+                                  255
+                                ]
+                              },
+                              {
+                                "type": "CIMSolidFill",
+                                "enable": true,
+                                "color": [
+                                  113,
+                                  201,
+                                  110,
+                                  255
+                                ]
+                              }
+                            ]
+                          }
+                        }
+                      ],
+                      "scaleSymbolsProportionally": true,
+                      "respectFrame": true
+                    }
+                  ],
+                  "haloSize": 1,
+                  "scaleX": 1,
+                  "angleAlignment": "Display",
+                  "version": "2.0.0",
+                  "build": "8933"
+                }
+              }
+            })
+          }
+        });
+
+        map.add(featureLayer);
+
+        view.when().then(async () => {
+          const rl = view.map.basemap.referenceLayers.getItemAt(0);
+          rl.opacity = 0.25;
+        });
+      });
+    </script>
+  </head>
+
+  <body>
+    <div id="viewDiv"></div>
+  </body>
+</html>

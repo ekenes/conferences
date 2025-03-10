@@ -1,0 +1,292 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="initial-scale=1,maximum-scale=1,user-scalable=no" />
+
+    <title>Dot density | Sample | ArcGIS API for JavaScript 4.16</title>
+
+    <link rel="stylesheet" href="https://js.arcgis.com/next/esri/themes/dark/main.css" />
+
+    <style>
+      html,
+      body,
+      #viewDiv {
+        padding: 0;
+        margin: 0;
+        height: 100%;
+        width: 100%;
+      }
+    </style>
+
+    <script src="https://js.arcgis.com/next/"></script>
+
+    <script>
+      require([
+        "esri/config",
+        "esri/WebMap",
+        "esri/views/MapView",
+        "esri/layers/FeatureLayer",
+        "esri/smartMapping/symbology/predominance",
+        "esri/smartMapping/renderers/predominance",
+        "esri/widgets/Legend",
+        "esri/widgets/Bookmarks",
+        "esri/widgets/Expand",
+        "esri/Color"
+      ], function (
+        esriConfig,
+        WebMap,
+        MapView,
+        FeatureLayer,
+        predominanceSchemes,
+        predominanceCreator,
+        Legend,
+        Bookmarks,
+        Expand,
+        Color
+      ) {
+
+        const fields = [{
+          name: "NOHS_CY",
+          label: "No high school"
+        }, {
+          name: "SOMEHS_CY",
+          label: "Some high school"
+        }, {
+          name: "HSGRAD_CY",
+          label: "High school diploma"
+        }, {
+          name: "SMCOLL_CY",
+          label: "Some college"
+        }, {
+          name: "ASSCDEG_CY",
+          label: "Associate's degree"
+        }, {
+          name: "BACHDEG_CY",
+          label: "Bachelor's degree"
+        }, {
+          name: "GRADDEG_CY",
+          label: "Graduate degree"
+        }];
+
+        const layer = new FeatureLayer({
+          portalItem: {
+            id: "1cbb0faa0f1f424bbe213bfae9319309"
+          },
+          minScale: 20000000,
+          maxScale: 35000,
+          title: "Educational attainment (ACS)",
+          popupTemplate: {
+            title: "{County}, {State}",
+            content: [
+              {
+                type: "media",
+                mediaInfos: [
+                  {
+                    title: "Educational attainment by category",
+                    type: "pie-chart",
+                    value: {
+                      fields: fields.map( field => field.name )
+                    }
+                  }
+                ]
+              },
+              {
+                type: "fields"
+              }
+            ],
+            fieldInfos: [
+              {
+                fieldName: "NOHS_CY",
+                label: "No high school",
+                format: {
+                  digitSeparator: true,
+                  places: 0
+                }
+              },
+              {
+                fieldName: "SOMEHS_CY",
+                label: "Some high school",
+                format: {
+                  digitSeparator: true,
+                  places: 0
+                }
+              },
+              {
+                fieldName: "HSGRAD_CY",
+                label: "High school diploma",
+                format: {
+                  digitSeparator: true,
+                  places: 0
+                }
+              },
+              {
+                fieldName: "SMCOLL_CY",
+                label: "Some college",
+                format: {
+                  digitSeparator: true,
+                  places: 0
+                }
+              },
+              {
+                fieldName: "ASSCDEG_CY",
+                label: "Associate's degree",
+                format: {
+                  digitSeparator: true,
+                  places: 0
+                }
+              },
+              {
+                fieldName: "BACHDEG_CY",
+                label: "Bachelor's degree",
+                format: {
+                  digitSeparator: true,
+                  places: 0
+                }
+              },
+              {
+                fieldName: "GRADDEG_CY",
+                label: "Graduate degree",
+                format: {
+                  digitSeparator: true,
+                  places: 0
+                }
+              }
+            ]
+          },
+          renderer: {
+            type: "simple",
+            symbol: {
+              type: "simple-fill",
+              color: [0,0,0,0.01],
+              outline: null
+            }
+          }
+        });
+
+        const map = new WebMap({
+          layers: [ layer ]
+        });
+
+        view = new MapView({
+          container: "viewDiv",
+          map: map,
+          center: [ -87.621, 41.848 ],
+          scale: 288895,
+          highlightOptions: {
+            fillOpacity: 0,
+            color: [50, 50, 50]
+          },
+          popup: {
+            dockEnabled: true,
+            dockOptions: {
+              position: "top-left",
+              breakpoint: false
+            }
+          },
+          constraints: {
+            maxScale: 35000,
+            snapToZoom: false
+          }
+        });
+
+        view.when().then(async () => {
+
+          const fields = [{
+            name: "NOHS_CY",
+            label: "No high school"
+          }, {
+            name: "SOMEHS_CY",
+            label: "Some high school"
+          }, {
+            name: "HSGRAD_CY",
+            label: "High school diploma"
+          }, {
+            name: "SMCOLL_CY",
+            label: "Some college"
+          }, {
+            name: "ASSCDEG_CY",
+            label: "Associate's degree"
+          }, {
+            name: "BACHDEG_CY",
+            label: "Bachelor's degree"
+          }, {
+            name: "GRADDEG_CY",
+            label: "Graduate degree"
+          }];
+
+          const predominanceScheme = predominanceSchemes.getSchemeByName({
+            geometryType: layer.geometryType,
+            numColors: fields.length,
+            theme: "default",
+            name: "Flower Field"
+          });
+
+          predominanceScheme.sizeScheme.background.outline.width = 0;
+          predominanceScheme.sizeScheme.marker.minSize = 1;
+          predominanceScheme.sizeScheme.marker.maxSize = 20;
+
+          const params = {
+            layer,
+            view,
+            fields,
+            includeOpacityVariable: true,
+            includeSizeVariable: true,
+            outlineOptimizationEnabled: false,
+            sizeOptimizationEnabled: false,
+            legendOptions: {
+              title: "Educational Attainment (ACS)",
+              showLegend: true
+            },
+            sortBy: "value",
+            defaultSymbolEnabled: false,
+            predominanceScheme
+          };
+
+          const { renderer } = await predominanceCreator.createRenderer(params);
+          layer.renderer = renderer;
+
+          const rs = 800000;
+
+          // const sizeVariable = renderer.visualVariables.filter( vv => vv.type === "size")[0];
+          // sizeVariable.minDataValue = 0;
+          // sizeVariable.maxDataValue = 40000;
+          // sizeVariable.legendOptions.title = "Population age 25+";
+          // sizeVariable.minSize = {
+          //   type: "size",
+          //   valueExpression: "$view.scale",
+          //   stops: [
+          //     { value: rs, size: 1},
+          //     { value: rs/2, size: 2},
+          //     { value: rs/4, size: 3},
+          //     { value: rs/8, size: 4}
+          //   ]
+          // };
+          // sizeVariable.maxSize = {
+          //   type: "size",
+          //   valueExpression: "$view.scale",
+          //   stops: [
+          //     { value: rs, size: 20},
+          //     { value: rs/2, size: 25},
+          //     { value: rs/4, size: 30},
+          //     { value: rs/8, size: 35}
+          //   ]
+          // };
+
+          view.map.basemap = "dark-gray-vector";
+
+          view.ui.add( new Expand({
+            view: view,
+            content: new Legend({ view }),
+            group: "top-right",
+            expanded: true
+          }), "top-right" );
+        });
+      });
+    </script>
+  </head>
+
+  <body>
+    <div id="viewDiv"></div>
+  </body>
+</html>

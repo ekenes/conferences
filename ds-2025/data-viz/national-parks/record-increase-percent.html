@@ -1,0 +1,325 @@
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta
+      name="viewport"
+      content="initial-scale=1,maximum-scale=1,user-scalable=no"
+    />
+    <title>
+      Intro to FeatureLayer | Sample | ArcGIS Maps SDK for JavaScript 4.26
+    </title>
+
+    <link
+      rel="stylesheet"
+      href="https://js.arcgis.com/4.29/esri/themes/light/main.css"
+    />
+    <script src="https://js.arcgis.com/4.29/"></script>
+
+    <style>
+      html,
+      body,
+      #viewDiv {
+        padding: 0;
+        margin: 0;
+        height: 100%;
+        width: 100%;
+      }
+    </style>
+
+    <script>
+      require([
+        "esri/Map",
+        "esri/views/MapView",
+        "esri/layers/FeatureLayer",
+        "esri/widgets/Legend"
+      ], (Map, MapView, FeatureLayer, Legend) => {
+        const map = new Map({
+          basemap: "gray-vector"
+        });
+
+        const view = new MapView({
+          container: "viewDiv",
+          map: map,
+          constraints: {
+            snapToZoom: false
+          },
+          zoom: 4,
+          center: [-100, 40]
+        });
+
+        view.ui.add(new Legend({ view }), "bottom-left");
+
+        /********************
+         * Add feature layer
+         ********************/
+
+        // Esri color ramps - Sunset Fade
+        // #b30000,#7c1158,#1a53ff,#00b7c7,#8be04e,#ebdc78
+        // const colors = // Esri color ramps - Mushroom Soup
+        // #00b6f1,#d9bf0d,#c44245,#6a28c7,#b9a087,#ab579d
+
+const colors = ["#b86b53", "#3e756d", "#9c5596", "#5c98ca", "#00b6f1", "#555555"];
+
+        // Carbon storage of trees in Warren Wilson College.
+        const featureLayer = new FeatureLayer({
+          portalItem: {
+            id: "0e3fd5de259f46acb169c54eb501cfe5"
+          },
+
+          labelingInfo: [
+            {
+              labelExpressionInfo: {
+                expression: `
+                  var s = 1905;
+                  var e = 2023;
+
+                  var highest = -Infinity;
+                  var highest_year = 1905;
+
+                  var previousValue = null;
+
+                  for (var y = s; y <= e; y++){
+                    var currentYear = $feature["F"+y];
+                    var previousYear = $feature["F"+(y-1)];
+                    if(currentYear < 1 || previousYear < 1){
+                      continue;
+                    }
+                    if(IsEmpty(currentYear) || IsEmpty(previousYear)){
+                      continue;
+                    }
+                    var change = (currentYear - previousYear) / previousYear;
+                    if(change > highest){
+                      highest = change;
+                      highest_year = y;
+                    }
+                  }
+
+                  return highest_year;
+                `
+              },
+              labelPlacement: "center-right",
+              symbol: {
+                type: "text", // autocasts as new TextSymbol()
+                font: {
+                  size: 11,
+                  family: "Noto Sans",
+                  weight: "bold"
+                },
+                horizontalAlignment: "left",
+                color: "#2b2b2b",
+                yoffset: 9,
+                // haloColor: "rgba(255,255,255,0.4)",
+                // haloSize: 2
+              }
+            }
+            , {
+              labelExpressionInfo: {
+                expression: "Replace($feature.Park, 'National Park', '', false)"
+              },
+              labelPlacement: "center-right",
+              // minScale: minScale,
+              symbol: {
+                type: "text", // autocasts as new TextSymbol()
+                font: {
+                  size: 6,
+                  family: "Noto Sans"
+                },
+                horizontalAlignment: "left",
+                color: "#2b2b2b",
+                yoffset: 0
+              }
+            }
+            , {
+              labelExpressionInfo: {
+                expression: `
+                  var s = 1905;
+                  var e = 2023;
+
+                  var highest = -Infinity;
+                  var highest_year = 1905;
+
+                  var previousValue = null;
+
+                  for (var y = s; y <= e; y++){
+                    var currentYear = $feature["F"+y];
+                    var previousYear = $feature["F"+(y-1)];
+                    if(currentYear < 1 || previousYear < 1){
+                      continue;
+                    }
+                    if(IsEmpty(currentYear) || IsEmpty(previousYear)){
+                      continue;
+                    }
+                    var change = (currentYear - previousYear) / previousYear;
+                    if(change > highest){
+                      highest = change;
+                      highest_year = y;
+                    }
+                  }
+
+                  return Text(highest, "+#,###.#%;-#,###.#%");
+                `
+              },
+              labelPlacement: "center-right",
+              // minScale: minScale,
+              symbol: {
+                type: "text", // autocasts as new TextSymbol()
+                font: {
+                  size: 6,
+                  family: "Noto Sans"
+                },
+                horizontalAlignment: "left",
+                color: "#2b2b2b",
+                yoffset: -7
+              }
+            }
+          ],
+          outFields: ["*"],
+          renderer: {
+
+            type: "class-breaks",
+            valueExpression: `
+              var s = 1905;
+              var e = 2023;
+
+              var highest = -Infinity;
+              var highest_year = 1905;
+
+              var previousValue = null;
+
+              for (var y = s; y <= e; y++){
+                var currentYear = $feature["F"+y];
+                var previousYear = $feature["F"+(y-1)];
+                if(currentYear < 1 || previousYear < 1){
+                  continue;
+                }
+                if(IsEmpty(currentYear) || IsEmpty(previousYear)){
+                  continue;
+                }
+                var change = (currentYear - previousYear) / previousYear;
+                if(change > highest){
+                  highest = change;
+                  highest_year = y;
+                }
+              }
+
+              return highest_year;
+            `,
+            classBreakInfos:[{
+              minValue: 1942,
+              maxValue: 1945,
+              label: "WWII",
+              symbol: {
+                type: "simple-marker",
+                outline: {
+                  width: 2,
+                  color: colors[0]
+                }
+              }
+            }, {
+              minValue: 1946,
+              maxValue: 1947,
+              label: "WWII recovery",
+              symbol: {
+                type: "simple-marker",
+                outline: {
+                  width: 2,
+                  color: colors[1]
+                }
+              }
+            }, {
+              minValue: 2020,
+              maxValue: 2020,
+              label: "COVID-19",
+              symbol: {
+                type: "simple-marker",
+                outline: {
+                  width: 2,
+                  color: colors[2]
+                }
+              }
+            }, {
+              minValue: 2021,
+              maxValue: 2021,
+              label: "COVID-19 recovery",
+              symbol: {
+                type: "simple-marker",
+                outline: {
+                  width: 2,
+                  color: colors[3]
+                }
+              }
+            }, {
+              minValue: 2023,
+              maxValue: 2023,
+              label: "Yellowstone flooding",
+              symbol: {
+                type: "simple-marker",
+                color: null,
+                outline: {
+                  width: 2,
+                  color: colors[4]
+                }
+              }
+            }],
+            defaultSymbol: {
+              type: "simple-marker",
+              outline: {
+                width: 2,
+                color: colors[5]
+              }
+            },
+            visualVariables: [{
+              type: "size",
+              valueExpressionTitle: "Record visitation numbers",
+              valueExpression: `
+                var s = 1905;
+                var e = 2023;
+
+                var highest = -Infinity;
+                var highest_year = 1905;
+
+                var previousValue = null;
+
+                for (var y = s; y <= e; y++){
+                  var currentYear = $feature["F"+y];
+                  var previousYear = $feature["F"+(y-1)];
+                  if(currentYear < 1 || previousYear < 1){
+                    continue;
+                  }
+                  if(IsEmpty(currentYear) || IsEmpty(previousYear)){
+                    continue;
+                  }
+                  var change = (currentYear - previousYear) / previousYear;
+                  if(change > highest){
+                    highest = change;
+                    highest_year = y;
+                  }
+                }
+
+                return highest;
+              `,
+              stops: [
+                { value: 1, label: "2x", size: "4px" },
+                { value: 2, label: "3x", size: "8px" },
+                { value: 3, label: "4x", size: "16px" },
+                { value: 4, label: "5x", size: "32px" },
+                { value: 5, label: "6x", size: "64px" }
+              ]
+            }]
+          }
+        });
+
+        map.add(featureLayer);
+
+        view.when().then(async () => {
+          const rl = view.map.basemap.referenceLayers.getItemAt(0);
+          rl.opacity = 0.25;
+        });
+      });
+    </script>
+  </head>
+
+  <body>
+    <div id="viewDiv"></div>
+  </body>
+</html>

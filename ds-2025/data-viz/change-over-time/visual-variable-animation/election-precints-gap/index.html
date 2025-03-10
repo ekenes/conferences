@@ -1,0 +1,822 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="initial-scale=1,maximum-scale=1,user-scalable=no" />
+    <title>Precints voting gap</title>
+
+    <link
+      rel="stylesheet"
+      href="https://js.arcgis.com/4.18/esri/themes/light/main.css"
+    />
+    <script src="https://js.arcgis.com/4.18/"></script>
+
+
+    <script>
+      require([
+        "require",
+        "esri/Map",
+        "esri/layers/FeatureLayer",
+        "esri/views/MapView",
+        "esri/core/promiseUtils",
+        "esri/widgets/Legend",
+        "esri/widgets/Home",
+        "esri/widgets/Fullscreen",
+        "esri/widgets/Slider",
+        "esri/widgets/Expand"
+      ], function(require, Map, FeatureLayer, MapView, promiseUtils, Legend, Home, Fullscreen, Slider, Expand) {
+        //--------------------------------------------------------------------------
+        //
+        //  Setup Map and View
+        //
+        //--------------------------------------------------------------------------
+
+        var layer = new FeatureLayer({
+          url:
+            "https://services.arcgis.com/V6ZHFr6zdgNZuVG0/arcgis/rest/services/US_Voting_Precincts_2008_Election/FeatureServer/0",
+          // don't show precincts that didn't record any votes
+          definitionExpression: "(P2008_D > 0) AND (P2008_R > 0)",
+          title: "Voting precincts"
+        });
+
+        var view = new MapView({
+          map: new Map({
+            basemap: {
+              portalItem: {
+                id: "3582b744bba84668b52a16b0b6942544"
+              }
+            },
+            layers: [layer]
+          }),
+          container: "viewDiv",
+          constraints: {
+            snapToZoom: false
+          },
+          extent: {
+            xmin: -126.902,
+            ymin: 23.848,
+            xmax: -65.73,
+            ymax: 50.15
+          }
+        });
+
+        //--------------------------------------------------------------------------
+        //
+        //  Setup UI
+        //
+        //--------------------------------------------------------------------------
+
+        view.ui.empty("top-left");
+
+        var applicationDiv = document.getElementById("applicationDiv");
+        var sliderValue = document.getElementById("sliderValue");
+        var playButton = document.getElementById("playButton");
+        var titleDiv = document.getElementById("titleDiv");
+        var animation = null;
+
+        var slider = new Slider({
+          container: "slider",
+          min: 0,
+          max: 100,
+          values: [ 50 ],
+          step: 0.25,
+          visibleElements: {
+            rangeLabels: true
+          },
+          labelFormatFunction: function(value, type){
+            if(type === "min"){
+              return "Contested";
+            }
+            if(type === "max"){
+              return "Landslide";
+            }
+            return value;
+          }
+        });
+
+        function inputHandler(event) {
+          stopAnimation();
+          setGapValue(parseInt(event.value));
+        }
+        slider.on("thumb-drag", inputHandler);
+
+        playButton.addEventListener("click", function() {
+          if (playButton.classList.contains("toggled")) {
+            stopAnimation();
+          } else {
+            startAnimation();
+          }
+        });
+
+        view.ui.add(titleDiv, "top-left");
+        view.ui.add(
+          new Expand({
+            view: view,
+            content: new Legend({
+              view: view
+            })
+          }),
+          "top-left"
+        );
+        view.ui.add(
+          new Home({
+            view: view
+          }),
+          "top-left"
+        );
+        view.ui.add(
+          new Fullscreen({
+            view: view,
+            element: applicationDiv
+          }),
+          "top-right"
+        );
+
+        // When the layerview is available, setup hovering interactivity
+        view.whenLayerView(layer).then(setupHoverTooltip);
+
+        // Starts the application by visualizing a gap of 50% between the two candidates
+        setGapValue(50);
+
+        //--------------------------------------------------------------------------
+        //
+        //  Methods
+        //
+        //--------------------------------------------------------------------------
+
+        /**
+         * Sets the current visualized gap.
+         */
+        function setGapValue(value) {
+          sliderValue.innerHTML =
+            "<span style='font-weight:bold; font-size:150%'>" +
+            (Math.round(value * 100) / 100).toFixed(2) +
+            " %</span> of the votes separate the two candidates";
+          slider.viewModel.setValue(0, value);
+          layer.renderer = createRenderer(value);
+        }
+
+        /**
+         * Creates a unique value renderer with opacity visual variable centered around a gap between the 2 candidates.
+         */
+        function createRenderer(gapValue) {
+          gapValue = Math.min(100, Math.max(0, gapValue));
+
+          function roundToTheTenth(value) {
+            return Math.round(value * 10) / 10;
+          }
+
+          // Create stops for an opacity visual variable where the gap value has an opacity
+          // of one, and values greater or lesser than +/- 2.5% points from the gap value are
+          // nearly completely transparent
+          var opacityStops = [
+            {
+              opacity: 0.02,
+              value: roundToTheTenth(gapValue - 2.5)
+            },
+            {
+              opacity: 1,
+              value: roundToTheTenth(gapValue)
+            },
+            {
+              opacity: 0.02,
+              value: roundToTheTenth(gapValue + 2.5)
+            }
+          ];
+
+          // If the gap is < 0, then adjust the first stop so the value is 0
+          if (gapValue - 2.5 < 0) {
+            opacityStops[0].opacity = 0.1 + -opacityStops[0].value / 2.5;
+            opacityStops[0].value = 0;
+          }
+
+          // If the gap is > 100, then adjust the last stop so the value is 100
+          if (gapValue + 2.5 > 100) {
+            opacityStops[2].opacity = (opacityStops[2].value - 100) / 2.5 + 0.1;
+            opacityStops[2].value = 100;
+          }
+
+          // return a new renderer with the calculated opacity visual variable
+          return {
+            type: "unique-value",
+            field: "Majority",
+            uniqueValueInfos: [
+              {
+                value: "Obama",
+                symbol: {
+                  type: "simple-marker",
+                  size: 9,
+                  color: "rgb(0, 92, 230)",
+                  outline: {
+                    color: "rgba(255, 255, 255, 0.5)",
+                    width: 0.75
+                  }
+                }
+              },
+              {
+                value: "McCain",
+                symbol: {
+                  type: "simple-marker",
+                  size: 9,
+                  color: "rgb(255, 20, 20)",
+                  outline: {
+                    color: "rgba(255, 255, 255, 0.5)",
+                    width: 0.75
+                  }
+                }
+              },
+              {
+                value: "Tied",
+                symbol: {
+                  type: "simple-marker",
+                  size: 9,
+                  color: "rgb(158, 85, 156)",
+                  outline: {
+                    color: "rgba(255, 255, 255, 0.5)",
+                    width: 0.75
+                  }
+                }
+              }
+            ],
+            visualVariables: [
+              {
+                type: "opacity",
+                // Arcade expression that calculates the gap between
+                valueExpression:
+                  "var fields = [$feature.P2008_D,$feature.P2008_R];" +
+                  "var sorted = Reverse(Sort(fields));" +
+                  "Round(((sorted[0] - sorted[1])/Sum(fields)*100), 2);",
+                valueExpressionTitle: "% gap",
+                stops: opacityStops
+              },
+              {
+                type: "size",
+                minDataValue: 600,
+                maxDataValue: 4562,
+                minSize: 3,
+                maxSize: 20,
+                valueExpression: "$feature.P2008_D + $feature.P2008_R",
+                valueExpressionTitle: "Turnout",
+                valueUnit: "unknown"
+              }
+            ]
+          };
+        }
+
+        /**
+         * Sets up a moving tooltip that displays
+         * a chart with the voter count for each candidate,
+         * and the gap between the two.
+         */
+        function setupHoverTooltip(layerview) {
+          var highlight;
+
+          var tooltip = createTooltip();
+
+          var hitTest = promiseUtils.debounce(function(point) {
+            return view.hitTest(point)
+              .then(function(hit) {
+                var results = hit.results.filter(function(result) {
+                  return result.graphic.layer === layer;
+                });
+
+                if (results.length) {
+                  var graphic = results[0].graphic;
+                  var screenPoint = hit.screenPoint;
+
+                  return {
+                    graphic: graphic,
+                    screenPoint: screenPoint,
+                    values: {
+                      democrat: Math.round(graphic.getAttribute("P2008_D")),
+                      republican: Math.round(graphic.getAttribute("P2008_R"))
+                    }
+                  };
+                } else {
+                  return null;
+                }
+              });
+          });
+
+          view.on("pointer-move", function(event) {
+            hitTest(event)
+              .then(function(result) {
+                if (highlight) {
+                  highlight.remove();
+                  highlight = null;
+                }
+
+                if (!result) {
+                  tooltip.hide();
+                  view.surface.style.cursor = "auto";
+                } else {
+                  highlight = layerview.highlight(result.graphic);
+                  tooltip.show(result.screenPoint, result.values);
+                  view.surface.style.cursor = "pointer";
+                }
+              }, function() {});
+          });
+
+          view.on("click", function(event) {
+            hitTest(event).then(function(result) {
+              if (!result) {
+                return;
+              }
+
+              stopAnimation();
+
+              var dem = result.values.democrat;
+              var rep = result.values.republican;
+              var p_gap = ((Math.max(dem, rep) - Math.min(dem, rep)) / (dem + rep)) * 100;
+              animation = animateTo(p_gap);
+            })
+            .catch(function(error){
+              if (error.name != "AbortError"){
+                console.error(error);
+              }
+            });
+          });
+        }
+
+        /**
+         * Starts the animation that cycle
+         * through the gap between the two candidates.
+         */
+        function startAnimation() {
+          stopAnimation();
+          animation = animate( slider.values[0] );
+          playButton.classList.add("toggled");
+        }
+
+        /**
+         * Stops the animations
+         */
+        function stopAnimation() {
+          if (!animation) {
+            return;
+          }
+
+          animation.remove();
+          animation = null;
+          playButton.classList.remove("toggled");
+        }
+
+        /**
+         * Animates the visualized gap continously.
+         */
+        function animate(startValue) {
+          var animating = true;
+          var value = startValue;
+          var direction = 0.1;
+
+          var frame = function() {
+            if (!animating) {
+              return;
+            }
+
+            value += direction;
+            if (value > 100) {
+              value = 100;
+              direction = -direction;
+            } else if (value < 0) {
+              value = 0;
+              direction = -direction;
+            }
+
+            setGapValue(value);
+            requestAnimationFrame(frame);
+          };
+
+          requestAnimationFrame(frame);
+
+          return {
+            remove: function() {
+              animating = false;
+            }
+          };
+        }
+
+        /**
+         * Animates to a gap value.
+         */
+        function animateTo(targetValue) {
+          var animating = true;
+
+          var frame = function() {
+            if (!animating) {
+              return;
+            }
+
+            var value = slider.values[0];
+
+            if (Math.abs(targetValue - value) < 1) {
+              animating = false;
+              setGapValue(targetValue);
+            } else {
+              setGapValue(value + (targetValue - value) * 0.25);
+              requestAnimationFrame(frame);
+            }
+          };
+
+          requestAnimationFrame(frame);
+
+          return {
+            remove: function() {
+              animating = false;
+            }
+          };
+        }
+
+        /**
+         * Creates a tooltip to display a chart showing the raw voters count
+         * and the gap between the two candidates.
+         */
+        function createTooltip() {
+          var tooltip = document.createElement("div");
+          var style = tooltip.style;
+
+          style.opacity = 0;
+          tooltip.setAttribute("role", "tooltip");
+          tooltip.classList.add("tooltip");
+
+          var content = document.getElementById("tooltipContent");
+          content.style.visibility = "visible";
+          content.classList.add("esri-widget");
+          tooltip.appendChild(content);
+
+          view.container.appendChild(tooltip);
+
+          var x = 0;
+          var y = 0;
+          var targetX = 0;
+          var targetY = 0;
+          var visible = false;
+          var moveRaFTimer;
+
+          function move() {
+            function moveStep() {
+              moveRaFTimer = null;
+              x += (targetX - x) * 0.5;
+              y += (targetY - y) * 0.5;
+
+              if (Math.abs(targetX - x) < 1 && Math.abs(targetY - y) < 1) {
+                x = targetX;
+                y = targetY;
+              } else {
+                moveRaFTimer = requestAnimationFrame(moveStep);
+              }
+
+              style.transform = "translate3d(" + Math.round(x) + "px," + Math.round(y) + "px, 0)";
+            }
+
+            if (!moveRaFTimer) {
+              moveRaFTimer = requestAnimationFrame(moveStep);
+            }
+          }
+
+          var dem;
+          var rep;
+          var updateRaFTimer;
+
+          function updateContent(values) {
+            if (dem === values.democrat && rep === values.republican) {
+              return;
+            }
+
+            dem = values.democrat;
+            rep = values.republican;
+            cancelAnimationFrame(updateRaFTimer);
+
+            updateRaFTimer = requestAnimationFrame(function() {
+              var p_gap = (Math.max(dem, rep) - Math.min(dem, rep)) / (dem + rep);
+              p_gap = Math.round(p_gap * 10000) / 100;
+              var p_dem = (dem / (dem + rep)) * 100;
+              var p_rep = (rep / (dem + rep)) * 100;
+
+              document.querySelector("#chart .row.democrat .bar").style.width = p_dem + "%";
+              document.querySelector("#chart .row.democrat .value > span").innerHTML = dem;
+
+              document.querySelector("#chart .row.republican .bar").style.width = p_rep + "%";
+              document.querySelector("#chart .row.republican .value > span").innerHTML = rep;
+
+              document.querySelector("#chart .row.gap .bar").style.width = p_gap + "%";
+              document.querySelector("#chart .row.gap .bar").style.marginLeft = Math.min(p_dem, p_rep) + "%";
+              document.querySelector("#chart .row.gap .value > span").innerHTML = p_gap + "%";
+            });
+          }
+
+          return {
+            show: function(point, values) {
+              if (!visible) {
+                x = point.x;
+                y = point.y;
+              }
+
+              targetX = point.x;
+              targetY = point.y;
+              style.opacity = 1;
+              visible = true;
+
+              move();
+              updateContent(values);
+            },
+
+            hide: function() {
+              style.opacity = 0;
+              visible = false;
+            }
+          };
+        }
+      });
+    </script>
+
+    <style>
+      html,
+      body {
+        width: 100%;
+        height: 100%;
+        padding: 0;
+        margin: 0;
+      }
+
+      #applicationDiv {
+        position: absolute;
+        width: 100%;
+        height: 100%;
+        display: flex;
+        flex-direction: column;
+        overflow: hidden;
+      }
+
+      #viewDiv {
+        width: 100%;
+        height: 100%;
+        flex: 1 1 auto;
+        order: 1;
+      }
+
+      #titleDiv {
+        font-weight: 400;
+        font-style: normal;
+        font-size: 1.2019rem;
+        padding: 10px;
+      }
+
+      #sliderContainer {
+        flex: 0 0 80px;
+        order: 2;
+
+        display: flex;
+        flex-flow: row;
+
+        padding: 0 12px;
+      }
+
+      #sliderValue {
+        flex: 0 0 150px;
+        order: 1;
+
+        display: flex;
+        justify-content: center;
+        flex-direction: column;
+        text-align: center;
+      }
+
+      #sliderInnerContainer {
+        flex: 1 1 auto;
+        order: 2;
+
+        display: flex;
+        flex-direction: column;
+        justify-content: center;
+        padding: 0 20px;
+      }
+
+      #slider {
+        width: 100%;
+      }
+      /**
+      * Play/Stop toggle button
+      */
+
+      #playButton {
+        flex: 0 0 100px;
+        order: 3;
+
+        margin: 20px 0;
+      }
+
+      .toggle-button {
+        display: flex;
+      }
+
+      .toggle-button.toggled .toggle-button-icon {
+        color: #cc1b1b;
+      }
+
+      .toggle-button .toggle-button-icon {
+        color: #1bcc1b;
+      }
+
+      .toggle-button > :nth-child(2) {
+        display: none;
+      }
+
+      .toggle-button.toggled > :nth-child(1) {
+        display: none;
+      }
+
+      .toggle-button.toggled > :nth-child(2) {
+        display: block;
+      }
+      /**
+      * Hover tooltip
+      */
+
+      .tooltip {
+        position: absolute;
+        pointer-events: none;
+        transition: opacity 200ms;
+      }
+
+      .tooltip > div {
+        margin: 0 auto;
+        padding: 12px;
+        border-radius: 4px;
+        box-shadow: 0 1px 2px rgba(0, 0, 0, 0.3);
+        transform: translate3d(-50%, -120%, 0);
+        width: 300px;
+        height: 185px;
+
+        display: flex;
+      }
+
+      .tooltip-content {
+        flex: 1 1 100%;
+        align-items: stretch;
+        flex-direction: column;
+      }
+
+      .tooltip-text {
+        border-top: 1px solid lightgray;
+        font-size: 75%;
+        font-style: italic;
+        margin-top: 12px;
+        padding-top: 4px;
+      }
+      /**
+      * Tooltip's chart
+      */
+
+      .chart {
+        flex: 1 1 100%;
+        display: flex;
+
+        flex-direction: column;
+        align-items: stretch;
+      }
+
+      .chart .row {
+        flex: 1 1 auto;
+        align-items: center;
+
+        display: flex;
+      }
+
+      .chart .row .labels {
+        flex: 0 0 60px;
+
+        display: flex;
+        flex-direction: row;
+        align-items: center;
+        text-align: right;
+      }
+
+      .chart .row .labels > span {
+        flex: 1 1 100%;
+        text-align: right;
+      }
+
+      .chart .row .value {
+        flex: 0 0 60px;
+
+        display: flex;
+        flex-direction: row;
+        align-items: center;
+        text-align: right;
+      }
+
+      .chart .row .value > span {
+        flex: 1 1 100%;
+        text-align: right;
+      }
+
+      .chart .row .data {
+        flex: 1 1 100%;
+
+        position: relative;
+        padding-left: 4px;
+        padding-right: 4px;
+      }
+
+      .row.gap {
+        margin-top: 12px;
+        padding-top: 12px;
+        border-top: 1px solid lightgray;
+      }
+
+      .bar {
+        text-align: right;
+        height: 24px;
+
+        display: flex;
+        align-items: center;
+        border-radius: 4px;
+        box-shadow: 0 1px 2px rgba(0, 0, 0, 0.3);
+
+        transition: 300ms all;
+      }
+
+      .row.democrat .bar {
+        background-color: rgb(0, 92, 230);
+      }
+
+      .row.republican .bar {
+        background-color: rgb(255, 20, 20);
+      }
+
+      .row.gap .bar {
+        position: relative;
+        background: white url("{{ jsapi_url }}/esri/symbols/patterns/backward-diagonal.png") repeat;
+        border-radius: 0;
+        border-bottom: 1px solid gray;
+        border-top: 1px solid gray;
+      }
+
+      .row.gap .bar > div {
+        position: absolute;
+        z-index: -1;
+        top: -110px;
+        bottom: -18px;
+        left: -1px;
+        right: -1px;
+        border-left: 1px dashed gray;
+        border-right: 1px dashed gray;
+        background: #ececec;
+      }
+      .esri-slider--horizontal .esri-slider__track {
+        height: 2px;
+        width: 95%;
+      }
+    </style>
+  </head>
+
+  <body>
+    <div id="applicationDiv">
+      <div id="viewDiv">
+        <div id="titleDiv" class="esri-widget">
+          Obama / McCain 2008 Election - voting districts gap
+        </div>
+      </div>
+      <div id="sliderContainer" class="esri-widget">
+        <span id="sliderValue"></span>
+        <div id="sliderInnerContainer">
+          <div id="slider"></div>
+        </div>
+        <div id="playButton" class="esri-widget esri-widget--button toggle-button">
+          <div>
+            <span class="toggle-button-icon esri-icon-play" aria-label="play icon"></span>
+            Play
+          </div>
+          <div>
+            <span class="toggle-button-icon esri-icon-pause" aria-label="pause icon"></span>
+            Pause
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div id="tooltipContent" class="tooltip-content" style="visibility: hidden;">
+      <div id="chart" class="chart">
+        <div class="row democrat">
+          <div class="labels"><span>Obama:</span></div>
+          <div class="data"><div class="bar"></div></div>
+          <div class="value"><span></span></div>
+        </div>
+        <div class="row republican">
+          <div class="labels"><span>McCain:</span></div>
+          <div class="data"><div class="bar"></div></div>
+          <div class="value"><span></span></div>
+        </div>
+        <div class="row gap">
+          <div class="labels"><span>Gap:</span></div>
+          <div class="data">
+            <div class="bar"><div></div></div>
+          </div>
+          <div class="value"><span></span></div>
+        </div>
+      </div>
+      <div class="tooltip-text">Click to view precincts with similar gap</div>
+    </div>
+  </body>
+</html>

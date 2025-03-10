@@ -1,0 +1,184 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="initial-scale=1,maximum-scale=1,user-scalable=no" />
+
+    <title>Hurricanes</title>
+
+    <link rel="stylesheet" href="https://js.arcgis.com/4.18/esri/themes/light/main.css"/>
+    <script src="https://js.arcgis.com/4.18/"></script>
+
+    <style>
+      html,
+      body,
+      #viewDiv {
+        padding: 0;
+        margin: 0;
+        height: 100%;
+        width: 100%;
+      }
+
+      #timeSlider {
+        position: absolute;
+        left: 100px;
+        right: 100px;
+        bottom: 30px;
+      }
+    </style>
+
+    <script>
+      require([
+        "esri/config",
+        "esri/WebMap",
+        "esri/views/MapView",
+        "esri/layers/FeatureLayer",
+        "esri/widgets/Legend",
+        "esri/widgets/TimeSlider",
+        "esri/widgets/Expand"
+      ], function (esriConfig,WebMap, MapView, FeatureLayer, Legend, TimeSlider, Expand) {
+
+        const year = 2005;
+
+        const renderer = {
+          type: "simple",
+          label: "Observed hurricane location",
+          symbol: {
+            type: "picture-marker",
+            url: "cyclone-marker.gif",
+            height: 20,
+            width: 20
+          },
+          visualVariables: [{
+            type: "size",
+            field: "Category",
+            stops: [
+              { value: 1, size: 12 },
+              { value: 2, size: 16 },
+              { value: 3, size: 20 },
+              { value: 4, size: 24 },
+              { value: 5, size: 28 }
+            ]
+          }]
+        };
+
+        const layer = new FeatureLayer({
+          title: `${year} Hurricane season`,
+          portalItem: {
+            id: "f14573e9c5ce4b41aecb199d5723209b"
+          },
+          renderer: renderer,
+          definitionExpression: `Season = ${year}`
+        });
+
+        const trackRenderer = {
+          type: "simple",
+          label: "Previous hurricane location",
+          symbol: {
+            type: "simple-marker",
+            color: "rgba(188,46,28,0.05)",
+            size: 4,
+            outline: null
+          },
+          visualVariables: [{
+            type: "size",
+            field: "Category",
+            legendOptions: {
+              showLegend: false
+            },
+            stops: [
+              { value: 1, size: 4 },
+              { value: 2, size: 8 },
+              { value: 3, size: 10 },
+              { value: 4, size: 12 },
+              { value: 5, size: 18 }
+            ]
+          }]
+        };
+
+        const trackLayer = new FeatureLayer({
+          title: `${year} Hurricane season`,
+          portalItem: {
+            id: "f14573e9c5ce4b41aecb199d5723209b"
+          },
+          renderer: trackRenderer,
+          useViewTime: false,
+          definitionExpression: `Season = ${year}`
+        });
+
+        const map = new WebMap({
+          basemap: {
+            portalItem: {
+              id: "3967a92f547341e28636a8ac159666a3"
+            }
+          },
+          layers: [ layer, trackLayer ]
+        });
+
+        const view = new MapView({
+          container: "viewDiv",
+          map: map,
+          scale: 136195673,
+          constraints: {
+            snapToZoom: false,
+            rotationEnabled: false
+          }
+        });
+
+        view.ui.add(new Expand({
+          content: new Legend({
+            view: view
+          }),
+          view: view,
+          expanded: false
+        }), "top-right");
+
+        const start = new Date(year-1, 9, 1);
+        const end = new Date(year+1, 0, 15);
+        const next = new Date(year-1, 9, 1, 7);
+        const timeSlider = new TimeSlider({
+          container: "timeSlider",
+          playRate: 30,
+          mode: "time-window",
+          fullTimeExtent: {
+            start,
+            end
+          },
+          values: [ start, next ],
+          stops: {
+            interval: {
+              value: 6,
+              unit: "hours"
+            }
+          },
+          view: view
+        });
+        view.ui.add(timeSlider, "manual");
+
+        view.whenLayerView(trackLayer).then(function(trackLayerView){
+          trackLayerView.filter = {
+            timeExtent: {
+              start,
+              end: timeSlider.values[1]
+            }
+          };
+
+          timeSlider.watch("values", function(values){
+            trackLayerView.filter = {
+              timeExtent: {
+                start,
+                end: values[1]
+              }
+            }
+          });
+        });
+
+      });
+    </script>
+  </head>
+
+  <body>
+    <div id="viewDiv"></div>
+    <div id="timeSlider"></div>
+  </body>
+</html>

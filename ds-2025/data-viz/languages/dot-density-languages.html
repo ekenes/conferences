@@ -1,0 +1,208 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <meta charset="utf-8" />
+    <meta
+      name="viewport"
+      content="initial-scale=1,maximum-scale=1,user-scalable=no"
+    />
+
+    <title>Languages spoken at home</title>
+
+    <link
+      rel="stylesheet"
+      href="https://js.arcgis.com/next/esri/themes/light/main.css"
+    />
+
+    <style>
+      html,
+      body,
+      #viewDiv {
+        padding: 0;
+        margin: 0;
+        height: 100%;
+        width: 100%;
+      }
+    </style>
+
+    <script src="https://js.arcgis.com/next/"></script>
+
+    <script>
+      require([
+        "esri/config",
+        "esri/WebMap",
+        "esri/views/MapView",
+        "esri/layers/FeatureLayer",
+        "esri/renderers/DotDensityRenderer",
+        "esri/widgets/Legend",
+        "esri/widgets/Bookmarks",
+        "esri/widgets/Expand"
+      ], function (
+        esriConfig,
+        WebMap,
+        MapView,
+        FeatureLayer,
+        DotDensityRenderer,
+        Legend,
+        Bookmarks,
+        Expand
+      ) {
+
+        const map = new WebMap({
+          basemap: {
+            portalItem: {
+              id: "3582b744bba84668b52a16b0b6942544"
+            }
+          }
+        });
+
+        const view = new MapView({
+          container: "viewDiv",
+          map: map,
+          center: [ -87.621, 41.848 ],
+          scale: 288895,
+          highlightOptions: {
+            fillOpacity: 0,
+            color: [50, 50, 50]
+          },
+          popup: {
+            dockEnabled: true,
+            dockOptions: {
+              position: "top-right",
+              breakpoint: false
+            }
+          },
+          constraints: {
+            maxScale: 35000,
+            snapToZoom: false
+          }
+        });
+
+        view.when().then(function () {
+
+          const colors = ["#00b6f1", "#d9bf0d", "#c44245", "#6a28c7", "#b9a087", "#ab579d", "#78aea0", "#1e8553", "#ada016"];
+
+          // #e65154|#26b6ff|#67e6d1|#cd76d6|#ffca8c|#fff2b3|#ff8cd9|#d99d5b|#c8f2a9|#d4b8ff
+          // const colors = ["#e65154", "#26b6ff", "#67e6d1", "#cd76d6", "#ffca8c", "#fff2b3", "#ff8cd9", "#d99d5b", "#c8f2a9", "#d4b8ff"];
+
+          // #f22f00|#ffff80|#26ffff|#a040ff|#d99800|#c0ff73|#ffdd00|#ff4dc4|#5ff500|#0040ff
+          // const colors = ["#f22f00", "#ffff80", "#26ffff", "#a040ff", "#d99800", "#c0ff73", "#ffdd00", "#ff4dc4", "#5ff500", "#0040ff"];
+
+          const dotDensityRenderer = new DotDensityRenderer({
+            dotValue: 800,
+            outline: null,
+            referenceScale: 18489297, // 1:18,489,297 view scale
+            legendOptions: {
+              unit: "people"
+            },
+            blendDots: true,
+            attributes: [
+              // {
+              //   field: "B16007_calc_numEngOnlyE",
+              //   color: colors[0],
+              //   label: "English"
+              // },
+              {
+                field: "B16007_calc_numSpanE",
+                color: colors[1],
+                label: "Spanish"
+              },
+              {
+                field: "B16007_calc_numAPIE",
+                color: colors[2],
+                label: "Asian/Pacific Islander"
+              },
+              {
+                field: "B16007_calc_numIEE",
+                color: colors[3],
+                label: "Indo-European"
+              },
+              {
+                field: "B16007_calc_numOtherE",
+                color: colors[4],
+                label: "Other"
+              }
+            ]
+          });
+
+          view.watch("scale", (scale) => {
+            console.log("view scale", scale);
+          })
+
+          const layer = new FeatureLayer({
+            portalItem: {
+              id: "25f21cb5e352415aa03fdef93a35939a"
+            },
+            minScale: 20000000,
+            maxScale: 35000,
+            title: "Educational attainment (ACS)",
+            popupTemplate: {
+              title: "{County}, {State}",
+              content: [
+                {
+                  type: "fields",
+                  fieldInfos: [
+                    {
+                      fieldName: "B16007_calc_numEngOnlyE",
+                      label: "English",
+                      format: {
+                        digitSeparator: true,
+                        places: 0
+                      }
+                    },
+                    {
+                      fieldName: "B16007_calc_numSpanE",
+                      label: "Spanish",
+                      format: {
+                        digitSeparator: true,
+                        places: 0
+                      }
+                    },
+                    {
+                      fieldName: "B16007_calc_numAPIE",
+                      label: "Asian/Pacific Islander",
+                      format: {
+                        digitSeparator: true,
+                        places: 0
+                      }
+                    },
+                    {
+                      fieldName: "B16007_calc_numIEE",
+                      label: "Indo-European",
+                      format: {
+                        digitSeparator: true,
+                        places: 0
+                      }
+                    },
+                    {
+                      fieldName: "B16007_calc_numOtherE",
+                      label: "Other",
+                      format: {
+                        digitSeparator: true,
+                        places: 0
+                      }
+                    }
+                  ]
+                }
+              ]
+            },
+            renderer: dotDensityRenderer
+          });
+
+          map.add(layer);
+
+          view.ui.add( new Expand({
+            view: view,
+            content: new Legend({ view: view }),
+            group: "top-right",
+            expanded: true
+          }), "top-right" );
+        });
+      });
+    </script>
+  </head>
+
+  <body>
+    <div id="viewDiv"></div>
+  </body>
+</html>
