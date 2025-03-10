@@ -1,0 +1,139 @@
+<html lang="en">
+
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="initial-scale=1,maximum-scale=1,user-scalable=no" />
+
+  <!-- Load Calcite -->
+  <script type="module" src="https://js.arcgis.com/calcite-components/3.0.2/calcite.esm.js"></script>
+
+  <!-- Load the ArcGIS Maps SDK for JavaScript core API -->
+  <link rel="stylesheet" type="text/css" href="https://js.arcgis.com/4.32/esri/themes/dark/main.css" />
+  <script src="https://js.arcgis.com/4.32/"></script>
+
+  <!-- Load map components -->
+  <script type="module" src="https://js.arcgis.com/map-components/4.32/arcgis-map-components.esm.js"></script>
+
+  <style>
+    html,
+    body {
+      padding: 0;
+      margin: 0;
+      width: 100vw;
+      height: 100vh;
+    }
+
+    arcgis-map {
+      background-color: #2c2e31;
+    }
+
+    #instructions {
+      font-style: italic;
+      padding-bottom: 5px;
+    }
+
+    #controlDiv {
+      width: min-content;
+    }
+
+    #buttonDiv {
+      text-align: center;
+      padding: 10px;
+    }
+
+    .esri-legend__layer-row {
+      cursor: pointer;
+    }
+  </style>
+</head>
+
+<body>
+  <calcite-shell>
+    <arcgis-map item-id="1f4de04882f24fcca2bac56bb74d5c68">
+      <arcgis-expand position="top-left" group="top-left" expand-icon="legend">
+        <arcgis-placement>
+          <div id="controlDiv">
+            <arcgis-legend reference-element="arcgis-map"></arcgis-legend>
+            <div id="buttonDiv">
+              <div id="instructions">Hover over category to emphasize it. Click category to freeze selection.</div>
+              <calcite-button id="reset-button">Reset</calcite-button>
+            </div>
+          </div>
+        </arcgis-placement>
+      </arcgis-expand>
+      <arcgis-expand position="top-left" group="top-left">
+        <arcgis-search></arcgis-search>
+      </arcgis-expand>
+      <arcgis-expand expanded position="bottom-right">
+        <arcgis-bookmarks></arcgis-bookmarks>
+      </arcgis-expand>
+    </arcgis-map>
+  </calcite-shell>
+
+  <script>
+    const arcgisMap = document.querySelector("arcgis-map");
+    const legend = document.querySelector("arcgis-legend");
+
+    arcgisMap.highlightOptions = {
+      fillOpacity: 0,
+      color: "white"
+    };
+
+    arcgisMap.popup = {
+      dockEnabled: true,
+      dockOptions: {
+        position: "top-right",
+        breakpoint: false
+      }
+    };
+
+    arcgisMap.constraints = {
+      maxScale: 35000
+    };
+
+    arcgisMap.addEventListener("arcgisViewReadyChange", async () => {
+      let mousemoveEnabled = true;
+      const layer = arcgisMap.map.layers.getItemAt(0);
+      const dotDensityRenderer = layer.renderer.clone();
+
+      function legendEventListener(event) {
+        const selectedText = event.target.alt || event.target.innerText;
+        const legendInfos = legend.activeLayerInfos.getItemAt(0).legendElements[0].infos;
+        const matchFound = legendInfos.filter((info) => info.label === selectedText).length > 0;
+        if (matchFound) {
+          showSelectedField(selectedText);
+          if (event.type === "click") {
+            mousemoveEnabled = false;
+            legend.removeEventListener("mousemove", legendEventListener);
+          }
+        } else {
+          layer.renderer = dotDensityRenderer;
+        }
+      }
+
+      function showSelectedField(label) {
+        const oldRenderer = layer.renderer;
+        const newRenderer = oldRenderer.clone();
+        const attributes = newRenderer.attributes.map(attribute => {
+          attribute.color.a = attribute.label === label ? 1 : 0.2;
+          return attribute;
+        });
+        newRenderer.attributes = attributes;
+        layer.renderer = newRenderer;
+      }
+
+      legend.addEventListener("mousemove", legendEventListener);
+      legend.addEventListener("click", legendEventListener);
+
+      // enables exploration on mouse move
+      const resetButton = document.getElementById("reset-button");
+      resetButton.addEventListener("click", () => {
+        mousemoveEnabled = true;
+        layer.renderer = dotDensityRenderer;
+        legend.addEventListener("mousemove", legendEventListener);
+      });
+    });
+  </script>
+</body>
+
+</html>
