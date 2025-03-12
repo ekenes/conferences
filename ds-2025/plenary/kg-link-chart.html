@@ -175,6 +175,10 @@
             position: "top-left"
           };
 
+          arcgisMap.constraints = {
+            snapToZoom: false
+          };
+
           const healthcareNetworkLayer = arcgisMap.map.layers.find(({ title }) => title === "Healthcare Network");
           await healthcareNetworkLayer.load();
 
